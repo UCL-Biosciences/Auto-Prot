@@ -58,14 +58,14 @@ The template for the report can be edited: `report/report-template.md`
 ## 🤝 Contributing
 Set up contributions docs... Suggestions and feedback are very welcome. Please send to james.d.gilbert@ucl.ac.uk
 
+  
 
-
-
-
-
-
-
-********* Will go somewhere else **************
+  
+  
+  
+  
+  
+********* The rest will go somewhere else **************
 
 ## Usage
 Metadata must be loaded first as it is used to clean proteindata.
