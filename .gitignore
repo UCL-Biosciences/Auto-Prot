@@ -1,2 +1,3 @@
-input/data/*
+input/data/metadata.csv
+input/data/proteindata.csv
 output/*
