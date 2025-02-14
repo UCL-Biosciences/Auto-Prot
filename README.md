@@ -20,17 +20,17 @@ Make Main-run run on Mac without hard coded path to python
 - [conda](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html)
 - Somewhere to run command line commands (e.g. VS Code).
 
-### Clone the repository
+### 1. Clone the repository
 git clone https://github.com/your-repo.git
 
-### Navigate into the project
+### 2. Navigate into the project
 cd your-repo
 
-### Install dependencies for your operating system
+### 3. Install dependencies for your operating system
 Create the environment and download dependencies using the information in configuration files: `conda env create -f .../configs/auto-prot-env-YOUR-OS-HERE.yml`. Which version you use will depend on whether you are using a Windows machine or a Mac.
 Acivate the environment with: `conda activate auto-proteomics`
 
-### Generate outputs
+### 4. Generate outputs
 #### Input
 Make sure your data are in `data/proteindata.csv` and `data/metadata.csv` (requirements below). If you don't add your files to the `data` folder, the notebook will run using the default, example dataset.
 
@@ -39,7 +39,7 @@ Once the environment is active, run `jupyter notebook` and open the main.ipynb (
 
 Run all notebook cells to produce output plots and tables that are added to the report below.
 
-### Run the pipeline
+### 5. Generate the report
 To generate an html report, we need a new conda environment. First deactivate the active environment with `conda deactivate`. Then make the environment for converting the template to an html report: `conda env create -f .../configs/auto-prot-env-markdown-YOUR-OS-HERE.yml`. Activate it `conda activate markdown`.
 
 Now we generate the report (from the main directory): `python .../utils/generate_report.py`. This will save the report in `.../report/report-out.html`
