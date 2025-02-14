@@ -14,7 +14,7 @@ This repository contains the Auto-Proteomics analysis pipeline for generating st
 - Somewhere to run command line commands (e.g. VS Code).
 
 ### 1. Clone the repository
-git clone https://github.com/jdgilbert245/05-Auto-Prot
+`git clone https://github.com/jdgilbert245/05-Auto-Prot`
 
 ### 2. Navigate into the project
 cd /path/to/repo
