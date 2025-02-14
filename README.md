@@ -14,10 +14,10 @@ This repository contains the Auto-Proteomics analysis pipeline for generating st
 - Somewhere to run command line commands (e.g. VS Code).
 
 ### 1. Clone the repository
-git clone https://github.com/your-repo.git
+git clone https://github.com/jdgilbert245/05-Auto-Prot
 
 ### 2. Navigate into the project
-cd your-repo
+cd /path/to/repo
 
 ### 3. Install dependencies for your operating system
 Create the environment and download dependencies using the information in configuration files: `conda env create -f configs/auto-prot-env-YOUR-OS-HERE.yml`. Which version you use will depend on whether you are using a Windows machine or a Mac.
