@@ -32,7 +32,7 @@ Acivate the environment with: `conda activate auto-proteomics`
 
 ### 4. Generate outputs
 #### Input
-Make sure your data are in `data/proteindata.csv` and `data/metadata.csv` (requirements below). If you don't add your files to the `data` folder, the notebook will run using the default, example dataset.
+Make sure your data are in `data/proteindata.csv` and `data/metadata.csv` (requirements below). If you don't add your files to the `data` folder, you can generate an example dataset by running `python utils/gen_random_data.py`
 
 #### Run notebook
 Once the environment is active, run `jupyter notebook` and open the main.ipynb (in the main directory of this repo).
