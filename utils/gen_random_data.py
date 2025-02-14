@@ -63,7 +63,7 @@ df.loc[spike_set_2, cols_for_set_2] *= 5  # Spike second set in second treatment
 df = df.astype(int)
 
 # save to file
-df.to_csv(os.path.join(REPO_ROOT, 'data/proteindata.csv'), index=False)
+df.to_csv(os.path.join(REPO_ROOT, 'input/data/proteindata.csv'), index=False)
 
 ###### create metadata
 metadata_df = pd.DataFrame({
@@ -73,6 +73,6 @@ metadata_df = pd.DataFrame({
     "protein_abundance_name": col_names
 })
 
-metadata_df.to_csv(os.path.join(REPO_ROOT, 'data/metadata.csv'), index=False)
+metadata_df.to_csv(os.path.join(REPO_ROOT, 'input/data/metadata.csv'), index=False)
 
 print(f"Generated protein data and metadata and saved to file. All done.")
