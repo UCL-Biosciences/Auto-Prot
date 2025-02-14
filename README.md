@@ -27,7 +27,7 @@ git clone https://github.com/your-repo.git
 cd your-repo
 
 ### 3. Install dependencies for your operating system
-Create the environment and download dependencies using the information in configuration files: `conda env create -f .../configs/auto-prot-env-YOUR-OS-HERE.yml`. Which version you use will depend on whether you are using a Windows machine or a Mac.
+Create the environment and download dependencies using the information in configuration files: `conda env create -f configs/auto-prot-env-YOUR-OS-HERE.yml`. Which version you use will depend on whether you are using a Windows machine or a Mac.
 Acivate the environment with: `conda activate auto-proteomics`
 
 ### 4. Generate outputs
@@ -40,9 +40,9 @@ Once the environment is active, run `jupyter notebook` and open the main.ipynb (
 Run all notebook cells to produce output plots and tables that are added to the report below.
 
 ### 5. Generate the report
-To generate an html report, we need a new conda environment. First deactivate the active environment with `conda deactivate`. Then make the environment for converting the template to an html report: `conda env create -f .../configs/auto-prot-env-markdown-YOUR-OS-HERE.yml`. Activate it `conda activate markdown`.
+To generate an html report, we need a new conda environment. First deactivate the active environment with `conda deactivate`. Then make the environment for converting the template to an html report: `conda env create -f configs/auto-prot-env-markdown-YOUR-OS-HERE.yml`. Activate it `conda activate markdown`.
 
-Now we generate the report (from the main directory): `python .../utils/generate_report.py`. This will save the report in `.../report/report-out.html`
+Now we generate the report (from the main directory): `python utils/generate_report.py`. This will save the report in `report/report-out.html`
 
 
 ## 📂 Project Structure
