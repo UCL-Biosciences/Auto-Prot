@@ -86,7 +86,7 @@ The plot underneath shows the extent of the overrepresentation and the -log10 p-
 
 
 ## Report Generation Info
-All code used to generate this report is on [Github](https://github.com/jdgilbert245/auto-proteomics-devel).
+All code used to generate this report is on [Github](https://github.com/jdgilbert245/05-Auto-Prot).
 
 The code to run the analysis is in .../utils/analysis.py (version $ANALYSIS_VERSION).
 
