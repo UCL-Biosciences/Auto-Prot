@@ -1,13 +1,6 @@
 # Proteomics Report
 This repository contains the Auto-Proteomics analysis pipeline for generating standardised reports from protein abundance datasets.
 
-## To Do
-Make Main-run run on Mac without hard coded path to python
-
-### working through issues
--     only venn/upset and GO
--     need to decide on what to do with missing. Otherwise have no missing values and unique (i.e not differentially expressed) sets are underestimated
-
 ## Features
 - Processes mass spec-generated protein abundance data.
 - Generates an HTML report with common proteomics outputs.
