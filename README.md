@@ -28,7 +28,7 @@ Acivate the environment with: `conda activate auto-proteomics`
 Make sure your data are in `data/proteindata.csv` and `data/metadata.csv` (requirements below). If you don't add your files to the `data` folder, you can generate an example dataset by running `python utils/gen_random_data.py`
 
 #### Run notebook
-Once the environment is active, run `jupyter notebook` and open the main.ipynb (in the main directory of this repo).
+Once the environment is active, run `jupyter notebook` and open the `main.ipynb` (in the main directory of this repo). You can also open `main.ipynb` in e.g. VS Code and run the code in there.
 
 Run all notebook cells to produce output plots and tables that are added to the report below. If prompted to choose an environment, choose the one associated with the conda environment created above (by default called auto-proteomics).
 
