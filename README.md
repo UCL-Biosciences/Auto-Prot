@@ -56,7 +56,10 @@ Set up config file for parameters used in the analysis pipeline.
 The template for the report can be edited: `report/report-template.md`
 
 ## 🤝 Contributing
-Set up contributions docs... Suggestions and feedback are very welcome. Please send to james.d.gilbert@ucl.ac.uk
+Set up contributions docs...
+
+## 📧 Feedback
+Suggestions and feedback are very welcome. Please send to james.d.gilbert@ucl.ac.uk
 
   
 
@@ -92,7 +95,9 @@ Install wasn't working on personal laptop (Mac). Install [instructions](https://
 Didn't work on Windows laptop either. Followed instructions (and all combinations I could think of!). Just didn't work :'( Calculated LFC and fitted regressions manually.
 
 #### OS Specific Environments
-Libraries installed to conda env auto-proteomics. To re-create the env, you need to have (a version of) conda installed, then run conda env create -f configs/env.yml. Note, there are OS specific files because some windows dependencies aren't available on mac. The name of the environment created is specified in the top line of the yaml.
+Libraries installed to conda env auto-proteomics. To re-create the env, you need to have (a version of) conda installed, then run conda env create -f configs/env.yml. Note, there are OS specific files because some windows dependencies aren't available on mac. The name of the environment created is specified in the top line of the yaml. 
+
+I am testing the pipeline on Windows and Mac as often as possible. If you have any problems, please let me know: james.d.gilbert@ucl.ac.uk.
 
 ## Rendering the html report
 The report is generated in two main of steps:
