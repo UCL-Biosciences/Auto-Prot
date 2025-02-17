@@ -30,7 +30,7 @@ treatments = ['positive'] * n_samples_per_treatment + ['negative'] * n_samples_p
 ##### read and randomly sample gene list
 REPO_ROOT=get_repo_root()
 
-human_genes_file = os.path.join(REPO_ROOT, 'data/human_genes.txt')
+human_genes_file = os.path.join(REPO_ROOT, 'input/data/human_genes.txt')
 genes = pd.read_csv(human_genes_file)['Symbol'].dropna().unique().tolist()
 random.seed(0) # for repeatability
 sampled_genes = random.sample(genes, n_genes)
