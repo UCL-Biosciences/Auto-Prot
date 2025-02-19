@@ -27,10 +27,10 @@ Acivate the environment with: `conda activate auto-proteomics`
 #### Input
 Make sure your data are in `data/proteindata.csv` and `data/metadata.csv` (requirements below). If you don't add your files to the `data` folder, you can generate an example dataset by running `python utils/gen_random_data.py`
 
-#### Run notebook
-Once the environment is active, run `jupyter notebook` and open the `main.ipynb` (in the main directory of this repo). You can also open `main.ipynb` in e.g. VS Code and run the code in there. If prompted to select the python kernel, select the one associated with the `auto-proteomics` environment created above.
+#### Generate output
+To generate the output, you can run `python main.py`. This has been tested on windows. If it doesn't work on Mac, use `main.ipynb`:
 
-Run all notebook cells to produce output plots and tables that are added to the report below. If prompted to choose an environment, choose the one associated with the conda environment created above (by default called auto-proteomics).
+Once the environment is active, run `jupyter notebook` and open the `main.ipynb` (in the main directory of this repo). You can also open `main.ipynb` in e.g. VS Code and run the code in there. If prompted to select the python kernel, select the one associated with the `auto-proteomics` environment created above. Run all notebook cells to produce output plots and tables that are added to the report below. If prompted to choose an environment, choose the one associated with the conda environment created above (by default called auto-proteomics).
 
 ### 5. Generate the report
 To generate an html report, we need a new conda environment. First deactivate the active environment with `conda deactivate`. Then make the environment for converting the template to an html report: `conda env create -f configs/auto-prot-env-markdown-YOUR-OS-HERE.yml`. Activate it `conda activate markdown`.
