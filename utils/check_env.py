@@ -1,6 +1,7 @@
 import os
 import subprocess
 import yaml
+import platform
 
 # Automatically find the repo root (cross-platform safe)
 def get_repo_root():
@@ -18,8 +19,16 @@ def get_repo_root():
 # Set the repo root as a global variable
 REPO_ROOT = get_repo_root()
 
+# which environment to use depends on the operating system
+Active_OS = platform.system()
+
+if Active_OS == 'Windows':
+    env_file_path = os.path.join(REPO_ROOT, "configs", "auto-prot-env-windowsOS.yml")
+elif Active_OS == 'Darwin': # MAC is detected as Darwin
+    env_file_path = os.path.join(REPO_ROOT, "configs", "auto-prot-env-macOS.yml")
+
+
 # Path to the environment file (relative to repo root)
-env_file_path = os.path.join(REPO_ROOT, "configs", "auto-prot-env.yml")
 
 def get_active_env():
     """Returns the name of the currently active conda environment."""
