@@ -79,6 +79,8 @@ Metadata must contain the following columns:
 #### Protein Data
 Needs only the raw protein abundance data for each sample, with column names matching the values in the `protein_abundance_name` in the metadata. If the genes associated with the proteins are available, include the gene names in a column with "genes" in the name, and this will be used throughout to label the proteins.
 
+If data are phosphoproteomic, proteins (and associated genes) appear in multiple rows, once for each phosphorylation state. This creates duplicate gene names which we use as the index for various data frames. To correct this, the programme looks up a column called 'ptm.collapskey', which should contain phosphorylation information that will be appended to the gene name in the format: Gene__PhosphorulationState. Note double underscore.
+
 
 ### Environments
 Required libraries are in `configs/auto-prot-env-windowsOS.yml`. Recreate with `conda env create --name --file=configs/auto-prot-env.yml` and activate with `conda activate auto-proteomics`. A corresponding file for mac OS is also in configs.
