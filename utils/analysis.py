@@ -17,6 +17,7 @@ import statsmodels.formula.api as smf
 from statsmodels.stats.multitest import multipletests
 from gprofiler import GProfiler
 from utils.check_env import get_repo_root
+import itertools
 
 
 def generate_pca(df_standardised: pd.DataFrame,
@@ -234,13 +235,10 @@ def run_anova(row, metadata):
     gene_name = row.name  # Use row index as gene name
     data = pd.DataFrame(row)  # Convert row to DataFrame
     data.columns=['Abundance'] # rename column so can be used in model
-    
     # Map sample_id to treatment
     data["treatment"] = data.index.map(metadata.set_index("sample_rep")["treatment"])
-    
     # Fit OLS model
     model = smf.ols("Abundance ~ C(treatment)", data=data).fit()
-    
     # extract F stat and p value for the model
     # anova for looks at within and between group variance
     # between group variance is based on differences of group means from overall means
@@ -251,7 +249,6 @@ def run_anova(row, metadata):
     # a large ratio implies more difference within groups
     anova_table = sm.stats.anova_lm(model, typ=2)  # type 2 output doesn't depend on order of predictors
     f_stat, p_value = anova_table.iloc[0]["F"], anova_table.iloc[0]["PR(>F)"]
-    
     #### Extract group means and LFC
     # Compute group means (sorted alphabetically)
     group_means = data.groupby("treatment")["Abundance"].mean().sort_index()
@@ -261,7 +258,6 @@ def run_anova(row, metadata):
     grp2_mean = group_means.iloc[1]
     fc = grp2_mean / grp1_mean
     log2fc = np.log2( fc )
-    
     #return outputs
     results_anova = pd.Series({"Gene": gene_name,
                       "Group_1": grp1_name,
@@ -509,7 +505,6 @@ def enrichment_analysis(anova_lm_df: pd.DataFrame,
     plot_path = os.path.join(output_dir, 'plots', 'pathway_enrichment_plot.png')
     plt.savefig(plot_path, dpi=300, bbox_inches="tight")  # bbox_inches ensures labels aren't cut off
     plt.close()
-
     return pathway_result
     
 
@@ -539,6 +534,8 @@ def run_analysis(df: pd.DataFrame,
     # Initialize results dictionary
     results = {}
 
+    ##### Analyses for all treatment groups #####
+
     # Perform PCA and save results
     print("Performing PCA...")
     pca_results = generate_pca(df_standardised, output_dir, metadata=metadata)
@@ -554,6 +551,28 @@ def run_analysis(df: pd.DataFrame,
     df_heatmap = generate_heatmap(df_standardised, output_dir, metadata=metadata)
     results['heatmap'] = df_heatmap
 
+    # Look at overlaps of differnential abundance
+
+    #### if 2 or 3 groups, Venn
+
+    #### if 4 or more, upset
+
+    ###### Pairwise Analyses #####
+    # if there are > 2 treatment groups, pairwise analyses will have to be run separately for each pair of treatments
+    treatment_pairs = list(itertools.combinations(metadata['treatment'].unique(), 2))
+
+    for pair in treatment_pairs:
+        metadata_pair = metadata[metadata['treatment'].isin(pair)]
+        df_pair = df[metadata_pair['sample_rep'].tolist()]
+
+        # Generate and save volcano plot
+        print("Generating volcano plot...")
+        anova_lm_df, top_20_df = make_volcano(df_pair, output_dir, metadata=metadata_pair)
+        results['volcano'] = anova_lm_df
+
+
+
+
     # Generate and save volcano plot
     print("Generating volcano plot...")
     anova_lm_df, top_20_df = make_volcano(df, output_dir, metadata=metadata)
@@ -565,19 +584,12 @@ def run_analysis(df: pd.DataFrame,
                    top_20_df=top_20_df,
                    output_dir=output_dir,
                    metadata=metadata)
-
-    # Look at overlaps of differnential abundance
-
-    #### if 2 or 3 groups, Venn
-
-    #### if 4 or more, upset
-
-
+    
     # Find overrepresented pathways and save output
     print("Running enrichment analysis...")
     enrichment_analysis(anova_lm_df,
                    output_dir
-                   )
+    )
     
     ### write to file the version of this script
     REPO_ROOT = get_repo_root()

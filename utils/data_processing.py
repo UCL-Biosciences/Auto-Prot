@@ -7,6 +7,7 @@ import numpy as np
 import logging
 import os
 import json
+import seaborn as sns
 
 from sklearn.preprocessing import StandardScaler
 
@@ -50,6 +51,13 @@ def normalise_column_names(df, file_path=None, metadata = None):
     """
     df.columns = [col.lower().replace(' ', '_') for col in df.columns]
     df.columns = df.columns.astype(str)
+    ### For phosphoproteomic data, there are abundances for phosphorylated proteins
+    ### Each protein can be present multiple times - once per phosphorylation state
+    ### For the analysis to proceed, we need a unique ID for the protein-phosphorylation state combination
+    ## we append the phosporylation state (in column PTM.CollapseKey) to the pg.genes column
+    if ('ptm.collapsekey' in df) and ('pg.genes' in df):
+        print("Gene names and phosphorylation state present. Combining to make unique gene names")
+        df["pg.genes"] = df["pg.genes"] + '__' + df["ptm.collapsekey"]
     # If 'proteindata' is in the file path, set a column containing 'genes' as the index
     if 'proteindata' in file_path:
         genes_columns = [col for col in df.columns if 'genes' in col.lower()]
@@ -59,8 +67,9 @@ def normalise_column_names(df, file_path=None, metadata = None):
 
 def clean_data(df, file_path = None, metadata = None):
     """
-    Perform basic cleaning on the data: first filter protein data to include only protein abundance cols
-    Then drop duplicates and NAs
+    Perform basic cleaning on the data: first filter protein data to include only protein abundance cols 
+    and make sure they are all present.
+    Non-numeric protein abundances are converted to NaNs, then duplicate rows or rows with NAs are removed.
 
     Parameters:
     - df (pd.DataFrame): The dataframe to clean.
@@ -75,7 +84,13 @@ def clean_data(df, file_path = None, metadata = None):
     """
     if 'metadata' in file_path:
         df['protein_abundance_name'] = df['protein_abundance_name'].str.lower().str.replace(' ', '_')
-        df['sample_rep'] = (df['sample_id'] + '_' + df['replicate'].astype(str) )
+        df['sample_rep'] = (df['sample_id'] + '_' + df['replicate'].astype(str) ) # for a unique ID for each sample_replicate
+        
+        ### for plotting, assign a colour to each unique treatment group
+        colours = sns.color_palette("colorblind", len(df['treatment'].unique())).as_hex() # list of colour-blind-friendly colours as long as number of unique treatment levels
+        # colours = px.colors.qualitative.Alphabet[:len(df['treatment'].unique())] 
+        col_map = dict(zip(df['treatment'].unique(), colours)) # zip (combine) the treatments to the colours, store as a dictionary
+        df[ 'colours' ] = df['treatment'].map(col_map) # create a new var, mapping treatment in metadata to the colours in the dictionary
     if 'proteindata' in file_path:
         if metadata is None:
             raise ValueError("Error: Metadata is required but not provided.")   
@@ -88,6 +103,11 @@ def clean_data(df, file_path = None, metadata = None):
             valid_columns = metadata['protein_abundance_name'].tolist()
             # filter df to keep prot abundance columns
             df = df.loc[:, df.columns.isin(valid_columns)]
+            # protein columns should have only numeric data
+            # convert non-numeric values to NaN and print warning message
+            if not df.equals(df.select_dtypes(include=[np.number])):
+                print("Warning: DataFrame contains non-numeric values! Converting to NaN: these proteins will be removed!")
+                df = df.apply(pd.to_numeric, errors="coerce")
             ### protein columns can have long names - better to have just sample name
             # Create a mapping of old column names to new column names
             rename_mapping = dict(zip(metadata['protein_abundance_name'], metadata['sample_rep'] ) ) 
