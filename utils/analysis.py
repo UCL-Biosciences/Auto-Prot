@@ -274,7 +274,7 @@ def run_anova(row, metadata):
 def make_volcano(df_pair: pd.DataFrame,
                  output_dir: str,
                  metadata: pd.DataFrame = None,
-                 pair_name: str) -> pd.DataFrame:
+                 pair_name: str ) -> pd.DataFrame:
     """
     fit linear model for each protein. Calls run_anova, defined above
 
@@ -456,7 +456,7 @@ def enrichment_analysis(anova_lm_df: pd.DataFrame,
     # all results returns all results, not just those below p threshold
     all_results = False
 
-    # a background set can pe specified e.g. background=["BRCA1", "TP53", "AKT1", "MTOR", "EGFR", "MYC"]
+    # a background set can be specified e.g. background=["BRCA1", "TP53", "AKT1", "MTOR", "EGFR", "MYC"]
 
     # multiple testing correction can be g_SCS (default, Set Counts and Sizes), bonferroni, or fdr
     # from quick look, g_SCS seems to be similar to bonferroni, which are both less strict than fdr.
@@ -582,13 +582,10 @@ def run_analysis(df: pd.DataFrame,
         results_name = 'volcano_' + pair_name
         results['results_name'] = anova_lm_df
 
-
-
-
-    # Generate and save volcano plot
-    print("Generating volcano plot...")
-    anova_lm_df, top_20_df = make_volcano(df, output_dir, metadata=metadata)
-    results['volcano'] = anova_lm_df
+    # # Generate and save volcano plot
+    # print("Generating volcano plot...")
+    # anova_lm_df, top_20_df = make_volcano(df, output_dir, metadata=metadata)
+    # results['volcano'] = anova_lm_df
 
     # Generate and abundance of top proteins by LFC
     print("Plotting abundance...")
