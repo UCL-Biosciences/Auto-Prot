@@ -256,7 +256,7 @@ def run_anova(row, metadata):
     grp1_mean = group_means.iloc[0]
     grp2_name = group_means.index.tolist()[1]
     grp2_mean = group_means.iloc[1]
-    fc = grp2_mean / grp1_mean
+    fc = ( grp2_mean + 1) / ( grp1_mean + 1 )
     log2fc = np.log2( fc )
     #return outputs
     results_anova = pd.Series({"Gene": gene_name,
@@ -271,20 +271,23 @@ def run_anova(row, metadata):
     return results_anova
 
 
-def make_volcano(df: pd.DataFrame,
+def make_volcano(df_pair: pd.DataFrame,
                  output_dir: str,
-                 metadata: pd.DataFrame = None) -> pd.DataFrame:
+                 metadata: pd.DataFrame = None,
+                 pair_name: str) -> pd.DataFrame:
     """
     fit linear model for each protein. Calls run_anova, defined above
 
     Args:
         df (pd.DataFrame): protein abundance data.
         output_dir (str): Directory to save the output
+        metadata (pd.DataFrame): metadata
+        pair_name (str): treatment groups to be compared, separated by an underscore
 
     Returns:
         df_model_out (pd.DataFrame): gene name, F statistic, p value, FDR corrected p value.
     """
-    anova_lm_df = df.apply(run_anova, axis=1, metadata=metadata)
+    anova_lm_df = df_pair.apply(run_anova, axis=1, metadata=metadata)
     # Apply FDR correction (Benjamini-Hochberg)
     _, fdr_corrected_pvals, _, _ = multipletests(anova_lm_df["p_value"].values , method="fdr_bh")
     # Add FDR-adjusted p-values to DataFrame
@@ -314,8 +317,8 @@ def make_volcano(df: pd.DataFrame,
     plt.grid(True, linestyle='--', alpha=0.6)
     # Set symmetrical x-axis
     # Save plot and PCA data
-    plt.xlim(-4, 4)
-    plot_path = os.path.join(output_dir, 'plots', 'volcano_plot.png')
+    #plt.xlim(-4, 4)
+    plot_path = os.path.join(output_dir, 'plots', pair_name, 'volcano_plot.png')
     plt.savefig(plot_path, dpi=300)
     plt.close()
     # save the top 20 rows to csv for display in final report
@@ -325,7 +328,7 @@ def make_volcano(df: pd.DataFrame,
     top_20_df = sorted_df.head(20).round(decimals = 2)
     top_20_df = top_20_df.round({"p_value":4, "FDR_p_value":4})
     # Save to CSV
-    top_prot_path = os.path.join(output_dir, 'data', 'top_20_by_LFC.csv')
+    top_prot_path = os.path.join(output_dir, 'data', pair_name, 'top_20_by_LFC.csv')
     top_20_df.to_csv(top_prot_path, index=False)
     return anova_lm_df, top_20_df
 
@@ -564,11 +567,20 @@ def run_analysis(df: pd.DataFrame,
     for pair in treatment_pairs:
         metadata_pair = metadata[metadata['treatment'].isin(pair)]
         df_pair = df[metadata_pair['sample_rep'].tolist()]
+        pair_name = "_".join(map(str, pair) )
+        if not os.path.exists(os.path.join(output_dir, 'plots', pair_name)):
+            os.mkdir(os.path.join(output_dir, 'plots', pair_name))
+        if not os.path.exists(os.path.join(output_dir, 'data', pair_name)):
+            os.mkdir(os.path.join(output_dir, 'data', pair_name))
 
         # Generate and save volcano plot
         print("Generating volcano plot...")
-        anova_lm_df, top_20_df = make_volcano(df_pair, output_dir, metadata=metadata_pair)
-        results['volcano'] = anova_lm_df
+        anova_lm_df, top_20_df = make_volcano(df_pair,
+                                              output_dir,
+                                              metadata=metadata_pair,
+                                              pair_name = pair_name)
+        results_name = 'volcano_' + pair_name
+        results['results_name'] = anova_lm_df
 
 
 
