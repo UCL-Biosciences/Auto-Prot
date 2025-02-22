@@ -77,7 +77,7 @@ Metadata must contain the following columns:
 4. **protein_abundance_name**: The name in the protein data of the column that contains raw protein abundance for each sample. Important that these map correctly.
 
 #### Protein Data
-Needs only the raw protein abundance data for each sample, with column names matching the values in the `protein_abundance_name` in the metadata. A 
+Needs only the raw protein abundance data for each sample, with column names matching the values in the `protein_abundance_name` in the metadata. If the genes associated with the proteins are available, include the gene names in a column with "genes" in the name, and this will be used throughout to label the proteins.
 
 
 ### Environments
