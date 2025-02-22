@@ -62,16 +62,17 @@ Set up contributions docs...
 Suggestions and feedback are very welcome. Please send to james.d.gilbert@ucl.ac.uk
 
   
-
-  
-  
-  
-  
   
 ********* The rest will go somewhere else **************
-
 ## Usage
-Metadata must be loaded first as it is used to clean proteindata.
+
+### Input Data
+#### Metadata
+Metadata must contain the following columns:
+1. **sample_id**: unique ID for each sample.
+2. **replicate**: replicates for sample IDs. If there are no replicates, these values will all be 1.
+3. **treatment**: treatment group for each sample.
+4. **protein_abundance_name**: The name in the protein data of the column that contains raw protein abundance for each sample. Important that these map correctly.
 
 
 ### Environments
