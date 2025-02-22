@@ -570,7 +570,7 @@ def run_analysis(df: pd.DataFrame,
         pair_name = "_".join(map(str, pair) )
         if not os.path.exists(os.path.join(output_dir, 'plots', pair_name)):
             os.mkdir(os.path.join(output_dir, 'plots', pair_name))
-        if not os.path.exists(os.path.join(output_dir, 'data', pair_name)):
+        if not os.path.exists(os.path.join(output_dir, 'plots', pair_name)):
             os.mkdir(os.path.join(output_dir, 'data', pair_name))
 
         # Generate and save volcano plot
