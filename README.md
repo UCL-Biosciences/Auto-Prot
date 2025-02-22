@@ -67,6 +67,8 @@ Suggestions and feedback are very welcome. Please send to james.d.gilbert@ucl.ac
 ## Usage
 
 ### Input Data
+Both input files must be csv format and be named `metadata.csv` and `proteindata.csv`.
+
 #### Metadata
 Metadata must contain the following columns:
 1. **sample_id**: unique ID for each sample.
@@ -74,9 +76,12 @@ Metadata must contain the following columns:
 3. **treatment**: treatment group for each sample.
 4. **protein_abundance_name**: The name in the protein data of the column that contains raw protein abundance for each sample. Important that these map correctly.
 
+#### Protein Data
+Needs only the raw protein abundance data for each sample, with column names matching the values in the `protein_abundance_name` in the metadata. A 
+
 
 ### Environments
-Required libraries are in `configs/auto-prot-env.yml`. Recreate with `conda env create --name auto-proteomics --file=configs/auto-prot-env.yml` and activate with `conda activate auto-proteomics`.
+Required libraries are in `configs/auto-prot-env-windowsOS.yml`. Recreate with `conda env create --name --file=configs/auto-prot-env.yml` and activate with `conda activate auto-proteomics`. A corresponding file for mac OS is also in configs.
 
 This project includes an automatic Conda environment check before running the report generator. It ensures the active environment matches the environments/auto-prot-env.yml file. The check function is saved in `utils/check_env.py`.
 
