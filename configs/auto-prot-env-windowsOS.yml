@@ -22,7 +22,7 @@ dependencies:
   - brotli-python=1.0.9
   - bzip2=1.0.8
   - ca-certificates=2024.12.31
-  - certifi=2025.1.31
+  - certifi=2024.12.14
   - cffi=1.17.1
   - charset-normalizer=3.3.2
   - colorama=0.4.6
@@ -111,7 +111,6 @@ dependencies:
   - pillow=11.0.0
   - pip=24.2
   - platformdirs=3.10.0
-  - plotly=5.24.1
   - ply=3.11
   - prometheus_client=0.21.0
   - prompt-toolkit=3.0.43
@@ -155,7 +154,6 @@ dependencies:
   - stack_data=0.2.0
   - statsmodels=0.14.4
   - tbb=2021.8.0
-  - tenacity=9.0.0
   - terminado=0.17.1
   - threadpoolctl=3.5.0
   - tinycss2=1.2.1
