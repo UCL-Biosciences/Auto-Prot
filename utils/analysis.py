@@ -30,6 +30,7 @@ def generate_pca(df_standardised: pd.DataFrame,
     Args:
         df_standardised (pd.DataFrame): Standardised protein abundance data.
         output_dir (str): Directory to save the PCA plot and data.
+        metadata (pd.DF): sample metadata
         components (int): Number of principal components to compute.
 
     Returns:
@@ -99,14 +100,14 @@ def generate_pca(df_standardised: pd.DataFrame,
 
 def generate_MDS(df_standardised: pd.DataFrame,
                  output_dir: str,
-                 metadata: pd.DataFrame = None,
-                 components: int = 2) -> pd.DataFrame:
+                 metadata: pd.DataFrame = None) -> pd.DataFrame:
     """
     Perform MDS on the given DataFrame and save the results as a plot.
 
     Args:
         df_standardised (pd.DataFrame): Standardised protein abundance data.
-        output_dir (str): Directory to save the PCA plot and data.
+        output_dir (str): Directory to save the plot and data.
+        metadata (pd.DF): sample metadata
 
     Returns:
         pd.DataFrame: DataFrame with MDS and metadata.
@@ -173,8 +174,7 @@ def generate_MDS(df_standardised: pd.DataFrame,
 
 
 def generate_heatmap(df_standardised: pd.DataFrame,
-                 output_dir: str,
-                 metadata: pd.DataFrame = None) -> pd.DataFrame:
+                 output_dir: str) -> pd.DataFrame:
     """
     Generate a heatmap using the standardised data
 
@@ -228,6 +228,7 @@ def run_anova(row, metadata):
 
     Args:
         row : iterating through rows with df.apply()
+        metadata (pd.DF): sample metadata
         
     Returns:
         
@@ -273,15 +274,17 @@ def run_anova(row, metadata):
 
 def make_volcano(df_pair: pd.DataFrame,
                  output_dir: str,
-                 metadata: pd.DataFrame = None,
-                 pair_name: str ) -> pd.DataFrame:
+                 pair_name: str,
+                 metadata: pd.DataFrame = None
+                 ) -> pd.DataFrame:
     """
     fit linear model for each protein. Calls run_anova, defined above
 
     Args:
         df (pd.DataFrame): protein abundance data.
         output_dir (str): Directory to save the output
-        metadata (pd.DataFrame): metadata
+        pair_name (str): name of treatments being compared (pairwise)
+        metadata (pd.DF): sample metadata
         pair_name (str): treatment groups to be compared, separated by an underscore
 
     Returns:
@@ -421,69 +424,61 @@ def plot_venn(anova_lm_df: pd.DataFrame,
     """
 
 def enrichment_analysis(anova_lm_df: pd.DataFrame,
+                        pair_name: str,
                         output_dir: str) :
     """
     run enrichment analysis to identify overrepresented genes, functions and pathways
 
     Args:
         anova_lm_df (pd.DataFrame): df with anova outputs including LFC, p value and FDR adjusted p value
+        pair_name (str): name of treatments being compared (pairwise)
         output_dir (str): Directory to save the output.
 
     Returns:
         enrichment data (pd.DataFrame)
     """    
-
     ##### Calculate enrichment #####
     gp = GProfiler(return_dataframe=True)
-
     ##### G Profiler options #####
     # for ORA, just need a list of genes
     pathway_query_genes = anova_lm_df.loc[
-    (anova_lm_df['FDR_p_value'] < 0.05)
+    (anova_lm_df['FDR_p_value'] < 0.05) ##################################### change back to FDR_p_value
     ]['Gene']
-
+    # in the case of phosphoproteomic data, gene names have a double __ with phosphorylation state added,
+    # for now, we remove the phospho data from this set of genes
+    # may want to look at separately later
+    pathway_query_genes = [ gene.split("__")[0] for gene in pathway_query_genes ]
     # for GSEA, query genes can be weighted e.g. genes_weighted = {'BRCA1': 2.3, 'TP53': 1.8, 'AKT1': -1.2, 'MTOR': -2.1}
     genes_weighted_dict = anova_lm_df[ (anova_lm_df[[ 'FDR_p_value' ]]<0.05).all(axis=1) ] \
     .set_index('Gene')['Log2_Fold_Change'].to_dict()
-
     # pathway database can be REAC, GO or KEGG. Also less common but available: CORUM, HPA, TF and MIRNA
     # defaults to REAC
-    source=['REAC']
-
+    source=['GO']
     # p value threshold defaults to 0.05
     p_threshold=0.05
-
     # all results returns all results, not just those below p threshold
     all_results = False
-
     # a background set can be specified e.g. background=["BRCA1", "TP53", "AKT1", "MTOR", "EGFR", "MYC"]
-
     # multiple testing correction can be g_SCS (default, Set Counts and Sizes), bonferroni, or fdr
     # from quick look, g_SCS seems to be similar to bonferroni, which are both less strict than fdr.
     significance_threshold_method='g_SCS'
-
     ##### Running pathway enrichment #####
     pathway_result = gp.profile(organism='hsapiens',
-        query=pathway_query_genes.to_list(),
+        query=pathway_query_genes,
         sources=source,
         user_threshold = p_threshold,
         significance_threshold_method = significance_threshold_method,
         all_results = all_results
     )  # REAC for Reactome
-
     ### save results to file
-    enrichment_path = os.path.join(output_dir, 'data', 'pathway_enrichment.csv')
+    enrichment_path = os.path.join(output_dir, 'data', pair_name, 'pathway_enrichment.csv')
     pathway_result.round(decimals = 2).to_csv(enrichment_path, index=False)
-
     ##### Plot enrichment #####
     pathway_plot_df = pathway_result.sort_values('p_value', ascending = True).head(20)
-
     pathway_plot_df['-log10(p_value)'] = -np.log10(pathway_plot_df['p_value'])
-
     # Setting up the plot using Seaborn and Matplotlib adjustments
     plt.figure(figsize=(15, 20))
     #ax = plt.gca()
-
     sns.relplot(
         data = pathway_plot_df,
         x = "-log10(p_value)",
@@ -500,12 +495,10 @@ def enrichment_analysis(anova_lm_df: pd.DataFrame,
     plt.title('Pathway Enrichment', fontsize=16)
     plt.xticks(fontsize=12)
     plt.yticks(fontsize=12)  # Ensure y-axis labels are readable
-
     # Adjust layout to ensure labels are fully visible
     plt.tight_layout()
-
     # Save plot data
-    plot_path = os.path.join(output_dir, 'plots', 'pathway_enrichment_plot.png')
+    plot_path = os.path.join(output_dir, 'plots', pair_name, 'pathway_enrichment_plot.png')
     plt.savefig(plot_path, dpi=300, bbox_inches="tight")  # bbox_inches ensures labels aren't cut off
     plt.close()
     return pathway_result
@@ -579,26 +572,33 @@ def run_analysis(df: pd.DataFrame,
                                               output_dir,
                                               metadata=metadata_pair,
                                               pair_name = pair_name)
-        results_name = 'volcano_' + pair_name
+        results_name = 'df_lm_' + pair_name
         results['results_name'] = anova_lm_df
+
+        # Find overrepresented pathways and save output
+        print("Running enrichment analysis...")
+        enrichment_analysis(anova_lm_df,
+                            pair_name,
+                            output_dir
+                            )
 
     # # Generate and save volcano plot
     # print("Generating volcano plot...")
     # anova_lm_df, top_20_df = make_volcano(df, output_dir, metadata=metadata)
     # results['volcano'] = anova_lm_df
 
-    # Generate and abundance of top proteins by LFC
-    print("Plotting abundance...")
-    plot_abundance(df=df,
-                   top_20_df=top_20_df,
-                   output_dir=output_dir,
-                   metadata=metadata)
+    # # Generate and abundance of top proteins by LFC
+    # print("Plotting abundance...")
+    # plot_abundance(df=df,
+    #                top_20_df=top_20_df,
+    #                output_dir=output_dir,
+    #                metadata=metadata)
     
-    # Find overrepresented pathways and save output
-    print("Running enrichment analysis...")
-    enrichment_analysis(anova_lm_df,
-                   output_dir
-    )
+    # # Find overrepresented pathways and save output
+    # print("Running enrichment analysis...")
+    # enrichment_analysis(anova_lm_df,
+    #                output_dir
+    # )
     
     ### write to file the version of this script
     REPO_ROOT = get_repo_root()
