@@ -5,6 +5,7 @@
 
 ## Import libraries
 import os
+import json
 
 ## Import functions
 # Functions are saved in separate files and imported here
@@ -22,21 +23,18 @@ def main():
     # Check environment
     if not "VSCODE_PID" in os.environ:
         env.compare_envs()
-
     # File paths
     # getting repo dir automatically is useful as should mean we don't need to specify
     # machine-specific paths and code should run on different users' machines
     REPO_ROOT = env.get_repo_root()
-
     # File path to the dataset
     proteinDataPath = os.path.join(REPO_ROOT, 'input/data/proteindata.csv')
     metadataPath = os.path.join(REPO_ROOT, 'input/data/metadata.csv')
     outPath = os.path.join(REPO_ROOT, 'output')
     json_out = os.path.join(REPO_ROOT, 'output/data/data_for_report.json')
-    
+    config_path = os.path.join(REPO_ROOT, 'configs/auto-prot.json')
     # Create the output directory
     dp.make_outdir(outPath)
-
     # Data processing
     print("Loading and processing data...")
     # metadata
@@ -44,7 +42,6 @@ def main():
                                   json_out=json_out,
                                   outPath = outPath)
     #dp.validate_metadata(metadata)
-
     # protein abundance data
     df_protAbundance, df_protAbundance_standardised = dp.preprocess_data(file_path=proteinDataPath,
                                                                          metadata=metadata,
@@ -56,13 +53,44 @@ def main():
 
     # Analysis
     print("Running analysis...")
-    analysis_results = an.run_analysis(df = df_protAbundance,
-                                        df_standardised = df_protAbundance_standardised,
-                                        metadata = metadata,
-                                        json_out=json_out,
-                                        output_dir = outPath)
-    print("Analysis complete.")
 
+    # if subsetting required, loop through
+    with open(config_path, "r") as f:
+        config = json.load(f)
+
+    # if subsetting not required, go through with full datasets
+    if config.get("subset_yes_or_no") is False:
+        analysis_results = an.run_analysis(df = df_protAbundance,
+                                            df_standardised = df_protAbundance_standardised,
+                                            metadata = metadata,
+                                            json_out=json_out,
+                                            output_dir = outPath)
+        print("Analysis complete.")
+    elif config.get("subset_yes_or_no") is True:
+        # Read subsets from config
+        subset_terms = config.get("subsets", [])
+    # Loop through subsets
+        for subset in subset_terms:
+            print(f"Processing subset: {subset}")
+            # Subset data based on index search term
+            subset_df = df_protAbundance[df_protAbundance.index.str.contains(subset, regex=False)]
+            subset_df_standardised = df_protAbundance_standardised.loc[:, df_protAbundance_standardised.columns.str.contains(subset, regex=False)]
+            # Raise an error if no matching rows are found
+            if subset_df.empty:
+                raise ValueError(f"No matches found for subset: {subset}")
+            # Create a new output directory for the subset
+            subset_outPath = os.path.join(outPath, subset.replace(" ", "_"))
+            dp.make_outdir(subset_outPath)
+            # Run analysis for the subset
+            print(f"Running analysis for {subset}...")
+            analysis_results = an.run_analysis(
+                df=subset_df,
+                df_standardised=subset_df_standardised,
+                metadata=metadata,
+                json_out=json_out,
+                output_dir=subset_outPath
+            )
+        print("All subsets processed successfully.")
 
 #### If executed in main script, run the function to produce the output
 if __name__ == "__main__":

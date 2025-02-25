@@ -36,30 +36,27 @@ def generate_pca(df_standardised: pd.DataFrame,
     Returns:
         pd.DataFrame: DataFrame with principal components and metadata.
     """
-
     # Perform PCA
     pca = PCA(n_components=components)
     principal_components = pca.fit_transform(df_standardised)
-
+    n_prot = df_standardised.shape[1]
+    plot_title = 'PCA Plot (n proteins = ' + str(n_prot) + ')'
     # Create DataFrame with PCA results
     df_PCA = pd.DataFrame(
         data=principal_components,
         columns=[f'principal component {i + 1}' for i in range(components)],
         index = pd.DataFrame(df_standardised).index
     )
-
     # pull over treatment from metadata
     # df_PCA . look up by index . and map to
     # metadata . temporarily set index to sample_id [ and find treatment ]
     df_PCA['treatment'] = df_PCA.index.map(metadata.set_index('sample_rep')['treatment'])
-
     # Calculate variance explained by each component
     explained_variance = pca.explained_variance_ratio_
     pc_labels = [
         f'PC{i + 1} ({round(var * 100, 2)}%)'
         for i, var in enumerate(explained_variance[:components])
     ]
-
     # Plot PCA
     plt.figure(figsize=(4, 3))
     plot_pca = sns.scatterplot(
@@ -68,7 +65,6 @@ def generate_pca(df_standardised: pd.DataFrame,
         y='principal component 2',
         hue='treatment'
     )
-
     # Annotate points with sample IDs
     for i in range(df_PCA.shape[0]):
         plt.text(
@@ -79,24 +75,19 @@ def generate_pca(df_standardised: pd.DataFrame,
             ha='center',
             va='bottom'
         )
-
     # Set labels and title
     plot_pca.set(xlabel=pc_labels[0], ylabel=pc_labels[1])
-    plt.title('PCA Plot')
+    plt.title(plot_title)
     plt.tight_layout()
-
     # Save plot and PCA data
     plot_path = os.path.join(output_dir, 'plots', 'pca_plot.png')
     data_path = os.path.join(output_dir, 'data', 'pca_data.csv')
     plt.savefig(plot_path, dpi=300)
     plt.close()
     df_PCA.to_csv(data_path, index=False)
-
     print(f"PCA plot saved to {plot_path}")
     print(f"PCA data saved to {data_path}")
-
     return df_PCA
-
 
 def generate_MDS(df_standardised: pd.DataFrame,
                  output_dir: str,
@@ -112,39 +103,33 @@ def generate_MDS(df_standardised: pd.DataFrame,
     Returns:
         pd.DataFrame: DataFrame with MDS and metadata.
     """
-
     # Perform MDS
     # pdist(x) computes the Euclidean distances between each pair of points in an array
     dissimilarity_array = pdist(df_standardised, metric='euclidean')
+    n_prot = df_standardised.shape[1]
+    plot_title = 'MDS Dissimilarity based on Protein Abundance (n proteins = ' + str(n_prot) + ')'
     # suqareform() returns the matrix
     dissimilarity_matrix = squareform(dissimilarity_array)
-
     # Perform NMDS
     mds = MDS(n_components=2, # n_components is number of dimensions
             dissimilarity="precomputed", # we calculate above
             random_state=42,
             metric = True ) 
-
     # Fit the data  and return the embedded coordinates.
     mds_coords = mds.fit_transform(dissimilarity_matrix) # If dissimilarity=='precomputed', the input should be the dissimilarity matrix.
-
     # Convert the NMDS coordinates (nmds_coords) to a pandas DataFrame
     mds_coords_df = pd.DataFrame(mds_coords,
                                  columns=['MDS1', 'MDS2'],
                                  index = pd.DataFrame(df_standardised).index)
-
     # pull over treatment from metadata
     # df_PCA . look up by index . and map to
     # metadata . temporarily set index to sample_id [ and find treatment ]
     mds_coords_df['treatment'] = mds_coords_df.index.map(metadata.set_index('sample_rep')['treatment'])
-
     #### Generate NMDS plot
     plot_nmds = sns.scatterplot(data = mds_coords_df, x = 'MDS1', y = 'MDS2',
                     hue = 'treatment')
-    
     ## seaborn returns an axis-object rather than a figure, so you can still alter features of it. E.g. axes names:
     plot_nmds.set(xlabel = 'MDS 1', ylabel = 'MDS 2')
-
     # Add sample IDs from the 'target' column with an offset
     for i in range(mds_coords_df.shape[0]):
         plt.text(
@@ -155,21 +140,17 @@ def generate_MDS(df_standardised: pd.DataFrame,
             ha='center',  # Horizontal alignment
             va='bottom'   # Vertical alignment
         )
-
     # Set labels and title
-    plt.title('MDS Dissimilarity based on Protein Abundance')
+    plt.title(plot_title)
     plt.tight_layout()
-
     # Save plot and PCA data
     plot_path = os.path.join(output_dir, 'plots', 'mds_plot.png')
     data_path = os.path.join(output_dir, 'data', 'mds_data.csv')
     plt.savefig(plot_path, dpi=300)
     plt.close()
     mds_coords_df.to_csv(data_path, index=False)
-
-    print(f"PCA plot saved to {plot_path}")
-    print(f"PCA data saved to {data_path}")
-
+    print(f"MDS plot saved to {plot_path}")
+    print(f"MDS data saved to {data_path}")
     return mds_coords_df
 
 
@@ -185,40 +166,33 @@ def generate_heatmap(df_standardised: pd.DataFrame,
     Returns:
         
     """
-
     #### need the other orientation for heatmap
     # transpose and add sample ids as colnames
     df_heat = pd.DataFrame(df_standardised.T)
     df_heat.columns = df_standardised.index
-
+    n_prot = df_heat.shape[0]
+    plot_title = 'heatmap of euclidean distance (n protein = ' + str(n_prot) + ')'
     # Create clustermap
     heatmap = sns.clustermap(df_heat, 
                     #annot=True, 
                     fmt=".2f",
                     cmap="viridis")
-
     # Move x-axis labels (column names) to the top
     heatmap.ax_heatmap.xaxis.set_ticks_position("top")  # Move ticks to the top
     heatmap.ax_heatmap.xaxis.set_label_position("top")  # Move axis label to the top
-
     # Remove dendrogram tick labels
     heatmap.ax_heatmap.set_xticks(np.arange(len(df_heat.columns)))  # Set tick positions for columns
     heatmap.ax_heatmap.set_xticklabels(df_heat.columns, rotation=45, ha='left')  # Use only column names
-
     # Explicitly disable extra tick labels from the dendrogram
     heatmap.ax_heatmap.tick_params(axis='x', which='both', bottom=False, top=True)
-
     # Set labels and title
-    plt.title('Heatmap of Sample Dissimilarity based on Protein Abundance')
+    plt.title(plot_title)
     # plt.tight_layout()
-
     # Save plot and PCA data
     plot_path = os.path.join(output_dir, 'plots', 'heatmap_plot.png')
     plt.savefig(plot_path, dpi=300)
     plt.close()
-
     print(f"heatmap saved to {plot_path}")
-
     return df_heat
 
 # Function to run ANOVA for each protein
@@ -238,39 +212,41 @@ def run_anova(row, metadata):
     data.columns=['Abundance'] # rename column so can be used in model
     # Map sample_id to treatment
     data["treatment"] = data.index.map(metadata.set_index("sample_rep")["treatment"])
-    # Fit OLS model
-    model = smf.ols("Abundance ~ C(treatment)", data=data).fit()
-    # extract F stat and p value for the model
-    # anova for looks at within and between group variance
-    # between group variance is based on differences of group means from overall means
-    # within-group variance is residuals of observations from group mean
-    # Mean Squares stats are SS / df for treatment and residuals
-    # F stat is MS(treatment) / MS(residual)
-    # a large ratio implies more difference between groups
-    # a large ratio implies more difference within groups
-    anova_table = sm.stats.anova_lm(model, typ=2)  # type 2 output doesn't depend on order of predictors
-    f_stat, p_value = anova_table.iloc[0]["F"], anova_table.iloc[0]["PR(>F)"]
-    #### Extract group means and LFC
-    # Compute group means (sorted alphabetically)
-    group_means = data.groupby("treatment")["Abundance"].mean().sort_index()
-    grp1_name = group_means.index.tolist()[0]
-    grp1_mean = group_means.iloc[0]
-    grp2_name = group_means.index.tolist()[1]
-    grp2_mean = group_means.iloc[1]
-    fc = ( grp2_mean + 1) / ( grp1_mean + 1 )
-    log2fc = np.log2( fc )
-    #return outputs
-    results_anova = pd.Series({"Gene": gene_name,
-                      "Group_1": grp1_name,
-                      "Group_1_mean": grp1_mean,
-                      "Group_2": grp2_name,
-                      "Group_2_mean": grp2_mean,
-                      "Raw_Fold_Change": fc,
-                      "Log2_Fold_Change": log2fc,
-                      "F_Stat": f_stat,
-                      "p_value": p_value})
-    return results_anova
-
+    ### count data are usually modelled with a generalised linear model with a negative binomial error distribution
+    ### However, abundance data often violate the assumption of poisson GLMs that mean = variance
+    ### To deal with this "overdispersion", we use a generalised linear model with a negative binomial error distribution 
+    ### this won't work for cases where all values are 0 as we can't estimate deviance (or deviance returns NaN)
+    ### exclude these for now.
+    if (data["Abundance"] == 0).all():
+        print("All values are zero. NB GLM cannot be fitted. For gene ", gene_name)
+    if (data["Abundance"] != 0).any():
+        model = smf.glm("Abundance ~ C(treatment)", data=data, family=sm.families.NegativeBinomial(alpha = 1.0)).fit() # alpha = dispersion parameter
+        # For generalISED linear models, we can't run anova tests to look at how much variance is explained by the different parameters.
+        # instead, we use the Wald statistic. Wald stat is the coefficient divided by the standard error.
+        # This is good because the wald statistic will be higher - indicating stronger effect - when there is less variation (less noise) and/or a larger sample size - both contribute to stronger evidence
+        # larger wald stat = stronger evidence. Wald test stat is the chi2 value
+        wald_test = model.wald_test_terms(scalar = True)
+        wald_stat, p_value = wald_test.table.loc["C(treatment)", "statistic"], wald_test.table.loc["C(treatment)", "pvalue"]
+        #### Extract group means and LFC
+        # Compute group means (sorted alphabetically)
+        group_means = data.groupby("treatment")["Abundance"].mean().sort_index()
+        grp1_name = group_means.index.tolist()[0]
+        grp1_mean = group_means.iloc[0] + 1 ## add small constant for LFC
+        grp2_name = group_means.index.tolist()[1]
+        grp2_mean = group_means.iloc[1] + 1 ## add small constant for LFC
+        fc = ( grp2_mean ) / ( grp1_mean )
+        log2fc = np.log2( fc )
+        #return outputs
+        results_anova = pd.Series({"Gene": gene_name,
+                        "Group_1": grp1_name,
+                        "Group_1_mean": grp1_mean,
+                        "Group_2": grp2_name,
+                        "Group_2_mean": grp2_mean,
+                        "Raw_Fold_Change": fc,
+                        "Log2_Fold_Change": log2fc,
+                        "Wald_stat": wald_stat,
+                        "p_value": p_value})
+        return results_anova
 
 def make_volcano(df_pair: pd.DataFrame,
                  output_dir: str,
@@ -291,6 +267,8 @@ def make_volcano(df_pair: pd.DataFrame,
         df_model_out (pd.DataFrame): gene name, F statistic, p value, FDR corrected p value.
     """
     anova_lm_df = df_pair.apply(run_anova, axis=1, metadata=metadata)
+    n_prot = anova_lm_df.shape[0]
+    plot_title = 'Protein Abundance Log Fold Change (n = ' + str(n_prot) + ')'
     # Apply FDR correction (Benjamini-Hochberg)
     _, fdr_corrected_pvals, _, _ = multipletests(anova_lm_df["p_value"].values , method="fdr_bh")
     # Add FDR-adjusted p-values to DataFrame
@@ -301,6 +279,8 @@ def make_volcano(df_pair: pd.DataFrame,
     anova_lm_df['Colour'] = anova_lm_df.apply(
         lambda row: 'blue' if (abs(row['Log2_Fold_Change']) > 2 and row['FDR_p_value'] < 0.05) else 'gray', axis=1
     )
+    lm_path = os.path.join(output_dir, 'data', pair_name, 'lm_output.csv')
+    anova_lm_df.to_csv(lm_path, index=False)
     ### Create volcano plot
     sns.scatterplot(
         data=anova_lm_df, 
@@ -314,7 +294,7 @@ def make_volcano(df_pair: pd.DataFrame,
     # Customize the plot
     plt.axvline(x=2, color='red', linestyle='--', linewidth=1)  # Threshold for LFC > 1
     plt.axvline(x=-2, color='red', linestyle='--', linewidth=1)  # Threshold for LFC < -1
-    plt.title('Protein Abundance Log Fold Change', fontsize=16)
+    plt.title(plot_title, fontsize=16)
     plt.xlabel('Log2 Fold Change (LFC)', fontsize=12)
     plt.ylabel('-log10(FDR-corrected P-value)', fontsize=12)
     plt.grid(True, linestyle='--', alpha=0.6)
@@ -463,45 +443,46 @@ def enrichment_analysis(anova_lm_df: pd.DataFrame,
     # from quick look, g_SCS seems to be similar to bonferroni, which are both less strict than fdr.
     significance_threshold_method='g_SCS'
     ##### Running pathway enrichment #####
-    pathway_result = gp.profile(organism='hsapiens',
-        query=pathway_query_genes,
-        sources=source,
-        user_threshold = p_threshold,
-        significance_threshold_method = significance_threshold_method,
-        all_results = all_results
-    )  # REAC for Reactome
-    ### save results to file
-    enrichment_path = os.path.join(output_dir, 'data', pair_name, 'pathway_enrichment.csv')
-    pathway_result.round(decimals = 2).to_csv(enrichment_path, index=False)
-    ##### Plot enrichment #####
-    pathway_plot_df = pathway_result.sort_values('p_value', ascending = True).head(20)
-    pathway_plot_df['-log10(p_value)'] = -np.log10(pathway_plot_df['p_value'])
-    # Setting up the plot using Seaborn and Matplotlib adjustments
-    plt.figure(figsize=(15, 20))
-    #ax = plt.gca()
-    sns.relplot(
-        data = pathway_plot_df,
-        x = "-log10(p_value)",
-        y = "name",
-        size = "recall", # the proportion of query genes associated with the term
-        color = "green",
-        #height=20,       # Adjust figure height for better fit
-        aspect=0.6       # Maintain a suitable aspect ratio)
-    )
-    # Adjustments for axes padding and limits
-    # Adjustments for labels and titles
-    plt.xlabel('-log10(p-value)', fontsize=14)
-    plt.ylabel('Pathway Names', fontsize=14)
-    plt.title('Pathway Enrichment', fontsize=16)
-    plt.xticks(fontsize=12)
-    plt.yticks(fontsize=12)  # Ensure y-axis labels are readable
-    # Adjust layout to ensure labels are fully visible
-    plt.tight_layout()
-    # Save plot data
-    plot_path = os.path.join(output_dir, 'plots', pair_name, 'pathway_enrichment_plot.png')
-    plt.savefig(plot_path, dpi=300, bbox_inches="tight")  # bbox_inches ensures labels aren't cut off
-    plt.close()
-    return pathway_result
+    if len(pathway_query_genes) > 0:
+        pathway_result = gp.profile(organism='hsapiens',
+            query=pathway_query_genes,
+            sources=source,
+            user_threshold = p_threshold,
+            significance_threshold_method = significance_threshold_method,
+            all_results = all_results
+        )  # REAC for Reactome
+        ### save results to file
+        enrichment_path = os.path.join(output_dir, 'data', pair_name, 'pathway_enrichment.csv')
+        pathway_result.round(decimals = 2).to_csv(enrichment_path, index=False)
+        ##### Plot enrichment #####
+        pathway_plot_df = pathway_result.sort_values('p_value', ascending = True).head(20)
+        pathway_plot_df['-log10(p_value)'] = -np.log10(pathway_plot_df['p_value'])
+        # Setting up the plot using Seaborn and Matplotlib adjustments
+        plt.figure(figsize=(15, 20))
+        #ax = plt.gca()
+        sns.relplot(
+            data = pathway_plot_df,
+            x = "-log10(p_value)",
+            y = "name",
+            size = "recall", # the proportion of query genes associated with the term
+            color = "green",
+            #height=20,       # Adjust figure height for better fit
+            #aspect=0.4       # Maintain a suitable aspect ratio)
+        )
+        # Adjustments for axes padding and limits
+        # Adjustments for labels and titles
+        plt.xlabel('-log10(p-value)', fontsize=14)
+        plt.ylabel('Pathway Names', fontsize=14)
+        plt.title('Pathway Enrichment', fontsize=16)
+        plt.xticks(fontsize=12)
+        plt.yticks(fontsize=12)  # Ensure y-axis labels are readable
+        # Adjust layout to ensure labels are fully visible
+        plt.tight_layout()
+        # Save plot data
+        plot_path = os.path.join(output_dir, 'plots', pair_name, 'pathway_enrichment_plot.png')
+        plt.savefig(plot_path, dpi=300, bbox_inches="tight")  # bbox_inches ensures labels aren't cut off
+        plt.close()
+        return pathway_result
     
 
 ##########################################################################
@@ -544,7 +525,7 @@ def run_analysis(df: pd.DataFrame,
 
     # Generate and save heatmap
     print("Generating heatmap...")
-    df_heatmap = generate_heatmap(df_standardised, output_dir, metadata=metadata)
+    df_heatmap = generate_heatmap(df_standardised, output_dir)
     results['heatmap'] = df_heatmap
 
     # Look at overlaps of differnential abundance
@@ -558,25 +539,24 @@ def run_analysis(df: pd.DataFrame,
     treatment_pairs = list(itertools.combinations(metadata['treatment'].unique(), 2))
 
     for pair in treatment_pairs:
+        print("starting analysis for pair ", pair)
         metadata_pair = metadata[metadata['treatment'].isin(pair)]
         df_pair = df[metadata_pair['sample_rep'].tolist()]
         pair_name = "_".join(map(str, pair) )
         if not os.path.exists(os.path.join(output_dir, 'plots', pair_name)):
             os.mkdir(os.path.join(output_dir, 'plots', pair_name))
-        if not os.path.exists(os.path.join(output_dir, 'plots', pair_name)):
+        if not os.path.exists(os.path.join(output_dir, 'data', pair_name)):
             os.mkdir(os.path.join(output_dir, 'data', pair_name))
-
         # Generate and save volcano plot
-        print("Generating volcano plot...")
+        print("Generating volcano plot for pair ", pair_name, "...")
         anova_lm_df, top_20_df = make_volcano(df_pair,
                                               output_dir,
                                               metadata=metadata_pair,
                                               pair_name = pair_name)
         results_name = 'df_lm_' + pair_name
         results['results_name'] = anova_lm_df
-
         # Find overrepresented pathways and save output
-        print("Running enrichment analysis...")
+        print("Running enrichment analysis for pair ", pair_name, "...")
         enrichment_analysis(anova_lm_df,
                             pair_name,
                             output_dir

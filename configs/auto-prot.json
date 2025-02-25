@@ -1,0 +1,13 @@
+{
+
+    "speices" : "hsapiens",
+    "pcomponents" : 2,
+    "outPath" : "path",
+    "protPath" : "path",
+    "metaPath" : "path",
+    "phosphorylation" : "False",
+    "subset_yes_or_no": true,
+    "subsets" :  ["Carbamidomethyl (C)","Phospho (STY)", "Oxidation (M)"]
+
+    
+}
