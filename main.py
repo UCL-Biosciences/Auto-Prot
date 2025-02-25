@@ -48,16 +48,12 @@ def main():
                                                                          json_out=json_out,
                                                                          outPath = outPath)    
     #dp.validate_proteindata(df_protAbundance, metadata)
-
     print("Data loaded and processed...")
-
     # Analysis
     print("Running analysis...")
-
     # if subsetting required, loop through
     with open(config_path, "r") as f:
         config = json.load(f)
-
     # if subsetting not required, go through with full datasets
     if config.get("subset_yes_or_no") is False:
         analysis_results = an.run_analysis(df = df_protAbundance,
