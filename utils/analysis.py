@@ -266,7 +266,7 @@ def make_volcano(df_pair: pd.DataFrame,
     Returns:
         df_model_out (pd.DataFrame): gene name, F statistic, p value, FDR corrected p value.
     """
-    anova_lm_df = df_pair.apply(run_anova, axis=1, metadata=metadata)
+    anova_lm_df = df_pair.apply(run_anova, axis=1, metadata=metadata).dropna()
     n_prot = anova_lm_df.shape[0]
     plot_title = 'Protein Abundance Log Fold Change (n = ' + str(n_prot) + ')'
     # Apply FDR correction (Benjamini-Hochberg)
