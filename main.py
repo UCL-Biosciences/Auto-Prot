@@ -54,15 +54,18 @@ def main():
     # if subsetting required, loop through
     with open(config_path, "r") as f:
         config = json.load(f)
+
     # if subsetting not required, go through with full datasets
-    if config.get("subset_yes_or_no") is False:
+    if config.get("analyse_full_dataset") is True:
+        full_outPath=os.path.join(outPath, "full_dataset")
+        dp.make_outdir(full_outPath)
         analysis_results = an.run_analysis(df = df_protAbundance,
                                             df_standardised = df_protAbundance_standardised,
                                             metadata = metadata,
                                             json_out=json_out,
-                                            output_dir = outPath)
+                                            output_dir = full_outPath)
         print("Analysis complete.")
-    elif config.get("subset_yes_or_no") is True:
+    elif config.get("analyse_subsets") is True:
         # Read subsets from config
         subset_terms = config.get("subsets", [])
     # Loop through subsets

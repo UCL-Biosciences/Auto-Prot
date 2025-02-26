@@ -434,6 +434,7 @@ def enrichment_analysis(anova_lm_df: pd.DataFrame,
     # pathway database can be REAC, GO or KEGG. Also less common but available: CORUM, HPA, TF and MIRNA
     # defaults to REAC
     source=['GO']
+    plot_title = 'Pathway Enrichment (' + source[0] + ')' 
     # p value threshold defaults to 0.05
     p_threshold=0.05
     # all results returns all results, not just those below p threshold
@@ -458,7 +459,7 @@ def enrichment_analysis(anova_lm_df: pd.DataFrame,
         pathway_plot_df = pathway_result.sort_values('p_value', ascending = True).head(20)
         pathway_plot_df['-log10(p_value)'] = -np.log10(pathway_plot_df['p_value'])
         # Setting up the plot using Seaborn and Matplotlib adjustments
-        plt.figure(figsize=(15, 20))
+        # plt.figure(figsize=(15, 20))
         #ax = plt.gca()
         sns.relplot(
             data = pathway_plot_df,
@@ -466,14 +467,14 @@ def enrichment_analysis(anova_lm_df: pd.DataFrame,
             y = "name",
             size = "recall", # the proportion of query genes associated with the term
             color = "green",
-            #height=20,       # Adjust figure height for better fit
-            #aspect=0.4       # Maintain a suitable aspect ratio)
+            height=20,       # Adjust figure height for better fit
+            aspect=0.5       # Maintain a suitable aspect ratio)
         )
         # Adjustments for axes padding and limits
         # Adjustments for labels and titles
         plt.xlabel('-log10(p-value)', fontsize=14)
         plt.ylabel('Pathway Names', fontsize=14)
-        plt.title('Pathway Enrichment', fontsize=16)
+        plt.title(plot_title, fontsize=16)
         plt.xticks(fontsize=12)
         plt.yticks(fontsize=12)  # Ensure y-axis labels are readable
         # Adjust layout to ensure labels are fully visible

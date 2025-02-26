@@ -6,7 +6,8 @@
     "protPath" : "path",
     "metaPath" : "path",
     "phosphorylation" : "False",
-    "subset_yes_or_no": true,
+    "analyse_full_dataset": true,
+    "analyse_subsets": true,
     "subsets" :  ["Carbamidomethyl (C)","Phospho (STY)", "Oxidation (M)"]
 
     
