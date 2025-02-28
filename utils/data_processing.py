@@ -34,9 +34,6 @@ def load_data(file_path):
             df = pd.read_csv(file_path, sep='\t')
         else:
             raise ValueError("Unsupported file format. Please use CSV or TSV.")
-        
-        ### subsetting may be required 
-        
         return df
     except Exception as e:
         print(f"Error loading data: {e}")
@@ -130,6 +127,16 @@ def clean_data(df, file_path = None, metadata = None):
             df.index = index_series
             # drop rows with duplicated index values <<<< This is a weird quirk of the phosphoproteomics data. Need to find a way of uniquely identifying rows. Added to github issue
             df = df[df.index.duplicated(keep=False) == False]
+            #### We also want to remove low abundance proteins. Explained in the docs
+            #### But in short, zero abundances are hard to interpret - is the protein really absent or did you just not see it by chance?
+            # 1. Remove proteins where abundance is 0 in all samples for any treatment
+            for treatment in metadata['treatment'].unique():
+                treatment_samples = metadata.loc[metadata['treatment'] == treatment, 'sample_rep'].tolist()  # Get sample names
+                mask_all_zero = (df[treatment_samples] == 0).all(axis=1)
+                df = df.loc[~mask_all_zero]
+            # 2. Remove proteins where abundance is 0 in ≥50% of all samples
+            mask_half_zero = (df == 0).sum(axis=1) >= (df.shape[1] / 2)
+            df = df.loc[~mask_half_zero]
     df = df.drop_duplicates()
     df = df.dropna(axis=0) # where there are missing values, we will remove the protein (rows), not the sample (cols)   
     if 'proteindata' in file_path:
@@ -245,7 +252,8 @@ def preprocess_data(file_path,
 
 
 ### make outdir
-def make_outdir(out_path):
+def make_outdir(out_path,
+                make_subdirs = True):
     """
     Make output dir, including checks
 
@@ -265,11 +273,12 @@ def make_outdir(out_path):
         except Exception as e:
             print(f"An error occurred: {e}")   
 
-    out_subDirs = ['data', 'plots']
-    for subDir in out_subDirs:
-        path = os.path.join(out_path, subDir)
-        if not os.path.exists(path):
-            os.mkdir(path)
+    if (make_subdirs == True):
+        out_subDirs = ['data', 'plots']
+        for subDir in out_subDirs:
+            path = os.path.join(out_path, subDir)
+            if not os.path.exists(path):
+                os.mkdir(path)
  
 
 

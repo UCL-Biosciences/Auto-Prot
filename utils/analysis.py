@@ -18,6 +18,14 @@ from statsmodels.stats.multitest import multipletests
 from gprofiler import GProfiler
 from utils.check_env import get_repo_root
 import itertools
+import warnings
+from statsmodels.tools.sm_exceptions import ConvergenceWarning
+
+
+##### there is a warning to suppress when fitting models
+warnings.filterwarnings("ignore", message="Negative binomial dispersion parameter alpha not set. Using default value alpha=1.0.")
+# Suppress only ConvergenceWarning
+warnings.simplefilter("ignore", ConvergenceWarning)
 
 
 def generate_pca(df_standardised: pd.DataFrame,
@@ -220,33 +228,35 @@ def run_anova(row, metadata):
     if (data["Abundance"] == 0).all():
         print("All values are zero. NB GLM cannot be fitted. For gene ", gene_name)
     if (data["Abundance"] != 0).any():
-        model = smf.glm("Abundance ~ C(treatment)", data=data, family=sm.families.NegativeBinomial(alpha = 1.0)).fit() # alpha = dispersion parameter
-        # For generalISED linear models, we can't run anova tests to look at how much variance is explained by the different parameters.
-        # instead, we use the Wald statistic. Wald stat is the coefficient divided by the standard error.
-        # This is good because the wald statistic will be higher - indicating stronger effect - when there is less variation (less noise) and/or a larger sample size - both contribute to stronger evidence
-        # larger wald stat = stronger evidence. Wald test stat is the chi2 value
-        wald_test = model.wald_test_terms(scalar = True)
-        wald_stat, p_value = wald_test.table.loc["C(treatment)", "statistic"], wald_test.table.loc["C(treatment)", "pvalue"]
-        #### Extract group means and LFC
-        # Compute group means (sorted alphabetically)
-        group_means = data.groupby("treatment")["Abundance"].mean().sort_index()
-        grp1_name = group_means.index.tolist()[0]
-        grp1_mean = group_means.iloc[0] + 1 ## add small constant for LFC
-        grp2_name = group_means.index.tolist()[1]
-        grp2_mean = group_means.iloc[1] + 1 ## add small constant for LFC
-        fc = ( grp1_mean ) / ( grp2_mean )
-        log2fc = np.log2( fc )
-        #return outputs
-        results_anova = pd.Series({"Gene": gene_name,
-                        "Group_1": grp1_name,
-                        "Group_1_mean": grp1_mean,
-                        "Group_2": grp2_name,
-                        "Group_2_mean": grp2_mean,
-                        "Raw_Fold_Change": fc,
-                        "Log2_Fold_Change": log2fc,
-                        "Wald_stat": wald_stat,
-                        "p_value": p_value})
-        return results_anova
+        model = smf.negativebinomial('Abundance ~ C(treatment)', data=data).fit(disp=0)
+        ## some times these models fail to estimate parameters. Only continue when models have been fitted correctly
+        if not np.any(np.isnan(model.bse)):
+            # For generalISED linear models, we can't run anova tests to look at how much variance is explained by the different parameters.
+            # instead, we use the Wald statistic. Wald stat is the coefficient divided by the standard error.
+            # This is good because the wald statistic will be higher - indicating stronger effect - when there is less variation (less noise) and/or a larger sample size - both contribute to stronger evidence
+            # larger wald stat = stronger evidence. Wald test stat is the chi2 value
+            wald_test = model.wald_test_terms(scalar = True)
+            wald_stat, p_value = wald_test.table.loc["C(treatment)", "statistic"], wald_test.table.loc["C(treatment)", "pvalue"]
+            #### Extract group means and LFC
+            # Compute group means (sorted alphabetically)
+            group_means = data.groupby("treatment")["Abundance"].mean().sort_index()
+            grp1_name = group_means.index.tolist()[0]
+            grp1_mean = group_means.iloc[0] + 1 ## add small constant for LFC
+            grp2_name = group_means.index.tolist()[1]
+            grp2_mean = group_means.iloc[1] + 1 ## add small constant for LFC
+            fc = ( grp1_mean ) / ( grp2_mean )
+            log2fc = np.log2( fc )
+            #return outputs
+            results_anova = pd.Series({"Gene": gene_name,
+                            "Group_1": grp1_name,
+                            "Group_1_mean": grp1_mean,
+                            "Group_2": grp2_name,
+                            "Group_2_mean": grp2_mean,
+                            "Raw_Fold_Change": fc,
+                            "Log2_Fold_Change": log2fc,
+                            "Wald_stat": wald_stat,
+                            "p_value": p_value})
+            return results_anova
 
 def make_volcano(df_pair: pd.DataFrame,
                  output_dir: str,
@@ -269,7 +279,7 @@ def make_volcano(df_pair: pd.DataFrame,
     """
     anova_lm_df = df_pair.apply(run_anova, axis=1, metadata=metadata).dropna()
     n_prot = anova_lm_df.shape[0]
-    plot_title = 'Protein Abundance Log Fold Change (n = ' + str(n_prot) + ')'
+    plot_title = 'Protein Abundance Log Fold Change for treatments ' + pair_name + '(n = ' + str(n_prot) + ')'
     # Apply FDR correction (Benjamini-Hochberg)
     _, fdr_corrected_pvals, _, _ = multipletests(anova_lm_df["p_value"].values , method="fdr_bh")
     # Add FDR-adjusted p-values to DataFrame
@@ -281,6 +291,7 @@ def make_volcano(df_pair: pd.DataFrame,
     ### whether to plot the -log10(p_value) i.e. unadjusted or -log10(FDR_p_value) is specified in json field "LFC_plot_p_or_FDRp"
     Volcano_y_axis = config.get("LFC_plot_p_or_FDRp")
     Volcano_y_data = anova_lm_df[Volcano_y_axis]
+    
     # Add the Colour column based on LOG2FC and p_values_FDR
     anova_lm_df['Colour'] = anova_lm_df.apply(
         lambda row: 'blue' if (abs(row['Log2_Fold_Change']) > 2 and row['FDR_p_value'] < 0.05) else 'gray', axis=1

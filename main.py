@@ -34,26 +34,25 @@ def main():
     json_out = os.path.join(REPO_ROOT, 'output/data/data_for_report.json')
     config_path = os.path.join(REPO_ROOT, 'configs/auto-prot.json')
     # Create the output directory
-    dp.make_outdir(outPath)
+    dp.make_outdir(outPath, make_subdirs = False)
     # Data processing
     print("Loading and processing data...")
+
     # metadata
     metadata = dp.preprocess_data(file_path=metadataPath,
                                   json_out=json_out,
                                   outPath = outPath)
-    #dp.validate_metadata(metadata)
     # protein abundance data
     df_protAbundance, df_protAbundance_standardised = dp.preprocess_data(file_path=proteinDataPath,
                                                                          metadata=metadata,
                                                                          json_out=json_out,
                                                                          outPath = outPath)    
-    #dp.validate_proteindata(df_protAbundance, metadata)
+    ### Read in configuration data, stored in a json
+    with open(config_path, "r") as f:
+        config = json.load(f)
     print("Data loaded and processed...")
     # Analysis
     print("Running analysis...")
-    # if subsetting required, loop through
-    with open(config_path, "r") as f:
-        config = json.load(f)
 
     # if subsetting not required, go through with full datasets
     if config.get("analyse_full_dataset") is True:
@@ -63,7 +62,8 @@ def main():
                                             df_standardised = df_protAbundance_standardised,
                                             metadata = metadata,
                                             json_out=json_out,
-                                            output_dir = full_outPath)
+                                            output_dir = full_outPath,
+                                            config = config)
         print("Analysis complete.")
     elif config.get("analyse_subsets") is True:
         # Read subsets from config
@@ -87,7 +87,8 @@ def main():
                 df_standardised=subset_df_standardised,
                 metadata=metadata,
                 json_out=json_out,
-                output_dir=subset_outPath
+                output_dir=subset_outPath,
+                config = config
             )
         print("All subsets processed successfully.")
 

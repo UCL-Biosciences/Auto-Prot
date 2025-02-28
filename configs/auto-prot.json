@@ -10,7 +10,6 @@
     "analyse_subsets": true,
     "subsets" :  ["Carbamidomethyl (C)","Phospho (STY)", "Oxidation (M)"],
 
-    "LFC_plot_p_or_FDRp": "Log10_unadjusted_p_Value"
-
+    "LFC_plot_p_or_FDRp": "Log10_FDR_P_Value"
     
 }
