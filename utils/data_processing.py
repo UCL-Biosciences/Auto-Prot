@@ -59,7 +59,7 @@ def normalise_column_names(df, file_path=None, metadata = None):
     ### Each protein can be present multiple times - once per phosphorylation state
     ### For the analysis to proceed, we need a unique ID for the protein-phosphorylation state combination
     ## we append the phosporylation state (in column PTM.ModificationTitle and PTM.SiteAA) to the pg.genes column
-    if ('ptm.modificationtitle' in df) and ('pg.genes' in df):
+    if ('ptm.modificationtitle' in df) and ('ptm.siteaa' in df) and ('ptm.sitelocation' in df) and ('pg.genes' in df):
         print("Gene names and phosphorylation state present. Combining to make unique gene names")
         df["pg.genes"] = df["pg.genes"] + '__' + df["ptm.modificationtitle"] + '_' + df["ptm.siteaa"] + '_' + df["ptm.sitelocation"].astype(str)
     # If 'proteindata' is in the file path, set a column containing 'genes' as the index
