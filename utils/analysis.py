@@ -234,7 +234,7 @@ def run_anova(row, metadata):
         grp1_mean = group_means.iloc[0] + 1 ## add small constant for LFC
         grp2_name = group_means.index.tolist()[1]
         grp2_mean = group_means.iloc[1] + 1 ## add small constant for LFC
-        fc = ( grp2_mean ) / ( grp1_mean )
+        fc = ( grp1_mean ) / ( grp2_mean )
         log2fc = np.log2( fc )
         #return outputs
         results_anova = pd.Series({"Gene": gene_name,
@@ -251,6 +251,7 @@ def run_anova(row, metadata):
 def make_volcano(df_pair: pd.DataFrame,
                  output_dir: str,
                  pair_name: str,
+                 config: dict,
                  metadata: pd.DataFrame = None
                  ) -> pd.DataFrame:
     """
@@ -275,6 +276,11 @@ def make_volcano(df_pair: pd.DataFrame,
     anova_lm_df["FDR_p_value"] = fdr_corrected_pvals
     # and -log10(FDR) for plot
     anova_lm_df['Log10_FDR_P_Value'] = -np.log10(anova_lm_df['FDR_p_value'])
+    anova_lm_df['Log10_unadjusted_p_Value'] = -np.log10(anova_lm_df['p_value'])
+    
+    ### whether to plot the -log10(p_value) i.e. unadjusted or -log10(FDR_p_value) is specified in json field "LFC_plot_p_or_FDRp"
+    Volcano_y_axis = config.get("LFC_plot_p_or_FDRp")
+    Volcano_y_data = anova_lm_df[Volcano_y_axis]
     # Add the Colour column based on LOG2FC and p_values_FDR
     anova_lm_df['Colour'] = anova_lm_df.apply(
         lambda row: 'blue' if (abs(row['Log2_Fold_Change']) > 2 and row['FDR_p_value'] < 0.05) else 'gray', axis=1
@@ -285,7 +291,7 @@ def make_volcano(df_pair: pd.DataFrame,
     sns.scatterplot(
         data=anova_lm_df, 
         x='Log2_Fold_Change',  # Log fold change
-        y='Log10_FDR_P_Value',  # -log10(FDR-corrected p-value)
+        y=Volcano_y_data,  # -log10(FDR-corrected p-value)
         hue='Colour',  # Color based on significance
         palette={'blue': 'blue', 'gray': 'gray'},
         legend=False,  # No legend for this plot
@@ -296,7 +302,7 @@ def make_volcano(df_pair: pd.DataFrame,
     plt.axvline(x=-2, color='red', linestyle='--', linewidth=1)  # Threshold for LFC < -1
     plt.title(plot_title, fontsize=16)
     plt.xlabel('Log2 Fold Change (LFC)', fontsize=12)
-    plt.ylabel('-log10(FDR-corrected P-value)', fontsize=12)
+    plt.ylabel(Volcano_y_axis, fontsize=12)
     plt.grid(True, linestyle='--', alpha=0.6)
     # Set symmetrical x-axis
     # Save plot and PCA data
@@ -494,6 +500,7 @@ def run_analysis(df: pd.DataFrame,
                  df_standardised: pd.DataFrame,
                  metadata: pd.DataFrame,
                  output_dir: str,
+                 config: dict, 
                  json_out: str) -> dict:
     """
     Full analysis pipeline: performs PCA,
@@ -553,7 +560,8 @@ def run_analysis(df: pd.DataFrame,
         anova_lm_df, top_20_df = make_volcano(df_pair,
                                               output_dir,
                                               metadata=metadata_pair,
-                                              pair_name = pair_name)
+                                              pair_name = pair_name,
+                                              config = config)
         results_name = 'df_lm_' + pair_name
         results['results_name'] = anova_lm_df
         # Find overrepresented pathways and save output
