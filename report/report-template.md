@@ -62,11 +62,6 @@ Here, we show the top 20 proteins by absolute difference in log2 fold change, in
 
 {{TOP_20_PROTS}}
 
-#### Abundance of Specific Proteins
-We now show the distributions of the 10 most differentially abundant proteins.
-
-<img src="../output/plots/abundance_top10_plot.png" width="800" height="400">
-
 #### Shared and Differential Abundance
 We may want to know how many protein abundances are unique to each treatment and if there are any proteins with different abundances in multiple treatments. We use a venn diagram to show this when there are two or three treatments. For four or more treatments, we show the overlaps using an upset plot. Both plots highlight shared and unique proteins, helping to identify overlaps or exclusivity between groups. Verify data quality by checking for unexpected patterns, such as overly large or small intersections. Focus on intersections of interest, such as proteins unique to a condition or shared across all.
 
