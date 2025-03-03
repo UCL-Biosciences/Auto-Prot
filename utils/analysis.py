@@ -287,11 +287,9 @@ def make_volcano(df_pair: pd.DataFrame,
     # and -log10(FDR) for plot
     anova_lm_df['Log10_FDR_P_Value'] = -np.log10(anova_lm_df['FDR_p_value'])
     anova_lm_df['Log10_unadjusted_p_Value'] = -np.log10(anova_lm_df['p_value'])
-    
     ### whether to plot the -log10(p_value) i.e. unadjusted or -log10(FDR_p_value) is specified in json field "LFC_plot_p_or_FDRp"
     Volcano_y_axis = config.get("LFC_plot_p_or_FDRp")
     Volcano_y_data = anova_lm_df[Volcano_y_axis]
-    
     # Add the Colour column based on LOG2FC and p_values_FDR
     anova_lm_df['Colour'] = anova_lm_df.apply(
         lambda row: 'blue' if (abs(row['Log2_Fold_Change']) > 2 and row['FDR_p_value'] < 0.05) else 'gray', axis=1
@@ -444,7 +442,8 @@ def enrichment_analysis(anova_lm_df: pd.DataFrame,
     # in the case of phosphoproteomic data, gene names have a double __ with phosphorylation state added,
     # for now, we remove the phospho data from this set of genes
     # may want to look at separately later
-    pathway_query_genes = [ gene.split("__")[0] for gene in pathway_query_genes ]
+    if any(isinstance(gene, str) and '__' in gene for gene in pathway_query_genes):
+        pathway_query_genes = [str(gene).split("__")[0] for gene in pathway_query_genes]
     # for GSEA, query genes can be weighted e.g. genes_weighted = {'BRCA1': 2.3, 'TP53': 1.8, 'AKT1': -1.2, 'MTOR': -2.1}
     genes_weighted_dict = anova_lm_df[ (anova_lm_df[[ 'FDR_p_value' ]]<0.05).all(axis=1) ] \
     .set_index('Gene')['Log2_Fold_Change'].to_dict()
@@ -463,7 +462,7 @@ def enrichment_analysis(anova_lm_df: pd.DataFrame,
     ##### Running pathway enrichment #####
     if len(pathway_query_genes) > 0:
         pathway_result = gp.profile(organism='hsapiens',
-            query=pathway_query_genes,
+            query=list(pathway_query_genes),
             sources=source,
             user_threshold = p_threshold,
             significance_threshold_method = significance_threshold_method,
