@@ -20,6 +20,8 @@ from utils.check_env import get_repo_root
 import itertools
 import warnings
 from statsmodels.tools.sm_exceptions import ConvergenceWarning
+from glob import glob
+from PIL import Image
 
 
 ##### there is a warning to suppress when fitting models
@@ -279,7 +281,7 @@ def make_volcano(df_pair: pd.DataFrame,
     """
     anova_lm_df = df_pair.apply(run_anova, axis=1, metadata=metadata).dropna()
     n_prot = anova_lm_df.shape[0]
-    plot_title = 'Protein Abundance Log Fold Change for treatments ' + pair_name + '(n = ' + str(n_prot) + ')'
+    plot_title = 'Protein Abundance Log Fold Change for treatments \n' + pair_name + '(n = ' + str(n_prot) + ')'
     # Apply FDR correction (Benjamini-Hochberg)
     _, fdr_corrected_pvals, _, _ = multipletests(anova_lm_df["p_value"].values , method="fdr_bh")
     # Add FDR-adjusted p-values to DataFrame
@@ -470,7 +472,7 @@ def enrichment_analysis(anova_lm_df: pd.DataFrame,
         )  # REAC for Reactome
         ### save results to file
         enrichment_path = os.path.join(output_dir, 'data', pair_name, 'pathway_enrichment.csv')
-        pathway_result.round(decimals = 2).to_csv(enrichment_path, index=False)
+        pathway_result.round({'precision': 2, 'recall':2}).to_csv(enrichment_path, index=False)
         ##### Plot enrichment #####
         pathway_plot_df = pathway_result.sort_values('p_value', ascending = True).head(20)
         pathway_plot_df['-log10(p_value)'] = -np.log10(pathway_plot_df['p_value'])
@@ -483,7 +485,7 @@ def enrichment_analysis(anova_lm_df: pd.DataFrame,
             y = "name",
             size = "recall", # the proportion of query genes associated with the term
             color = "green",
-            height=20,       # Adjust figure height for better fit
+            height=15,       # Adjust figure height for better fit
             aspect=0.5       # Maintain a suitable aspect ratio)
         )
         # Adjustments for axes padding and limits
@@ -501,6 +503,106 @@ def enrichment_analysis(anova_lm_df: pd.DataFrame,
         plt.close()
         return pathway_result
     
+#### combine plots made for different treatment groups
+def combine_plots(search_term,
+                  search_path,
+                  output_dir, 
+                  output_filename = None,
+                  img_size=(800, 600),
+                  max_cols=3):
+    """
+    Finds all images matching the search_term in subdirectories of search_path,
+    arranges them in a grid with up to max_cols columns, and saves a single PNG.
+
+    Parameters:
+    - search_term (str): The filename pattern to search for (e.g., "volcano_plot.png").
+    - search_path (str): The base directory where images are stored.
+    - output_filename (str): The filename for the combined image (auto-generated if None).
+    - img_size (tuple): (width, height) to resize images.
+    - max_cols (int): Maximum number of columns in the grid.
+
+    Returns:
+    - str: Path to the saved combined image, or None if no images found.
+    """
+    # Find all matching images
+    image_paths = sorted(glob(os.path.join(search_path, "**", search_term), recursive=True))
+    if not image_paths:
+        print(f"No plots found for '{search_term}'.")
+        return None
+    # Load and resize images
+    images = [Image.open(img).resize(img_size, Image.LANCZOS) for img in image_paths]
+    # Determine grid layout
+    cols = min(max_cols, len(images))
+    rows = len(images) // cols
+    rows = (len(images) + cols - 1) // cols  # Round up to fit all images by adding cols - 1
+    # Create a blank canvas
+    combined_width = cols * img_size[0]
+    combined_height = rows * img_size[1]
+    combined_image = Image.new("RGB", (combined_width, combined_height), (255, 255, 255)) # 255,255,255 specifies background colour = white
+    # Paste images into grid
+    for idx, img in enumerate(images):
+        x_offset = (idx % cols) * img_size[0]
+        y_offset = (idx // cols) * img_size[1]
+        combined_image.paste(img, (x_offset, y_offset))
+    # Generate output filename if not provided
+    if output_filename is None:
+        output_filename = os.path.join(output_dir, f"plots/combined_{search_term.replace('.png', '')}.png")
+    # Save the final image
+    combined_image.save(output_filename)
+    print(f"Combined plot saved to: {output_filename}")
+    return output_filename  # Return the path for reference
+
+### for combining data from different treatments for display in the report ###
+def combine_csv_files(filename,
+                      output_dir,
+                      output_filename=None,
+                      top_n=10,
+                      new_column="treatment_pair"):
+    """
+    General function to combine CSV files from subdirectories into a single file.
+
+    Parameters:
+    - filename (str): The name of the CSV file to search for (e.g., "top_20_by_LFC.csv").
+    - output_dir (str): The root directory where data folders are stored.
+    - output_filename (str or None): The output filename for the combined CSV.
+                                     If None, it's auto-generated based on `filename`.
+    - top_n (int): Number of rows to take from each CSV file.
+    - new_column (str): Column name to store the extracted folder name (e.g., "treatment_pair").
+
+    Returns:
+    - pd.DataFrame: The combined DataFrame.
+    - str: The path where the final CSV is saved.
+    """
+    # Search for matching CSV files in subdirectories
+    search_pattern = os.path.join(output_dir, "data", "**", filename)
+    csv_files = sorted(glob(search_pattern, recursive=True))
+    # check if csv files exist
+    if not csv_files:
+        print(f"No files found matching '{filename}'.")
+        return None, None
+    combined_data = []
+    # Process each found CSV file
+    for file in csv_files:
+        # Extract the folder name (used as the category column)
+        folder_name = os.path.basename(os.path.dirname(file))  
+        # Read CSV and select top `n` rows
+        df = pd.read_csv(file).head(top_n)
+        # Add the extracted folder name as a new column
+        df[new_column] = folder_name  
+        # Append to the list
+        combined_data.append(df)
+    # Merge all data
+    combined_df = pd.concat(combined_data, ignore_index=True)
+    # Auto-generate output filename if not provided
+    if output_filename is None:
+        output_filename = os.path.join(output_dir, f"data/combined_{filename}")
+    # Ensure output directory exists
+    os.makedirs(os.path.dirname(output_filename), exist_ok=True)
+    # Save combined CSV
+    combined_df.to_csv(output_filename, index=False)
+    print(f"Combined file saved at: {output_filename}")
+    return combined_df, output_filename
+
 
 ##########################################################################
 #### This is the main function for analysing data, combining the above ###
@@ -581,24 +683,22 @@ def run_analysis(df: pd.DataFrame,
                             output_dir
                             )
 
-    # # Generate and save volcano plot
-    # print("Generating volcano plot...")
-    # anova_lm_df, top_20_df = make_volcano(df, output_dir, metadata=metadata)
-    # results['volcano'] = anova_lm_df
+    # combine plots from different pairs
+    combine_plots(search_path = output_dir,
+                  search_term = "volcano_plot.png",
+                  output_dir=output_dir) 
+    
+    combine_plots(search_path = output_dir,
+                  search_term = "pathway_enrichment_plot.png",
+                  output_dir=output_dir) 
+    
+    # Combine the top 10 most differentially abundant proteins
+    combine_csv_files(filename="top_20_by_LFC.csv",
+                      output_dir=output_dir)
+    # Combine pathway enrichment data
+    combine_csv_files(filename="pathway_enrichment.csv",
+                      output_dir=output_dir)
 
-    # # Generate and abundance of top proteins by LFC
-    # print("Plotting abundance...")
-    # plot_abundance(df=df,
-    #                top_20_df=top_20_df,
-    #                output_dir=output_dir,
-    #                metadata=metadata)
-    
-    # # Find overrepresented pathways and save output
-    # print("Running enrichment analysis...")
-    # enrichment_analysis(anova_lm_df,
-    #                output_dir
-    # )
-    
     ### write to file the version of this script
     REPO_ROOT = get_repo_root()
     analysis_version =  subprocess.check_output(["git", "log", "-n", "1", "--format=%H", "--", 
@@ -620,6 +720,3 @@ def run_analysis(df: pd.DataFrame,
     
     print("Analysis pipeline completed.")
     return results
-
-
-

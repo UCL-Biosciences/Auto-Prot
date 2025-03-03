@@ -65,7 +65,7 @@ def main():
                                             output_dir = full_outPath,
                                             config = config)
         print("Analysis complete.")
-    elif config.get("analyse_subsets") is True:
+    if config.get("analyse_subsets") is True:
         # Read subsets from config
         subset_terms = config.get("subsets", [])
     # Loop through subsets
@@ -78,7 +78,7 @@ def main():
             if subset_df.empty:
                 raise ValueError(f"No matches found for subset: {subset}")
             # Create a new output directory for the subset
-            subset_outPath = os.path.join(outPath, subset.replace(" ", "_"))
+            subset_outPath = os.path.join(outPath, 'subsets', subset.replace(" ", "_"))
             dp.make_outdir(subset_outPath)
             # Run analysis for the subset
             print(f"Running analysis for {subset}...")
