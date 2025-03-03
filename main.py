@@ -34,7 +34,7 @@ def main():
     json_out = os.path.join(REPO_ROOT, 'output/data/data_for_report.json')
     config_path = os.path.join(REPO_ROOT, 'configs/auto-prot.json')
     # Create the output directory
-    dp.make_outdir(outPath, make_subdirs = False)
+    dp.make_outdir(outPath, make_subdirs = True)
     # Data processing
     print("Loading and processing data...")
 
