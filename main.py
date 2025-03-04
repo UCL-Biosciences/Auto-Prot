@@ -32,7 +32,7 @@ def main():
     metadataPath = os.path.join(REPO_ROOT, 'input/data/metadata.csv')
     outPath = os.path.join(REPO_ROOT, 'output')
     json_out = os.path.join(REPO_ROOT, 'output/data/data_for_report.json')
-    config_path = os.path.join(REPO_ROOT, 'configs/auto-prot.json')
+    config_path = os.path.join(REPO_ROOT, 'configs/auto-prot-config.json')
     # Create the output directory
     dp.make_outdir(outPath, make_subdirs = True)
     # Data processing
