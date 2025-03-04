@@ -37,17 +37,17 @@ We start with simple clustering. Which samples are most similar?
 #### PCA Plot
 PCA plots represent the distances among samples. This is a good chance to start exploring your data, looking both for interesting results and anything that suggests there is something unusual in the data generated. Does the plot below show what you expected? If there are technical or biological replicates, we generally expect them to be tightly clustered. Is that the case? What about the clustering by treatment, is that what you expected?
 
-<img src="../output/plots/pca_plot.png" width="600" height="450">
+<img src="../output/full_dataset/plots/pca_plot.png" width="600" height="450">
 
 #### MDS Clustering
 A multidimensional scaling (MDS) plot is a visualisation tool that shows how similar samples are. Similar to PCA but can be more flexible. While PCA relies on the assumption of linearity, MDS does not assume linearity because it works on ranks. MDS is more flexible in the types of data it can use. Does the MDS agree with the PCA plot above?
 
-<img src="../output/plots/mds_plot.png" width="600" height="450">
+<img src="../output/full_dataset/plots/mds_plot.png" width="600" height="450">
 
 ### Relationships among samples and proteins
 The below dendrogram and heatmap shows hierarchical relationships of proteins (rows) and samples (columns) based on their dissimilarity. Colour intensity represents standardised protein abundance. Clusters highlight groups of proteins/samples with similar abundances. Verify data quality by ensuring expected clustering (e.g., replicates group together) and checking for outliers or missing data. Explore clusters to identify functionally related proteins or patterns linked to experimental conditions.
 
-<img src="../output/plots/heatmap_plot.png" width="600" height="600">
+<img src="../output/full_dataset/plots/heatmap_plot.png" width="600" height="600">
 
 ### Differential Protein Abundance
 Now, we look at the protein abundance and whether there are differences between treatment groups.
@@ -55,17 +55,12 @@ Now, we look at the protein abundance and whether there are differences between 
 #### Volcano Plot
 Volcano plots highlight differential protein abundance between two conditions, with log2 fold change on the x-axis and -log10 p-value on the y-axis. Proteinsthat are more upregulated or downregulated are displayed as points further from the center, with blue points representing protein with an FDR-corrected p-value less than 0.05. Verify data quality by ensuring symmetrical distribution and expected patterns (e.g., balanced up- and downregulated proteins). Focus on outliers that may represent biologically meaningful changes. Use this plot to quickly identify key proteins of interest for further analysis or validation.
 
-<img src="../output/plots/volcano_plot.png" width="800" height="600">
+<img src="../output/full_dataset/plots/combined_volcano_plot.png" width="1000" height="300">
 
 #### Table of Differentially Expressed Proteins
-Here, we show the top 20 proteins by absolute difference in log2 fold change, including the protein,associated genes, treatment means, LFC, and FDR-corrected p value.
+Here, we show the top 20 proteins by absolute difference in log2 fold change, including the protein, associated genes, treatment means, LFC, and FDR-corrected p value.
 
 {{TOP_20_PROTS}}
-
-#### Abundance of Specific Proteins
-We now show the distributions of the 10 most differentially abundant proteins.
-
-<img src="../output/plots/abundance_top10_plot.png" width="800" height="400">
 
 #### Shared and Differential Abundance
 We may want to know how many protein abundances are unique to each treatment and if there are any proteins with different abundances in multiple treatments. We use a venn diagram to show this when there are two or three treatments. For four or more treatments, we show the overlaps using an upset plot. Both plots highlight shared and unique proteins, helping to identify overlaps or exclusivity between groups. Verify data quality by checking for unexpected patterns, such as overly large or small intersections. Focus on intersections of interest, such as proteins unique to a condition or shared across all.
@@ -82,7 +77,7 @@ The table below summarises the most overrepresented pathways.
 
 The plot underneath shows the extent of the overrepresentation and the -log10 p-value.
 
-<img src="../output/plots/pathway_enrichment_plot.png" width="800" height="400">
+<img src="../output/full_dataset/plots/combined_pathway_enrichment_plot.png" width="800" height="400">
 
 
 ## Report Generation Info

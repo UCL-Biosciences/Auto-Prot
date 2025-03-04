@@ -7,6 +7,7 @@ import numpy as np
 import logging
 import os
 import json
+import seaborn as sns
 
 from sklearn.preprocessing import StandardScaler
 
@@ -28,11 +29,12 @@ def load_data(file_path):
     """
     try:
         if file_path.endswith('.csv'):
-            return pd.read_csv(file_path)
+            df = pd.read_csv(file_path)
         elif file_path.endswith('.tsv'):
-            return pd.read_csv(file_path, sep='\t')
+            df = pd.read_csv(file_path, sep='\t')
         else:
             raise ValueError("Unsupported file format. Please use CSV or TSV.")
+        return df
     except Exception as e:
         print(f"Error loading data: {e}")
         return None
@@ -50,6 +52,13 @@ def normalise_column_names(df, file_path=None, metadata = None):
     """
     df.columns = [col.lower().replace(' ', '_') for col in df.columns]
     df.columns = df.columns.astype(str)
+    ### For phosphoproteomic data, there are abundances for phosphorylated proteins
+    ### Each protein can be present multiple times - once per phosphorylation state
+    ### For the analysis to proceed, we need a unique ID for the protein-phosphorylation state combination
+    ## we append the phosporylation state (in column PTM.ModificationTitle and PTM.SiteAA) to the pg.genes column
+    if ('ptm.modificationtitle' in df) and ('ptm.siteaa' in df) and ('ptm.sitelocation' in df) and ('pg.genes' in df):
+        print("Gene names and phosphorylation state present. Combining to make unique gene names")
+        df["pg.genes"] = df["pg.genes"] + '__' + df["ptm.modificationtitle"] + '_' + df["ptm.siteaa"] + '_' + df["ptm.sitelocation"].astype(str)
     # If 'proteindata' is in the file path, set a column containing 'genes' as the index
     if 'proteindata' in file_path:
         genes_columns = [col for col in df.columns if 'genes' in col.lower()]
@@ -59,8 +68,9 @@ def normalise_column_names(df, file_path=None, metadata = None):
 
 def clean_data(df, file_path = None, metadata = None):
     """
-    Perform basic cleaning on the data: first filter protein data to include only protein abundance cols
-    Then drop duplicates and NAs
+    Perform basic cleaning on the data: first filter protein data to include only protein abundance cols 
+    and make sure they are all present.
+    Non-numeric protein abundances are converted to NaNs, then duplicate rows or rows with NAs are removed.
 
     Parameters:
     - df (pd.DataFrame): The dataframe to clean.
@@ -75,7 +85,13 @@ def clean_data(df, file_path = None, metadata = None):
     """
     if 'metadata' in file_path:
         df['protein_abundance_name'] = df['protein_abundance_name'].str.lower().str.replace(' ', '_')
-        df['sample_rep'] = (df['sample_id'] + '_' + df['replicate'].astype(str) )
+        df['sample_rep'] = (df['sample_id'] + '_' + df['replicate'].astype(str) ) # for a unique ID for each sample_replicate
+        
+        ### for plotting, assign a colour to each unique treatment group
+        colours = sns.color_palette("colorblind", len(df['treatment'].unique())).as_hex() # list of colour-blind-friendly colours as long as number of unique treatment levels
+        # colours = px.colors.qualitative.Alphabet[:len(df['treatment'].unique())] 
+        col_map = dict(zip(df['treatment'].unique(), colours)) # zip (combine) the treatments to the colours, store as a dictionary
+        df[ 'colours' ] = df['treatment'].map(col_map) # create a new var, mapping treatment in metadata to the colours in the dictionary
     if 'proteindata' in file_path:
         if metadata is None:
             raise ValueError("Error: Metadata is required but not provided.")   
@@ -88,6 +104,11 @@ def clean_data(df, file_path = None, metadata = None):
             valid_columns = metadata['protein_abundance_name'].tolist()
             # filter df to keep prot abundance columns
             df = df.loc[:, df.columns.isin(valid_columns)]
+            # protein columns should have only numeric data
+            # convert non-numeric values to NaN and print warning message
+            if not df.equals(df.select_dtypes(include=[np.number])):
+                print("Warning: DataFrame contains non-numeric values! Converting to NaN: these proteins will be removed!")
+                df = df.apply(pd.to_numeric, errors="coerce")
             ### protein columns can have long names - better to have just sample name
             # Create a mapping of old column names to new column names
             rename_mapping = dict(zip(metadata['protein_abundance_name'], metadata['sample_rep'] ) ) 
@@ -104,6 +125,18 @@ def clean_data(df, file_path = None, metadata = None):
             index_series[nan_mask] = [f"Unknown-gene-{i+1}" for i in range(nan_mask.sum())]
             # Set updated index
             df.index = index_series
+            # drop rows with duplicated index values <<<< This is a weird quirk of the phosphoproteomics data. Need to find a way of uniquely identifying rows. Added to github issue
+            df = df[df.index.duplicated(keep=False) == False]
+            #### We also want to remove low abundance proteins. Explained in the docs
+            #### But in short, zero abundances are hard to interpret - is the protein really absent or did you just not see it by chance?
+            # 1. Remove proteins where abundance is 0 in all samples for any treatment
+            for treatment in metadata['treatment'].unique():
+                treatment_samples = metadata.loc[metadata['treatment'] == treatment, 'sample_rep'].tolist()  # Get sample names
+                mask_all_zero = (df[treatment_samples] == 0).all(axis=1)
+                df = df.loc[~mask_all_zero]
+            # 2. Remove proteins where abundance is 0 in ≥50% of all samples
+            mask_half_zero = (df == 0).sum(axis=1) >= (df.shape[1] / 2)
+            df = df.loc[~mask_half_zero]
     df = df.drop_duplicates()
     df = df.dropna(axis=0) # where there are missing values, we will remove the protein (rows), not the sample (cols)   
     if 'proteindata' in file_path:
@@ -205,8 +238,8 @@ def preprocess_data(file_path,
         # column-wise, i.e. by protein, not sample.
         df_T = df.T
         df_T.columns = df_T.columns.astype(str)
-        df_scaled = StandardScaler().fit_transform(df_T)   
-        df_standardised = pd.DataFrame(df_scaled, index = df_T.index, columns = df_T.columns)
+        df_scaled = StandardScaler().fit_transform(df_T)  # scale the data
+        df_standardised = pd.DataFrame(df_scaled, index = df_T.index, columns = df_T.columns) # add additional data
         pd.DataFrame(df).to_csv(os.path.join(outPath, 'data/protAbundance.csv'), index=False)
         pd.DataFrame(df_standardised).to_csv(os.path.join(outPath, 'data/protAbundance_standardised.csv'), index=False)
         
@@ -215,11 +248,12 @@ def preprocess_data(file_path,
                              data_standardised = df_standardised, 
                              metadata = metadata)
         
-        return df, df_standardised    
+        return df, df_standardised
 
 
 ### make outdir
-def make_outdir(out_path):
+def make_outdir(out_path,
+                make_subdirs = True):
     """
     Make output dir, including checks
 
@@ -239,11 +273,12 @@ def make_outdir(out_path):
         except Exception as e:
             print(f"An error occurred: {e}")   
 
-    out_subDirs = ['data', 'plots']
-    for subDir in out_subDirs:
-        path = os.path.join(out_path, subDir)
-        if not os.path.exists(path):
-            os.mkdir(path)
+    if (make_subdirs == True):
+        out_subDirs = ['data', 'plots']
+        for subDir in out_subDirs:
+            path = os.path.join(out_path, subDir)
+            if not os.path.exists(path):
+                os.mkdir(path)
  
 
 
@@ -277,28 +312,22 @@ def validate_metadata(metadata):
 def validate_proteindata(data,
                          data_standardised,
                          metadata):
-
     ##### checks for raw protein abundance data #####
     # Check if data is empty
     if data.empty:
         raise ValueError("Error: The protein abundance data is empty.")
-    
     # Check if row indices (proteins) are unique
     if not data.index.is_unique:
         raise ValueError("Error: Protein identifiers (row indices) must be unique.")
-    
     # Check if column names (samples) are unique
     if not data.columns.is_unique:
         raise ValueError("Error: Sample identifiers (columns) must be unique.")
-    
     # Validate protein abundance columns from metadata
     # names of abundance columns:
     abundance_columns = metadata['sample_rep']  # Columns to check. Note this depends on whether cols have been renamed
-    
     # Ensure one-to-one mapping: all sample_id values in columns, and all columns are sample_ids
     if set(abundance_columns) != set(data.columns):
         raise ValueError("Error: Mismatch between metadata samples and protein abundance columns. Ensure a strict one-to-one mapping.")
-    
     # If all protein_abundance_name columns are present,
     # Check numeric values only in specified abundance columns
     non_numeric_columns = [
@@ -307,30 +336,23 @@ def validate_proteindata(data,
     ]
     if non_numeric_columns:
         raise ValueError(f"Error: The following columns contain non-numeric values: {non_numeric_columns}")
-    
     # Check for missing values (NaNs) in the entire DataFrame
     if data.isna().any().any():
         raise ValueError("Error: The protein abundance df contains missing (NaN) values!")
-
     ##### checks for standardised protein abundance data #####
-
     # Check for missing values (NaNs) in the entire DataFrame
     if data_standardised.isna().any().any():
         raise ValueError("Error: The standardised protein abundance df contains missing (NaN) values!")
-
     ### check mean ~0 and variance ~1
     # Calculate column-wise mean and variance
     mean_vals = data_standardised.mean()
     var_vals = data_standardised.var(ddof=0) # ddof = 0 divides deviance by N-1 for sample var. Default divides by N and gives population var.
-
     # Define tolerance for deviation from expected values
     mean_tolerance = 1e-6  # Mean should be very close to 0
     var_tolerance = 0.1    # Variance should be around 1, allowing small deviations
-
     # Check mean is close to 0
     if not np.all(np.abs(mean_vals) < mean_tolerance):
         raise ValueError("Error: Standardised data mean is not sufficiently close to 0.")
-
     # Check variance is close to 1
     if not np.all(np.abs(var_vals - 1) < var_tolerance):
         raise ValueError("Error: Standardised data variance is not sufficiently close to 1.")

@@ -1,4 +1,4 @@
-import markdown2 # conda env info in configs/auto-prot-env-markdown-macOS.yml
+import markdown # conda env info in configs/auto-prot-env-markdown-macOS.yml
 import os
 import subprocess
 import json
@@ -59,8 +59,8 @@ def generate_report_html(report_MD: str,
     # read straight to html so it can slot into the template
     enrichment_df = pd.read_csv(enrichment_path)[['source', 'native', 'name', 'p_value',
                                                   'term_size', 'query_size', 'intersection_size',
-                                                  'precision', 'recall']] \
-        .head(20).to_html(index=False, border =1 )
+                                                  'precision', 'recall', 'treatment_pair']] \
+        .to_html(index=False, border =1 )
     
     # Open the file for reading and read the input to a temp variable
     with open(report_MD, 'r') as f:
@@ -80,7 +80,7 @@ def generate_report_html(report_MD: str,
         tempMd = tempMd.replace(key, str(value))
 
     # Convert the input to HTML
-    tempHtml = markdown2.markdown(tempMd)
+    tempHtml = markdown.markdown(tempMd)
     # If necessary, could print or edit the results at this point.
     # Open the HTML file and write the output.
     with open(report_html, 'w') as f:
@@ -94,8 +94,8 @@ if __name__ == "__main__":
     #### set location of report template and where html will be stored
     report_MD=os.path.join(REPO_ROOT, "./report/report-template.md")
     report_html =os.path.join(REPO_ROOT, "./output/report-out.html")
-    top_20_prots_path =os.path.join(REPO_ROOT, "./output/data/top_20_by_LFC.csv")
-    enrichment_path =os.path.join(REPO_ROOT, "./output/data/pathway_enrichment.csv")
+    top_20_prots_path =os.path.join(REPO_ROOT, "./output/full_dataset/data/combined_top_20_by_LFC.csv")
+    enrichment_path =os.path.join(REPO_ROOT, "./output/full_dataset/data/combined_pathway_enrichment.csv")
     json_out = os.path.join(REPO_ROOT, 'output/data/data_for_report.json')
 
     generate_report_html(report_MD,

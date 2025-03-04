@@ -1,0 +1,15 @@
+{
+
+    "speices" : "hsapiens",
+    "pcomponents" : 2,
+    "outPath" : "path",
+    "protPath" : "path",
+    "metaPath" : "path",
+    
+    "analyse_full_dataset": true,
+    "analyse_subsets": false,
+    "subsets" : "NA",
+
+    "LFC_plot_p_or_FDRp": "Log10_FDR_P_Value"
+    
+}
