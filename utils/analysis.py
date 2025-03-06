@@ -29,6 +29,65 @@ warnings.filterwarnings("ignore", message="Negative binomial dispersion paramete
 # Suppress only ConvergenceWarning
 warnings.simplefilter("ignore", ConvergenceWarning)
 
+def generate_histogram(df: pd.DataFrame,
+                        output_dir: str,
+                        metadata: pd.DataFrame,
+                        json_out: dict): 
+    """
+    Generate histograms showing distributions for the different treatments
+
+    Args:
+        df (pd.DataFrame): protein abundance data.
+        output_dir (str): Directory to save the output
+        metadata (pd.DF): sample metadata
+        config (dict): configuration info for the pipeline. we add mean and sd per treatment, which can go into report
+        json_out (str): File for saving information to go into the final repo
+
+    Returns:
+        
+    """
+    ### to create histograms, need to re format
+    # need cols: sample replicate, treatment, abundance
+    df_long = df.melt(var_name='Sample', value_name='Abundance', ignore_index=False)
+    df_long = df_long.reset_index().rename(columns={'index': 'Protein'})  # Ensure 'Protein' column exists
+    df_long = df_long.merge(metadata[['sample_rep', 'treatment']], left_on='Sample', right_on='sample_rep')
+    # Log-transform the abundance values to make it easier to see
+    df_long['Log_Abundance'] = np.log1p(df_long['Abundance'])
+    # Create the figure
+    plt.figure(figsize=(10, 6))
+    ax = sns.kdeplot(data=df_long, x='Log_Abundance', hue='treatment', common_norm=False, linewidth=2)
+    # Force legend display
+    handles, labels = ax.get_legend_handles_labels()
+    if handles:
+        ax.legend(handles=handles, labels=labels, title="Treatment")
+    # Set labels and title
+    plt.xlabel("Log(Protein Abundance + 1)")
+    plt.ylabel("Density")
+    plt.title("Density of Log-Transformed Protein Abundance by Treatment")
+    # Save plot and PCA data
+    plot_path = os.path.join(output_dir, 'plots', 'histogram_all_treatments_plot.png')
+    plt.savefig(plot_path, dpi=300)
+    plt.close()
+    ### for the full dataset, we want to record the mean and SD for abundance for each treatment ###
+    if "full_dataset" in output_dir:
+        # Compute mean Abundance per treatment
+        mean_abundance = df_long.groupby('treatment')['Abundance'].mean().round().astype('int')
+        mean_for_json = ", ".join([f"{mean}: {int(n):,}" for mean, n in mean_abundance.items()])
+        sd_abundance = df_long.groupby('treatment')['Abundance'].std().round().astype('int')
+        sd_for_json = ", ".join([f"{sd}: {int(n):,}" for sd, n in sd_abundance.items()])
+        # read data from json file
+        with open(json_out, "r") as f:
+            existing_data = json.load(f)
+        abundance_stats = {
+                "MEAN_ABUNDANCE": mean_for_json,
+                "SD_ABUNDANCE": sd_for_json
+        }
+        # Append new data
+        existing_data.update(abundance_stats)
+        # Write back to JSON file
+        with open(json_out, "w") as f:
+            json.dump(existing_data, f, indent=4)
+
 
 def generate_pca(df_standardised: pd.DataFrame,
                  output_dir: str,
@@ -622,7 +681,7 @@ def run_analysis(df: pd.DataFrame,
         df_standardised (pd.DataFrame): Standardised protein abundance data.
         metadata (pd.DataFrame): Metadata containing sample information.
         output_dir (str): Directory to save analysis outputs.
-        json_out (str): File for saving information to go into the final repo
+        json_out (str): File for saving information to go into the final report
 
     Returns:
         dict: Dictionary containing results from all analyses.
@@ -632,6 +691,12 @@ def run_analysis(df: pd.DataFrame,
     results = {}
 
     ##### Analyses for all treatment groups #####
+    # Generate histogram
+    print("Generating histogram")
+    generate_histogram(df,
+                        output_dir,
+                        metadata,
+                        json_out) 
 
     # Perform PCA and save results
     print("Performing PCA...")

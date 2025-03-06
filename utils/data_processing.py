@@ -182,7 +182,7 @@ def preprocess_data(file_path,
         treatment_summary = ", ".join([f"{treatment}: {n}" for treatment, n in treatment_counts.items()])
 
         metadata_values = {
-            "NUM_SAMPLES": df['sample_id'].nunique(),
+            "NUM_SAMPLES": df['sample_rep'].nunique(),
             "NUM_TREATMENTS": df['treatment'].nunique(),
             "TREATMENTS": treatment_summary
         }
@@ -202,7 +202,7 @@ def preprocess_data(file_path,
         
         #### protein summary
         NUM_PROTS = len(df.index)
-        NUM_PROTS_NA = nrow_original - NUM_PROTS
+        NUM_PROTS_REMOVED = nrow_original - NUM_PROTS
         
         # Compute mean value per row (per protein across all samples)
         mean_abundance = df.iloc[:, 1:].mean(axis=1)  # Exclude protein column
@@ -210,7 +210,7 @@ def preprocess_data(file_path,
         # Compute min, max, and mean of these mean abundances
         abundance_stats = {
             "NUM_PROTS_OG": nrow_original,
-            "NUM_PROTS_NA": NUM_PROTS_NA,
+            "NUM_PROTS_REMOVED": NUM_PROTS_REMOVED,
             "NUM_PROTS": f"{NUM_PROTS:,.0f}",
             "MIN_AVERAGE_ABUNDANCE": f"{mean_abundance.min():,.0f}",
             "MAX_AVERAGE_ABUNDANCE": f"{mean_abundance.max():,.0f}",

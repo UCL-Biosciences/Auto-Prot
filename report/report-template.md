@@ -20,12 +20,15 @@ Read on to see some common proteomics outputs,  including:
 
 ## Exprimental and Data Summary
 ### Samples
-The data contain $NUM_SAMPLES samples from $NUM_TREATMENTS treatment groups ($TREATMENTS). 
+The data contain $NUM_SAMPLES samples from $NUM_TREATMENTS treatment groups ($TREATMENTS). The distribution of proteins in the different treatments is shown below. It is important to check that they look as you expect. If you think samples in the different treatments should have roughly similar distributions, is that what you see? It is also worth checking the means and standard deviations of the different groups:
 
-***** distribution of protein count by sample ******
+Mean abundances across treatments: $MEAN_ABUNDANCE
+Standard deviations across treatments: $SD_ABUNDANCE
+
+<img src="../output/full_dataset/plots/histogram_all_treatments_plot.png" width="600" height="450">
 
 ### Proteins
-From an initial $NUM_PROTS_OG proteins, $NUM_PROTS_NA with NA values were removed, leaving $NUM_PROTS proteins in the dataset. The median abundance per protein was $MEDIAN_AVERAGE_ABUNDANCE (range: $MIN_AVERAGE_ABUNDANCE - $MAX_AVERAGE_ABUNDANCE).
+From an initial $NUM_PROTS_OG proteins, $NUM_PROTS_REMOVED with NA values were removed, leaving $NUM_PROTS proteins in the dataset. The median abundance per protein was $MEDIAN_AVERAGE_ABUNDANCE (range: $MIN_AVERAGE_ABUNDANCE - $MAX_AVERAGE_ABUNDANCE).
 
 ***** distribution of all proteins ******
 
