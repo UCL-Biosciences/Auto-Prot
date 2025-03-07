@@ -22,6 +22,8 @@ import warnings
 from statsmodels.tools.sm_exceptions import ConvergenceWarning
 from glob import glob
 from PIL import Image
+from matplotlib import patches
+
 
 
 ##### there is a warning to suppress when fitting models
@@ -319,6 +321,108 @@ def run_anova(row, metadata):
                             "p_value": p_value})
             return results_anova
 
+
+def volcano_plot(anova_lm_df,
+                  config,
+                  Volcano_y_data,
+                  LFC_threshold,
+                  plot_title
+                  ):
+    """
+    Adds an inset zoomed-in plot to a volcano plot if necessary.
+    """
+    # Define y-axis cutoff threshold
+    fdr_cut_off = config.get("volcano_y_cutoff") # note this is in terms of FDR for readability, converted to -log10() here:
+    y_cutoff = -np.log10(fdr_cut_off)
+    # Determine if an inset is needed (i.e., if any points exceed the y-axis limit)
+    max_y_value = np.max(anova_lm_df['Log10_FDR_P_Value'])
+    truncate = max_y_value > y_cutoff
+    ### whether to plot the -log10(p_value) i.e. unadjusted or -log10(FDR_p_value) is specified in json field "LFC_plot_p_or_FDRp"
+    Volcano_y_axis = config.get("LFC_plot_p_or_FDRp")
+    Volcano_y_data = anova_lm_df[Volcano_y_axis]
+    LFC_threshold = config.get("LFC_threshold")
+    FDR_threshold = config.get("FDR_threshold")
+    # if max y NOT above the cutoff, do normal plot
+    if not truncate:
+        # Create the figure and axis for plotting
+        fig, ax = plt.subplots(figsize=(8, 6))
+        ### Create volcano plot
+        sns.scatterplot(
+            data=anova_lm_df, 
+            x='Log2_Fold_Change',  # Log fold change
+            y=Volcano_y_data,  # -log10(FDR-corrected p-value)
+            hue='Colour',  # Color based on significance
+            palette={'blue': 'blue', 'gray': 'gray'},
+            legend=False,  # No legend for this plot
+            alpha=0.7  # Transparency for points
+        )
+        # Customize the plot
+        plt.axvline(x=LFC_threshold, color='red', linestyle='--', linewidth=1)
+        plt.axvline(x=-LFC_threshold, color='red', linestyle='--', linewidth=1)
+        ax.axhline(y=threshold_value, color='red', linestyle='--', linewidth=1)
+        plt.title(plot_title, fontsize=16)
+        plt.xlabel('Log2 Fold Change (LFC)', fontsize=12)
+        plt.ylabel(Volcano_y_axis, fontsize=12)
+        plt.grid(True, linestyle='--', alpha=0.6)
+    # if max y above cutoff, make inset.
+    if truncate:
+        threshold_value = config.get("FDR_threshold")
+        # Identify points exceeding the cutoff
+        high_values = anova_lm_df['Log10_FDR_P_Value'] > y_cutoff
+        # Create the figure and axis for plotting
+        fig, ax = plt.subplots(figsize=(8, 6))
+        # plot outliers, with prominent black rings to distinguish from normal points
+        sns.scatterplot(
+            data=anova_lm_df[high_values], 
+            x='Log2_Fold_Change',  # Log fold change
+            y=np.full(sum(high_values), y_cutoff),  # -log10(FDR-corrected p-value)
+            hue='Colour',  # Color based on significance
+            palette={'blue': 'blue', 'gray': 'gray'},
+            legend=False,  # No legend for this plot
+            alpha=1, # Transparency for points
+            edgecolor='black',
+            linewidth=1.5
+        )
+        # plot non-outliers
+        sns.scatterplot(
+            data=anova_lm_df[~high_values], 
+            x='Log2_Fold_Change',  # Log fold change
+            y=Volcano_y_data[~high_values],  # -log10(FDR-corrected p-value)
+            hue='Colour',  # Color based on significance
+            palette={'blue': 'blue', 'gray': 'gray'},
+            legend=False,  # No legend for this plot
+            alpha=0.7 # Transparency for points
+        )
+        # Customize the plot
+        plt.axvline(x=LFC_threshold, color='red', linestyle='--', linewidth=1)
+        plt.axvline(x=-LFC_threshold, color='red', linestyle='--', linewidth=1)
+        plt.axhline(y=threshold_value, color='red', linestyle='--', linewidth=1)
+        plt.title(plot_title, fontsize=16)
+        plt.xlabel('Log2 Fold Change (LFC)', fontsize=12)
+        plt.ylabel(Volcano_y_axis, fontsize=12)
+        plt.grid(True, linestyle='--', alpha=0.6)
+        ### return the plot
+        return fig, ax
+
+        # # If an inset is needed, create the zoomed-in panel
+        # inset_ax = fig.add_axes([0.6, 0.6, 0.3, 0.3])  # Adjust position and size
+        # # Corrected filtering for the inset region
+        # inset_mask = (abs(anova_lm_df['Log2_Fold_Change']) < 3) & (anova_lm_df['Log10_FDR_P_Value'] < y_cutoff)
+        # # Scatter plot for the inset
+        # sns.scatterplot(
+        #     x=anova_lm_df['Log2_Fold_Change'][inset_mask],
+        #     y=anova_lm_df['Log10_FDR_P_Value'][inset_mask],
+        #     color='blue', alpha=0.5, ax=inset_ax
+        # )
+        # # Inset aesthetics
+        # inset_ax.set_xlim(-3, 3)
+        # inset_ax.set_ylim(0, y_cutoff)
+        # inset_ax.set_xticks([])
+        # inset_ax.set_yticks([])
+        # # Draw a rectangle on the main plot to indicate the zoomed-in area
+        # rect = patches.Rectangle((-3, 0), 6, 20, linewidth=1, edgecolor='blue', facecolor='none', linestyle='dashed')
+        # ax.add_patch(rect)
+
 def make_volcano(df_pair: pd.DataFrame,
                  output_dir: str,
                  pair_name: str,
@@ -348,37 +452,17 @@ def make_volcano(df_pair: pd.DataFrame,
     # and -log10(FDR) for plot
     anova_lm_df['Log10_FDR_P_Value'] = -np.log10(anova_lm_df['FDR_p_value'])
     anova_lm_df['Log10_unadjusted_p_Value'] = -np.log10(anova_lm_df['p_value'])
-    ### whether to plot the -log10(p_value) i.e. unadjusted or -log10(FDR_p_value) is specified in json field "LFC_plot_p_or_FDRp"
-    Volcano_y_axis = config.get("LFC_plot_p_or_FDRp")
-    Volcano_y_data = anova_lm_df[Volcano_y_axis]
+ 
     # Add the Colour column based on LOG2FC and p_values_FDR
     anova_lm_df['Colour'] = anova_lm_df.apply(
-        lambda row: 'blue' if (abs(row['Log2_Fold_Change']) > 2 and row['FDR_p_value'] < 0.05) else 'gray', axis=1
+        lambda row: 'blue' if (abs(row['Log2_Fold_Change']) >= LFC_threshold and row['FDR_p_value'] <= FDR_threshold) else 'gray', axis=1
     )
     lm_path = os.path.join(output_dir, 'data', pair_name, 'lm_output.csv')
     anova_lm_df.to_csv(lm_path, index=False)
-    ### Create volcano plot
-    sns.scatterplot(
-        data=anova_lm_df, 
-        x='Log2_Fold_Change',  # Log fold change
-        y=Volcano_y_data,  # -log10(FDR-corrected p-value)
-        hue='Colour',  # Color based on significance
-        palette={'blue': 'blue', 'gray': 'gray'},
-        legend=False,  # No legend for this plot
-        alpha=0.7  # Transparency for points
-    )
-    # Customize the plot
-    plt.axvline(x=2, color='red', linestyle='--', linewidth=1)  # Threshold for LFC > 1
-    plt.axvline(x=-2, color='red', linestyle='--', linewidth=1)  # Threshold for LFC < -1
-    plt.title(plot_title, fontsize=16)
-    plt.xlabel('Log2 Fold Change (LFC)', fontsize=12)
-    plt.ylabel(Volcano_y_axis, fontsize=12)
-    plt.grid(True, linestyle='--', alpha=0.6)
-    # Set symmetrical x-axis
-    # Save plot and PCA data
-    #plt.xlim(-4, 4)
+    # make plot
+    fig, ax = volcano_plot( anova_lm_df, config, plot_title )
     plot_path = os.path.join(output_dir, 'plots', pair_name, 'volcano_plot.png')
-    plt.savefig(plot_path, dpi=300)
+    fig.savefig(plot_path, dpi=300)
     plt.close()
     # save the top 20 rows to csv for display in final report
     # Sort by a relevant column (modify column name as needed)
@@ -481,6 +565,7 @@ def plot_venn(anova_lm_df: pd.DataFrame,
 
 def enrichment_analysis(anova_lm_df: pd.DataFrame,
                         pair_name: str,
+                        config: dict,
                         output_dir: str) :
     """
     run enrichment analysis to identify overrepresented genes, functions and pathways
@@ -493,12 +578,14 @@ def enrichment_analysis(anova_lm_df: pd.DataFrame,
     Returns:
         enrichment data (pd.DataFrame)
     """    
+    # threshold to define genes of interest
+    LFC_threshold = config.get("LFC_threshold")
     ##### Calculate enrichment #####
     gp = GProfiler(return_dataframe=True)
     ##### G Profiler options #####
     # for ORA, just need a list of genes
     pathway_query_genes = anova_lm_df.loc[
-    (anova_lm_df['FDR_p_value'] < 0.05) ##################################### change back to FDR_p_value
+    ( (anova_lm_df['FDR_p_value'] < 0.05) & (abs(anova_lm_df['Log2_Fold_Change']) >= LFC_threshold) ) ##################################### change back to FDR_p_value
     ]['Gene']
     # in the case of phosphoproteomic data, gene names have a double __ with phosphorylation state added,
     # for now, we remove the phospho data from this set of genes
@@ -740,11 +827,12 @@ def run_analysis(df: pd.DataFrame,
                                               pair_name = pair_name,
                                               config = config)
         results_name = 'df_lm_' + pair_name
-        results['results_name'] = anova_lm_df
+        results[results_name] = anova_lm_df
         # Find overrepresented pathways and save output
         print("Running enrichment analysis for pair ", pair_name, "...")
         enrichment_analysis(anova_lm_df,
                             pair_name,
+                            config,
                             output_dir
                             )
 
