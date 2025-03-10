@@ -324,8 +324,6 @@ def run_anova(row, metadata):
 
 def volcano_plot(anova_lm_df,
                   config,
-                  Volcano_y_data,
-                  LFC_threshold,
                   plot_title
                   ):
     """
@@ -341,7 +339,6 @@ def volcano_plot(anova_lm_df,
     Volcano_y_axis = config.get("LFC_plot_p_or_FDRp")
     Volcano_y_data = anova_lm_df[Volcano_y_axis]
     LFC_threshold = config.get("LFC_threshold")
-    FDR_threshold = config.get("FDR_threshold")
     # if max y NOT above the cutoff, do normal plot
     if not truncate:
         # Create the figure and axis for plotting
@@ -452,7 +449,9 @@ def make_volcano(df_pair: pd.DataFrame,
     # and -log10(FDR) for plot
     anova_lm_df['Log10_FDR_P_Value'] = -np.log10(anova_lm_df['FDR_p_value'])
     anova_lm_df['Log10_unadjusted_p_Value'] = -np.log10(anova_lm_df['p_value'])
- 
+    # find thresholds
+    LFC_threshold = config.get("LFC_threshold")
+    FDR_threshold = config.get("FDR_threshold")
     # Add the Colour column based on LOG2FC and p_values_FDR
     anova_lm_df['Colour'] = anova_lm_df.apply(
         lambda row: 'blue' if (abs(row['Log2_Fold_Change']) >= LFC_threshold and row['FDR_p_value'] <= FDR_threshold) else 'gray', axis=1
