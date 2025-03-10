@@ -401,25 +401,6 @@ def volcano_plot(anova_lm_df,
         ### return the plot
         return fig, ax
 
-        # # If an inset is needed, create the zoomed-in panel
-        # inset_ax = fig.add_axes([0.6, 0.6, 0.3, 0.3])  # Adjust position and size
-        # # Corrected filtering for the inset region
-        # inset_mask = (abs(anova_lm_df['Log2_Fold_Change']) < 3) & (anova_lm_df['Log10_FDR_P_Value'] < y_cutoff)
-        # # Scatter plot for the inset
-        # sns.scatterplot(
-        #     x=anova_lm_df['Log2_Fold_Change'][inset_mask],
-        #     y=anova_lm_df['Log10_FDR_P_Value'][inset_mask],
-        #     color='blue', alpha=0.5, ax=inset_ax
-        # )
-        # # Inset aesthetics
-        # inset_ax.set_xlim(-3, 3)
-        # inset_ax.set_ylim(0, y_cutoff)
-        # inset_ax.set_xticks([])
-        # inset_ax.set_yticks([])
-        # # Draw a rectangle on the main plot to indicate the zoomed-in area
-        # rect = patches.Rectangle((-3, 0), 6, 20, linewidth=1, edgecolor='blue', facecolor='none', linestyle='dashed')
-        # ax.add_patch(rect)
-
 def make_volcano(df_pair: pd.DataFrame,
                  output_dir: str,
                  pair_name: str,
@@ -463,16 +444,7 @@ def make_volcano(df_pair: pd.DataFrame,
     plot_path = os.path.join(output_dir, 'plots', pair_name, 'volcano_plot.png')
     fig.savefig(plot_path, dpi=300)
     plt.close()
-    # save the top 20 rows to csv for display in final report
-    # Sort by a relevant column (modify column name as needed)
-    sorted_df = anova_lm_df.sort_values(by="Log2_Fold_Change", ascending=False, key = abs)
-    # Select the top 20 rows
-    top_20_df = sorted_df.head(20).round(decimals = 2)
-    top_20_df = top_20_df.round({"p_value":4, "FDR_p_value":4})
-    # Save to CSV
-    top_prot_path = os.path.join(output_dir, 'data', pair_name, 'top_20_by_LFC.csv')
-    top_20_df.to_csv(top_prot_path, index=False)
-    return anova_lm_df, top_20_df
+    return anova_lm_df
 
 def enrichment_analysis(anova_lm_df: pd.DataFrame,
                         pair_name: str,
@@ -711,12 +683,6 @@ def run_analysis(df: pd.DataFrame,
     df_heatmap = generate_heatmap(df_standardised, output_dir)
     results['heatmap'] = df_heatmap
 
-    # Look at overlaps of differnential abundance
-
-    #### if 2 or 3 groups, Venn
-
-    #### if 4 or more, upset
-
     ###### Pairwise Analyses #####
     # if there are > 2 treatment groups, pairwise analyses will have to be run separately for each pair of treatments
     treatment_pairs = list(itertools.combinations(metadata['treatment'].unique(), 2))
@@ -732,11 +698,11 @@ def run_analysis(df: pd.DataFrame,
             os.mkdir(os.path.join(output_dir, 'data', pair_name))
         # Generate and save volcano plot
         print("Generating volcano plot for pair ", pair_name, "...")
-        anova_lm_df, top_20_df = make_volcano(df_pair,
-                                              output_dir,
-                                              metadata=metadata_pair,
-                                              pair_name = pair_name,
-                                              config = config)
+        anova_lm_df = make_volcano(df_pair,
+                                   output_dir,
+                                   metadata=metadata_pair,
+                                   pair_name = pair_name,
+                                   config = config)
         results_name = 'df_lm_' + pair_name
         results[results_name] = anova_lm_df
         # Find overrepresented pathways and save output
@@ -756,9 +722,6 @@ def run_analysis(df: pd.DataFrame,
                   search_term = "pathway_enrichment_plot.png",
                   output_dir=output_dir) 
     
-    # Combine the top 10 most differentially abundant proteins
-    combine_csv_files(filename="top_20_by_LFC.csv",
-                      output_dir=output_dir)
     # Combine pathway enrichment data
     combine_csv_files(filename="pathway_enrichment.csv",
                       output_dir=output_dir)
