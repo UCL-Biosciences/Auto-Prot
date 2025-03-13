@@ -7,6 +7,8 @@ This repository contains the Auto-Proteomics analysis pipeline for generating st
 - Customisable templates.
 
 ## 🚀 Quick Start
+### Branches
+`stable` branch is the most tested and show work reliably. If not, please let me know! It would be best to quick start using that branch. `staging` has new features that haven't been fully tested. Other branches are for developing new features.
 
 ### Prerequisites
 - [Python 3.8+](https://www.python.org/downloads/)
