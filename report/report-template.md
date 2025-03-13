@@ -63,7 +63,7 @@ Volcano plots highlight differential protein abundance between two conditions, w
 #### Table of Differentially Expressed Proteins
 Here, we show the top 20 proteins by absolute difference in log2 fold change, including the protein, associated genes, treatment means, LFC, and FDR-corrected p value.
 
-{{TOP_20_PROTS}}
+{{TOP_LFC_PROTS}}
 
 #### Shared and Differential Abundance
 We may want to know how many protein abundances are unique to each treatment and if there are any proteins with different abundances in multiple treatments. We use a venn diagram to show this when there are two or three treatments. For four or more treatments, we show the overlaps using an upset plot. Both plots highlight shared and unique proteins, helping to identify overlaps or exclusivity between groups. Verify data quality by checking for unexpected patterns, such as overly large or small intersections. Focus on intersections of interest, such as proteins unique to a condition or shared across all.

@@ -438,7 +438,7 @@ def make_volcano(df_pair: pd.DataFrame,
         lambda row: 'blue' if (abs(row['Log2_Fold_Change']) >= LFC_threshold and row['FDR_p_value'] <= FDR_threshold) else 'gray', axis=1
     )
     lm_path = os.path.join(output_dir, 'data', pair_name, ( pair_name + '_lm_output.csv') )
-    anova_lm_df.to_csv(lm_path, index=False)
+    anova_lm_df.sort_values(by = 'Log2_Fold_Change', key = abs, ascending=False).to_csv(lm_path, index=False)
     # make plot
     fig, ax = volcano_plot( anova_lm_df, config, plot_title )
     plot_path = os.path.join(output_dir, 'plots', pair_name, ( pair_name + '_volcano_plot.png') )
@@ -722,9 +722,15 @@ def run_analysis(df: pd.DataFrame,
                   search_term = "pathway_enrichment_plot.png",
                   output_dir=output_dir) 
     
+    # Combine most DE proteins for each treatment pair
+    combine_csv_files(filename="lm_output.csv",
+                      output_dir=output_dir,
+                      output_filename = os.path.join(output_dir, f"data/combined_topLFC.csv"))
+    
     # Combine pathway enrichment data
     combine_csv_files(filename="pathway_enrichment.csv",
-                      output_dir=output_dir)
+                      output_dir=output_dir,
+                      output_filename = os.path.join(output_dir, f"data/combined_top_pathway_enrichment.csv"))
 
     ### write to file the version of this script
     REPO_ROOT = get_repo_root()
