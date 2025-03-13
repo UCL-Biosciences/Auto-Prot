@@ -398,8 +398,8 @@ def volcano_plot(anova_lm_df,
         plt.xlabel('Log2 Fold Change (LFC)', fontsize=12)
         plt.ylabel(Volcano_y_axis, fontsize=12)
         plt.grid(True, linestyle='--', alpha=0.6)
-        ### return the plot
-        return fig, ax
+    ### return the plot
+    return fig, ax
 
 def make_volcano(df_pair: pd.DataFrame,
                  output_dir: str,
