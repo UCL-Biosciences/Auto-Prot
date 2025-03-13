@@ -240,8 +240,8 @@ def preprocess_data(file_path,
         df_T.columns = df_T.columns.astype(str)
         df_scaled = StandardScaler().fit_transform(df_T)  # scale the data
         df_standardised = pd.DataFrame(df_scaled, index = df_T.index, columns = df_T.columns) # add additional data
-        pd.DataFrame(df).to_csv(os.path.join(outPath, 'data/protAbundance.csv'), index=False)
-        pd.DataFrame(df_standardised).to_csv(os.path.join(outPath, 'data/protAbundance_standardised.csv'), index=False)
+        pd.DataFrame(df).to_csv(os.path.join(outPath, 'full_dataset/data/protAbundance.csv'), index=True)
+        pd.DataFrame(df_standardised).to_csv(os.path.join(outPath, 'full_dataset/data/protAbundance_standardised.csv'), index=True)
         
         ### run function to validate protein abundance data
         validate_proteindata(data=df,

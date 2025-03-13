@@ -339,6 +339,7 @@ def volcano_plot(anova_lm_df,
     Volcano_y_axis = config.get("LFC_plot_p_or_FDRp")
     Volcano_y_data = anova_lm_df[Volcano_y_axis]
     LFC_threshold = config.get("LFC_threshold")
+    threshold_value = -np.log10(config.get("FDR_threshold"))
     # if max y NOT above the cutoff, do normal plot
     if not truncate:
         # Create the figure and axis for plotting
@@ -356,14 +357,13 @@ def volcano_plot(anova_lm_df,
         # Customize the plot
         plt.axvline(x=LFC_threshold, color='red', linestyle='--', linewidth=1)
         plt.axvline(x=-LFC_threshold, color='red', linestyle='--', linewidth=1)
-        ax.axhline(y=threshold_value, color='red', linestyle='--', linewidth=1)
+        plt.axhline(y=threshold_value, color='red', linestyle='--', linewidth=1)
         plt.title(plot_title, fontsize=16)
         plt.xlabel('Log2 Fold Change (LFC)', fontsize=12)
         plt.ylabel(Volcano_y_axis, fontsize=12)
         plt.grid(True, linestyle='--', alpha=0.6)
     # if max y above cutoff, make inset.
     if truncate:
-        threshold_value = config.get("FDR_threshold")
         # Identify points exceeding the cutoff
         high_values = anova_lm_df['Log10_FDR_P_Value'] > y_cutoff
         # Create the figure and axis for plotting
@@ -437,11 +437,11 @@ def make_volcano(df_pair: pd.DataFrame,
     anova_lm_df['Colour'] = anova_lm_df.apply(
         lambda row: 'blue' if (abs(row['Log2_Fold_Change']) >= LFC_threshold and row['FDR_p_value'] <= FDR_threshold) else 'gray', axis=1
     )
-    lm_path = os.path.join(output_dir, 'data', pair_name, 'lm_output.csv')
+    lm_path = os.path.join(output_dir, 'data', pair_name, ( pair_name + '_lm_output.csv') )
     anova_lm_df.to_csv(lm_path, index=False)
     # make plot
     fig, ax = volcano_plot( anova_lm_df, config, plot_title )
-    plot_path = os.path.join(output_dir, 'plots', pair_name, 'volcano_plot.png')
+    plot_path = os.path.join(output_dir, 'plots', pair_name, ( pair_name + '_volcano_plot.png') )
     fig.savefig(plot_path, dpi=300)
     plt.close()
     return anova_lm_df
@@ -500,7 +500,7 @@ def enrichment_analysis(anova_lm_df: pd.DataFrame,
             all_results = all_results
         )  # REAC for Reactome
         ### save results to file
-        enrichment_path = os.path.join(output_dir, 'data', pair_name, 'pathway_enrichment.csv')
+        enrichment_path = os.path.join(output_dir, 'data', pair_name, ( pair_name + '_pathway_enrichment.csv') )
         pathway_result.round({'precision': 2, 'recall':2}).to_csv(enrichment_path, index=False)
         ##### Plot enrichment #####
         pathway_plot_df = pathway_result.sort_values('p_value', ascending = True).head(20)
@@ -527,7 +527,7 @@ def enrichment_analysis(anova_lm_df: pd.DataFrame,
         # Adjust layout to ensure labels are fully visible
         plt.tight_layout()
         # Save plot data
-        plot_path = os.path.join(output_dir, 'plots', pair_name, 'pathway_enrichment_plot.png')
+        plot_path = os.path.join(output_dir, 'plots', pair_name, ( pair_name + '_pathway_enrichment_plot.png') )
         plt.savefig(plot_path, dpi=300, bbox_inches="tight")  # bbox_inches ensures labels aren't cut off
         plt.close()
         return pathway_result
@@ -554,7 +554,7 @@ def combine_plots(search_term,
     - str: Path to the saved combined image, or None if no images found.
     """
     # Find all matching images
-    image_paths = sorted(glob(os.path.join(search_path, "**", search_term), recursive=True))
+    image_paths = sorted(glob(os.path.join(search_path, "**", "*" + search_term), recursive=True))
     if not image_paths:
         print(f"No plots found for '{search_term}'.")
         return None
@@ -603,7 +603,7 @@ def combine_csv_files(filename,
     - str: The path where the final CSV is saved.
     """
     # Search for matching CSV files in subdirectories
-    search_pattern = os.path.join(output_dir, "data", "**", filename)
+    search_pattern = os.path.join(output_dir, "data", "**", "*" + filename)
     csv_files = sorted(glob(search_pattern, recursive=True))
     # check if csv files exist
     if not csv_files:

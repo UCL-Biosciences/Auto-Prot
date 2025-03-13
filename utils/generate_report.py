@@ -96,7 +96,7 @@ if __name__ == "__main__":
     report_html =os.path.join(REPO_ROOT, "./output/report-out.html")
     top_20_prots_path =os.path.join(REPO_ROOT, "./output/full_dataset/data/combined_top_20_by_LFC.csv")
     enrichment_path =os.path.join(REPO_ROOT, "./output/full_dataset/data/combined_pathway_enrichment.csv")
-    json_out = os.path.join(REPO_ROOT, 'output/data/data_for_report.json')
+    json_out = os.path.join(REPO_ROOT, 'output/full_dataset/data/data_for_report.json')
 
     generate_report_html(report_MD,
                          report_html,
