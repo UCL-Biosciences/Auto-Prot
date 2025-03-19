@@ -8,9 +8,10 @@ import logging
 import os
 import json
 import seaborn as sns
-
+import matplotlib.pyplot as plt
+import sklearn
+from sklearn.experimental import enable_iterative_imputer
 from sklearn.preprocessing import StandardScaler
-
 
 # specify location of errors to standard output
 logging.basicConfig(level=logging.ERROR, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -66,7 +67,7 @@ def normalise_column_names(df, file_path=None, metadata = None):
             df = df.set_index(genes_columns[0])
     return df
 
-def clean_data(df, file_path = None, metadata = None):
+def clean_data(df, file_path = None, metadata = None, outPath = None):
     """
     Perform basic cleaning on the data: first filter protein data to include only protein abundance cols 
     and make sure they are all present.
@@ -115,6 +116,63 @@ def clean_data(df, file_path = None, metadata = None):
             # Rename columns in data_in based on the mapping
             df = df.rename(columns=rename_mapping)
             nrow_original = len(df.index)
+#####
+#####
+            #### impute and normalise from AlphaStats functions #####
+            ### log2 all vals
+            df_log2 = np.log2(df)
+            # Note It has been shown that normalizing the data first and then imputing the data performs better, than the other way around (Karpievitch et al. 2012). 
+            # This preprocessing order is also acquired in AlphaStats (unless preprocessing is done in several steps).
+            #### normalise
+            minmax = sklearn.preprocessing.MinMaxScaler()
+            scaler = sklearn.preprocessing.PowerTransformer()
+            minmaxed_array = minmax.fit_transform(df_log2.values.transpose())
+            normalized_array = scaler.fit_transform(minmaxed_array).transpose()
+            df_norm = pd.DataFrame(normalized_array, index=df_log2.index, columns=df_log2.columns )
+            #### impute ####
+            ## using random forest approach, which the AlphStats paper says performs best
+            imp = sklearn.ensemble.HistGradientBoostingRegressor(max_depth=10, max_iter=100, random_state=0)
+            imp = sklearn.impute.IterativeImputer(random_state=0, estimator=imp)
+            imputation_array = imp.fit_transform(df_norm.values)
+            df_imp = pd.DataFrame(
+                        imputation_array, index=df.index, columns=df.columns
+                    )
+            ### view distributions after different steps
+            # List of dataframes and titles for the subplots
+            dfs = [df, df_log2, df_norm, df_imp]
+            titles = ['Raw Intensities', 'Log₂ Transformed', 'Normalised', 'Imputed']
+            # Get unique treatment groups from metadata
+            treatment_groups = metadata['treatment'].unique()
+            # Set up the figure with a 2x2 grid
+            fig, axes = plt.subplots(2, 2, figsize=(15, 10))
+            axes = axes.flatten()
+            for ax, data, title in zip(axes, dfs, titles):
+                # Convert the DataFrame to long format: one row per measurement with sample id and intensity.
+                long_df = data.melt(var_name='sample_rep', value_name='intensity')
+                # Merge with metadata to obtain treatment information for each sample.
+                # Make sure metadata has 'sample_id' and 'treatment' columns.
+                long_df = long_df.merge(metadata[['sample_rep', 'treatment']], on='sample_rep', how='left')
+                # Plot boxplots: each sample's distribution is shown on the x-axis.
+                # The boxes are colored by treatment.
+                sns.boxplot(x='sample_rep', y='intensity', data=long_df, hue='treatment', ax=ax)
+                ax.set_title(title)
+                ax.set_xlabel("Sample ID")
+                ax.set_ylabel("Intensity")
+                # Rotate x tick labels for better readability
+                ax.set_xticklabels(ax.get_xticklabels(), rotation=45, ha='right')
+                # Remove redundant legends in subplots (optional)
+                if ax != axes[0]:
+                    ax.get_legend().remove()
+
+            # Add a single legend for the entire figure
+            handles, labels = axes[0].get_legend_handles_labels()
+            fig.legend(handles, labels, title='Treatment', loc='upper right')
+            plt.tight_layout()
+            plot_path = os.path.join(outPath, 'plots', 'boxplots_preProcessing_all_samples_plot.png')
+            plt.savefig(plot_path, dpi=300)
+            plt.close()
+#####
+#####
             # some proteins do not produce any associated genes. these values are left blank in the index
             # we replace the NaNs with Unknown-Gene-X, where X is a unique number for each unknown gene.\
             # Convert index to a Series to manipulate NaNs
@@ -198,7 +256,7 @@ def preprocess_data(file_path,
 
     
     if 'proteindata' in file_path:
-        df, nrow_original = clean_data(df, file_path = file_path, metadata=metadata) 
+        df, nrow_original = clean_data(df, file_path = file_path, metadata=metadata, outPath = outPath) 
         
         #### protein summary
         NUM_PROTS = len(df.index)

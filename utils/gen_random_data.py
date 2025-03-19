@@ -59,8 +59,9 @@ cols_for_set_2 = list(map(lambda x:'prot_abundance_'+str(x),sample_replicates[n_
 df.loc[spike_set_1, cols_for_set_1] *= 5  # Spike first set in first treatment group
 df.loc[spike_set_2, cols_for_set_2] *= 5  # Spike second set in second treatment group
 
-# Convert to integers
-df = df.astype(int)
+# Randomly set 5% of the DataFrame values to NA
+mask = np.random.rand(*df.shape) < 0.05
+df = df.mask(mask)
 
 # save to file
 df.to_csv(os.path.join(REPO_ROOT, 'input/data/proteindata.csv'), index=False)

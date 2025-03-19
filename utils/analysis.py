@@ -530,7 +530,9 @@ def enrichment_analysis(anova_lm_df: pd.DataFrame,
             all_results = all_results
         )  # REAC for Reactome
         ### save results to file
-        enrichment_path = os.path.join(output_dir, 'data', pair_name, 'pathway_enrichment.csv')
+        enrichment_path = os.path.join(output_dir, 'data', pair_name, 'path_enrich.csv')
+        # Ensure the directory exists; this creates intermediate directories if needed.
+        os.makedirs(os.path.dirname(enrichment_path), exist_ok=True)
         pathway_result.round({'precision': 2, 'recall':2}).to_csv(enrichment_path, index=False)
         ##### Plot enrichment #####
         pathway_plot_df = pathway_result.sort_values('p_value', ascending = True).head(20)
@@ -557,7 +559,7 @@ def enrichment_analysis(anova_lm_df: pd.DataFrame,
         # Adjust layout to ensure labels are fully visible
         plt.tight_layout()
         # Save plot data
-        plot_path = os.path.join(output_dir, 'plots', pair_name, 'pathway_enrichment_plot.png')
+        plot_path = os.path.join(output_dir, 'plots', pair_name, 'path_enrich_plot.png')
         plt.savefig(plot_path, dpi=300, bbox_inches="tight")  # bbox_inches ensures labels aren't cut off
         plt.close()
         return pathway_result
@@ -634,6 +636,7 @@ def combine_csv_files(filename,
     """
     # Search for matching CSV files in subdirectories
     search_pattern = os.path.join(output_dir, "data", "**", filename)
+    csv_files = glob(os.path.join(output_dir, "data", "*", filename)) + glob(os.path.join(output_dir, "data", "*", "*", filename))
     csv_files = sorted(glob(search_pattern, recursive=True))
     # check if csv files exist
     if not csv_files:
@@ -754,14 +757,14 @@ def run_analysis(df: pd.DataFrame,
                   output_dir=output_dir) 
     
     combine_plots(search_path = output_dir,
-                  search_term = "pathway_enrichment_plot.png",
+                  search_term = "path_enrich_plot.png",
                   output_dir=output_dir) 
     
     # Combine the top 10 most differentially abundant proteins
     combine_csv_files(filename="top_20_by_LFC.csv",
                       output_dir=output_dir)
     # Combine pathway enrichment data
-    combine_csv_files(filename="pathway_enrichment.csv",
+    combine_csv_files(filename="path_enrich.csv",
                       output_dir=output_dir)
 
     ### write to file the version of this script
