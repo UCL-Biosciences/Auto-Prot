@@ -206,7 +206,7 @@ def clean_data(df, file_path = None, metadata = None, outPath = None):
             plt.savefig(plot_path, dpi=300)
             plt.close()
             ## which df to use?
-            df = df_norm
+            df = df_log2
             #####
 #####
             # some proteins do not produce any associated genes. these values are left blank in the index
