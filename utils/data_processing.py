@@ -10,6 +10,7 @@ import json
 import seaborn as sns
 import matplotlib.pyplot as plt
 import sklearn
+import sklearn.ensemble
 from sklearn.experimental import enable_iterative_imputer
 from sklearn.preprocessing import StandardScaler
 
@@ -108,7 +109,7 @@ def clean_data(df, file_path = None, metadata = None, outPath = None):
             # protein columns should have only numeric data
             # convert non-numeric values to NaN and print warning message
             if not df.equals(df.select_dtypes(include=[np.number])):
-                print("Warning: DataFrame contains non-numeric values! Converting to NaN: these proteins will be removed!")
+                print("Warning: DataFrame contains non-numeric values! Converting to NaN: these proteins will be imputed!")
                 df = df.apply(pd.to_numeric, errors="coerce")
             ### protein columns can have long names - better to have just sample name
             # Create a mapping of old column names to new column names

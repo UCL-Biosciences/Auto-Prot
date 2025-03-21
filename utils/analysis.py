@@ -22,6 +22,7 @@ import warnings
 from statsmodels.tools.sm_exceptions import ConvergenceWarning
 from glob import glob
 from PIL import Image
+from pathlib import Path
 
 
 ##### there is a warning to suppress when fitting models
@@ -530,9 +531,10 @@ def enrichment_analysis(anova_lm_df: pd.DataFrame,
             all_results = all_results
         )  # REAC for Reactome
         ### save results to file
-        enrichment_path = os.path.join(output_dir, 'data', pair_name, 'path_enrich.csv')
-        # Ensure the directory exists; this creates intermediate directories if needed.
-        os.makedirs(os.path.dirname(enrichment_path), exist_ok=True)
+        enrichment_path = os.path.join(output_dir, 'data', pair_name, 'pathway_enrichment.csv')
+        ## windows sometimes rejects long paths. Workaround:
+        if os.name == 'nt':
+            enrichment_path = '\\\\?\\' + os.path.abspath(enrichment_path)
         pathway_result.round({'precision': 2, 'recall':2}).to_csv(enrichment_path, index=False)
         ##### Plot enrichment #####
         pathway_plot_df = pathway_result.sort_values('p_value', ascending = True).head(20)
@@ -559,7 +561,10 @@ def enrichment_analysis(anova_lm_df: pd.DataFrame,
         # Adjust layout to ensure labels are fully visible
         plt.tight_layout()
         # Save plot data
-        plot_path = os.path.join(output_dir, 'plots', pair_name, 'path_enrich_plot.png')
+        plot_path = os.path.join(output_dir, 'plots', pair_name, 'pathway_enrichment_plot.png')
+        ## windows sometimes rejects long paths. Workaround:
+        if os.name == 'nt':
+            plot_path = '\\\\?\\' + os.path.abspath(plot_path)
         plt.savefig(plot_path, dpi=300, bbox_inches="tight")  # bbox_inches ensures labels aren't cut off
         plt.close()
         return pathway_result
@@ -585,8 +590,16 @@ def combine_plots(search_term,
     Returns:
     - str: Path to the saved combined image, or None if no images found.
     """
+    if os.name == 'nt':
+        search_path = '\\\\?\\' + os.path.abspath(search_path)
     # Find all matching images
-    image_paths = sorted(glob(os.path.join(search_path, "**", search_term), recursive=True))
+    image_paths = []
+    for root, dirs, files in os.walk(search_path):
+        for file in files:
+            if search_term in file:
+                image_paths.append(os.path.join(root, file))
+    image_paths = [img for img in image_paths if 'combined_volcano_plot.png' not in img]
+    # image_paths = sorted(glob(os.path.join(search_path, "**", search_term), recursive=True))
     if not image_paths:
         print(f"No plots found for '{search_term}'.")
         return None
@@ -608,10 +621,12 @@ def combine_plots(search_term,
     # Generate output filename if not provided
     if output_filename is None:
         output_filename = os.path.join(output_dir, f"plots/combined_{search_term.replace('.png', '')}.png")
+        ## windows sometimes rejects long paths. Workaround:
+        if os.name == 'nt':
+            output_filename = '\\\\?\\' + os.path.abspath(output_filename)
     # Save the final image
     combined_image.save(output_filename)
     print(f"Combined plot saved to: {output_filename}")
-    return output_filename  # Return the path for reference
 
 ### for combining data from different treatments for display in the report ###
 def combine_csv_files(filename,
@@ -634,10 +649,16 @@ def combine_csv_files(filename,
     - pd.DataFrame: The combined DataFrame.
     - str: The path where the final CSV is saved.
     """
-    # Search for matching CSV files in subdirectories
-    search_pattern = os.path.join(output_dir, "data", "**", filename)
-    csv_files = glob(os.path.join(output_dir, "data", "*", filename)) + glob(os.path.join(output_dir, "data", "*", "*", filename))
-    csv_files = sorted(glob(search_pattern, recursive=True))
+    # Find all matching images
+    csv_files = []
+    for root, dirs, files in os.walk(output_dir):
+        for file in files:
+            if file == filename:
+                csv_files.append(os.path.join(root, file))
+    # # Search for matching CSV files in subdirectories
+    # search_pattern = os.path.join(output_dir, "data", "**", filename)
+    # csv_files = glob(os.path.join(output_dir, "data", "*", filename)) + glob(os.path.join(output_dir, "data", "*", "*", filename))
+    # csv_files = sorted(glob(search_pattern, recursive=True))
     # check if csv files exist
     if not csv_files:
         print(f"No files found matching '{filename}'.")
@@ -645,6 +666,8 @@ def combine_csv_files(filename,
     combined_data = []
     # Process each found CSV file
     for file in csv_files:
+        if os.name == 'nt':
+            file = '\\\\?\\' + os.path.abspath(file)
         # Extract the folder name (used as the category column)
         folder_name = os.path.basename(os.path.dirname(file))  
         # Read CSV and select top `n` rows
@@ -655,15 +678,17 @@ def combine_csv_files(filename,
         combined_data.append(df)
     # Merge all data
     combined_df = pd.concat(combined_data, ignore_index=True)
-    # Auto-generate output filename if not provided
+    # Generate output filename if not provided
     if output_filename is None:
-        output_filename = os.path.join(output_dir, f"data/combined_{filename}")
+        output_filename = os.path.join(output_dir, f"plots/combined_{output_filename}")
+        ## windows sometimes rejects long paths. Workaround:
+        if os.name == 'nt':
+            output_filename = '\\\\?\\' + os.path.abspath(output_filename)
     # Ensure output directory exists
     os.makedirs(os.path.dirname(output_filename), exist_ok=True)
     # Save combined CSV
     combined_df.to_csv(output_filename, index=False)
     print(f"Combined file saved at: {output_filename}")
-    return combined_df, output_filename
 
 
 ##########################################################################
@@ -757,14 +782,14 @@ def run_analysis(df: pd.DataFrame,
                   output_dir=output_dir) 
     
     combine_plots(search_path = output_dir,
-                  search_term = "path_enrich_plot.png",
+                  search_term = "pathway_enrichment_plot.png",
                   output_dir=output_dir) 
     
     # Combine the top 10 most differentially abundant proteins
     combine_csv_files(filename="top_20_by_LFC.csv",
                       output_dir=output_dir)
     # Combine pathway enrichment data
-    combine_csv_files(filename="path_enrich.csv",
+    combine_csv_files(filename="pathway_enrichment.csv",
                       output_dir=output_dir)
 
     ### write to file the version of this script
