@@ -3,6 +3,7 @@
 ## Note this should be two files: protein abundance and metadata
 
 import pandas as pd
+import sklearn.preprocessing
 import numpy as np
 import logging
 import os
@@ -119,31 +120,42 @@ def clean_data(df, file_path = None, metadata = None, outPath = None):
             nrow_original = len(df.index)
 #####
 #####
+            df = df.replace(0, np.nan)
+            # df = df[df.isnull().mean(axis=1) <= 0.33]
             #### impute and normalise from AlphaStats functions #####
             ### log2 all vals
-            df_log2 = np.log2(df)
+            df_log2 = np.log2(df + 1)
             # Note It has been shown that normalizing the data first and then imputing the data performs better, than the other way around (Karpievitch et al. 2012). 
             # This preprocessing order is also acquired in AlphaStats (unless preprocessing is done in several steps).
-            #### normalise
-            minmax = sklearn.preprocessing.MinMaxScaler()
-            scaler = sklearn.preprocessing.PowerTransformer()
-            minmaxed_array = minmax.fit_transform(df_log2.values.transpose())
-            normalized_array = scaler.fit_transform(minmaxed_array).transpose()
-            df_norm = pd.DataFrame(normalized_array, index=df_log2.index, columns=df_log2.columns )
             #### impute ####
             ## using random forest approach, which the AlphStats paper says performs best
             imp = sklearn.ensemble.HistGradientBoostingRegressor(max_depth=10, max_iter=100, random_state=0)
             imp = sklearn.impute.IterativeImputer(random_state=0, estimator=imp)
-            imputation_array = imp.fit_transform(df_norm.values)
-            df_imp = pd.DataFrame(
-                        imputation_array, index=df.index, columns=df.columns
-                    )
-            ### view distributions after different steps
+            imputation_array = imp.fit_transform(df_log2.values)
+            df_imp = pd.DataFrame( imputation_array, index=df.index, columns=df.columns)
+            #### normalise
+            df_log2_T = df_imp.T
+            df_log2_T.columns = df_log2_T.columns.astype(str)
+            normaliser = sklearn.preprocessing.Normalizer()
+            df_norm = pd.DataFrame(normaliser.fit_transform(df_log2_T).T,  index=df.index, columns=df.columns)
+            # minmax = sklearn.preprocessing.MinMaxScaler()
+            # scaler = sklearn.preprocessing.StandardScaler()
+            # minmaxed_array = minmax.fit_transform(df_log2.values.transpose())
+            # normalized_array = scaler.fit_transform(minmaxed_array).transpose()
+            # df_norm = pd.DataFrame(normalized_array, index=df_log2.index, columns=df_log2.columns )
+            #### impute ####
+            ## using random forest approach, which the AlphStats paper says performs best
+            # imp = sklearn.ensemble.HistGradientBoostingRegressor(max_depth=10, max_iter=100, random_state=0)
+            # imp = sklearn.impute.IterativeImputer(random_state=0, estimator=imp)
+            # imputation_array = imp.fit_transform(df_log2.values)
+            # df_imp = pd.DataFrame(
+            #             imputation_array, index=df.index, columns=df.columns
+            #         )
+            ### view distributions after different steps #####
+            #### By Sample ######
             # List of dataframes and titles for the subplots
-            dfs = [df, df_log2, df_norm, df_imp]
-            titles = ['Raw Intensities', 'Log₂ Transformed', 'Normalised', 'Imputed']
-            # Get unique treatment groups from metadata
-            treatment_groups = metadata['treatment'].unique()
+            dfs = [df, df_log2, df_imp, df_norm ]
+            titles = ['Raw Intensities', 'Log₂ Transformed', 'Imputed from log', 'Imputed then Normalised']
             # Set up the figure with a 2x2 grid
             fig, axes = plt.subplots(2, 2, figsize=(15, 10))
             axes = axes.flatten()
@@ -164,7 +176,7 @@ def clean_data(df, file_path = None, metadata = None, outPath = None):
                 # Remove redundant legends in subplots (optional)
                 if ax != axes[0]:
                     ax.get_legend().remove()
-
+            ##
             # Add a single legend for the entire figure
             handles, labels = axes[0].get_legend_handles_labels()
             fig.legend(handles, labels, title='Treatment', loc='upper right')
@@ -172,7 +184,30 @@ def clean_data(df, file_path = None, metadata = None, outPath = None):
             plot_path = os.path.join(outPath, 'plots', 'boxplots_preProcessing_all_samples_plot.png')
             plt.savefig(plot_path, dpi=300)
             plt.close()
-#####
+            #### for treatments ####
+            # Set up the figure with a 2x2 grid for KDE plots
+            fig, axes = plt.subplots(2, 2, figsize=(15, 10))
+            axes = axes.flatten()
+            for ax, data, title in zip(axes, dfs, titles):
+                # Convert the DataFrame to long format: one row per measurement with sample id and intensity.
+                long_df = data.melt(var_name='sample_rep', value_name='intensity')
+                # Merge with metadata to obtain treatment information for each sample.
+                # Make sure metadata has 'sample_rep' and 'treatment' columns.
+                long_df = long_df.merge(metadata[['sample_rep', 'treatment']], on='sample_rep', how='left')
+                # Plot KDE for each treatment on the same subplot
+                for treatment, group in long_df.groupby('treatment'):
+                    sns.kdeplot(data=group, x='intensity', ax=ax, label=treatment)
+                ax.set_title(title)
+                ax.set_xlabel("Intensity")
+                ax.set_ylabel("Density")
+                ax.legend(title='Treatment')
+            plt.tight_layout()
+            plot_path = os.path.join(outPath, 'plots', 'KDE_preProcessing_all_treatments_plot.png')
+            plt.savefig(plot_path, dpi=300)
+            plt.close()
+            ## which df to use?
+            df = df_norm
+            #####
 #####
             # some proteins do not produce any associated genes. these values are left blank in the index
             # we replace the NaNs with Unknown-Gene-X, where X is a unique number for each unknown gene.\

@@ -90,7 +90,7 @@ def generate_histogram(df: pd.DataFrame,
             json.dump(existing_data, f, indent=4)
 
 
-def generate_pca(df_standardised: pd.DataFrame,
+def generate_pca(df: pd.DataFrame,
                  output_dir: str,
                  metadata: pd.DataFrame = None,
                  components: int = 2) -> pd.DataFrame:
@@ -107,15 +107,16 @@ def generate_pca(df_standardised: pd.DataFrame,
         pd.DataFrame: DataFrame with principal components and metadata.
     """
     # Perform PCA
+    df_T = df.T # transpose for PCA and MDS
     pca = PCA(n_components=components)
-    principal_components = pca.fit_transform(df_standardised)
-    n_prot = df_standardised.shape[1]
+    principal_components = pca.fit_transform(df_T) 
+    n_prot = df_T.shape[1]
     plot_title = 'PCA Plot (n proteins = ' + str(n_prot) + ')'
     # Create DataFrame with PCA results
     df_PCA = pd.DataFrame(
         data=principal_components,
         columns=[f'principal component {i + 1}' for i in range(components)],
-        index = pd.DataFrame(df_standardised).index
+        index = pd.DataFrame(df_T).index
     )
     # pull over treatment from metadata
     # df_PCA . look up by index . and map to
@@ -128,7 +129,7 @@ def generate_pca(df_standardised: pd.DataFrame,
         for i, var in enumerate(explained_variance[:components])
     ]
     # Plot PCA
-    plt.figure(figsize=(4, 3))
+    plt.figure(figsize=(8, 6))
     plot_pca = sns.scatterplot(
         data=df_PCA,
         x='principal component 1',
@@ -159,7 +160,7 @@ def generate_pca(df_standardised: pd.DataFrame,
     print(f"PCA data saved to {data_path}")
     return df_PCA
 
-def generate_MDS(df_standardised: pd.DataFrame,
+def generate_MDS(df: pd.DataFrame,
                  output_dir: str,
                  metadata: pd.DataFrame = None) -> pd.DataFrame:
     """
@@ -175,8 +176,9 @@ def generate_MDS(df_standardised: pd.DataFrame,
     """
     # Perform MDS
     # pdist(x) computes the Euclidean distances between each pair of points in an array
-    dissimilarity_array = pdist(df_standardised, metric='euclidean')
-    n_prot = df_standardised.shape[1]
+    df_T = df.T # transpose for PCA and MDS
+    dissimilarity_array = pdist(df_T, metric='euclidean')  # remeber to transform for PCA and MDS
+    n_prot = df_T.shape[0]
     plot_title = 'MDS Dissimilarity based on Protein Abundance (n proteins = ' + str(n_prot) + ')'
     # suqareform() returns the matrix
     dissimilarity_matrix = squareform(dissimilarity_array)
@@ -190,7 +192,7 @@ def generate_MDS(df_standardised: pd.DataFrame,
     # Convert the NMDS coordinates (nmds_coords) to a pandas DataFrame
     mds_coords_df = pd.DataFrame(mds_coords,
                                  columns=['MDS1', 'MDS2'],
-                                 index = pd.DataFrame(df_standardised).index)
+                                 index = pd.DataFrame(df_T).index)
     # pull over treatment from metadata
     # df_PCA . look up by index . and map to
     # metadata . temporarily set index to sample_id [ and find treatment ]
@@ -224,7 +226,7 @@ def generate_MDS(df_standardised: pd.DataFrame,
     return mds_coords_df
 
 
-def generate_heatmap(df_standardised: pd.DataFrame,
+def generate_heatmap(df: pd.DataFrame,
                  output_dir: str) -> pd.DataFrame:
     """
     Generate a heatmap using the standardised data
@@ -238,8 +240,8 @@ def generate_heatmap(df_standardised: pd.DataFrame,
     """
     #### need the other orientation for heatmap
     # transpose and add sample ids as colnames
-    df_heat = pd.DataFrame(df_standardised.T)
-    df_heat.columns = df_standardised.index
+    df_heat = pd.DataFrame(df.T)
+    df_heat.columns = df.index
     n_prot = df_heat.shape[0]
     plot_title = 'heatmap of euclidean distance (n protein = ' + str(n_prot) + ')'
     # Create clustermap
@@ -728,17 +730,17 @@ def run_analysis(df: pd.DataFrame,
 
     # Perform PCA and save results
     print("Performing PCA...")
-    pca_results = generate_pca(df_standardised, output_dir, metadata=metadata)
+    pca_results = generate_pca(df, output_dir, metadata=metadata)
     results['pca'] = pca_results
 
     # Perform MDS and save results
     print("Performing MDS...")
-    mds_coords_df = generate_MDS(df_standardised, output_dir, metadata=metadata)
+    mds_coords_df = generate_MDS(df, output_dir, metadata=metadata)
     results['mds'] = mds_coords_df
 
     # Generate and save heatmap
     print("Generating heatmap...")
-    df_heatmap = generate_heatmap(df_standardised, output_dir)
+    df_heatmap = generate_heatmap(df, output_dir)
     results['heatmap'] = df_heatmap
 
     # Look at overlaps of differnential abundance
