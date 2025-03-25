@@ -324,7 +324,10 @@ def run_anova(row, metadata):
 
 def volcano_plot(anova_lm_df,
                   config,
-                  plot_title
+                  plot_title,
+                  Volcano_y_data,
+                  pair_name,
+                  n_prot
                   ):
     """
     Adds an inset zoomed-in plot to a volcano plot if necessary.
@@ -334,12 +337,15 @@ def volcano_plot(anova_lm_df,
     y_cutoff = -np.log10(fdr_cut_off)
     # Determine if an inset is needed (i.e., if any points exceed the y-axis limit)
     max_y_value = np.max(anova_lm_df['Log10_FDR_P_Value'])
+    # Determine if an inset is needed (i.e., if any points exceed the y-axis limit)
     truncate = max_y_value > y_cutoff
     ### whether to plot the -log10(p_value) i.e. unadjusted or -log10(FDR_p_value) is specified in json field "LFC_plot_p_or_FDRp"
     Volcano_y_axis = config.get("LFC_plot_p_or_FDRp")
     Volcano_y_data = anova_lm_df[Volcano_y_axis]
     LFC_threshold = config.get("LFC_threshold")
     threshold_value = -np.log10(config.get("FDR_threshold"))
+    # plot title
+    plot_title = 'Protein Abundance Log Fold Change for treatments \n' + pair_name + '(n = ' + str(n_prot) + ')'
     # if max y NOT above the cutoff, do normal plot
     if not truncate:
         # Create the figure and axis for plotting
@@ -398,8 +404,8 @@ def volcano_plot(anova_lm_df,
         plt.xlabel('Log2 Fold Change (LFC)', fontsize=12)
         plt.ylabel(Volcano_y_axis, fontsize=12)
         plt.grid(True, linestyle='--', alpha=0.6)
-    ### return the plot
-    return fig, ax
+        ### return the plot
+        return fig, ax
 
 def make_volcano(df_pair: pd.DataFrame,
                  output_dir: str,
@@ -430,7 +436,7 @@ def make_volcano(df_pair: pd.DataFrame,
     # and -log10(FDR) for plot
     anova_lm_df['Log10_FDR_P_Value'] = -np.log10(anova_lm_df['FDR_p_value'])
     anova_lm_df['Log10_unadjusted_p_Value'] = -np.log10(anova_lm_df['p_value'])
-    # find thresholds
+    ### whether to plot the -log10(p_value) i.e. unadjusted or -log10(FDR_p_value) is specified in json field "LFC_plot_p_or_FDRp"
     LFC_threshold = config.get("LFC_threshold")
     FDR_threshold = config.get("FDR_threshold")
     # Add the Colour column based on LOG2FC and p_values_FDR
@@ -440,11 +446,12 @@ def make_volcano(df_pair: pd.DataFrame,
     lm_path = os.path.join(output_dir, 'data', pair_name, ( pair_name + '_lm_output.csv') )
     anova_lm_df.sort_values(by = 'Log2_Fold_Change', key = abs, ascending=False).to_csv(lm_path, index=False)
     # make plot
-    fig, ax = volcano_plot( anova_lm_df, config, plot_title )
+    fig, ax = volcano_plot( anova_lm_df, config, plot_title, pair_name, n_prot )
     plot_path = os.path.join(output_dir, 'plots', pair_name, ( pair_name + '_volcano_plot.png') )
     fig.savefig(plot_path, dpi=300)
     plt.close()
     return anova_lm_df
+
 
 def enrichment_analysis(anova_lm_df: pd.DataFrame,
                         pair_name: str,

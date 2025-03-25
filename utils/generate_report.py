@@ -55,7 +55,6 @@ def generate_report_html(report_MD: str,
     # Load data from csv
     # read straight to html so it can slot into the template
     top_LFC_df = pd.read_csv(top_LFC_prots_path).to_html(index=False, border =1 )
-
     # read straight to html so it can slot into the template
     enrichment_df = pd.read_csv(enrichment_path)[['source', 'native', 'name', 'p_value',
                                                   'term_size', 'query_size', 'intersection_size',

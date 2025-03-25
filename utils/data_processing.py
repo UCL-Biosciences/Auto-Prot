@@ -242,14 +242,13 @@ def preprocess_data(file_path,
         df_standardised = pd.DataFrame(df_scaled, index = df_T.index, columns = df_T.columns) # add additional data
         pd.DataFrame(df).to_csv(os.path.join(outPath, 'full_dataset/data/protAbundance.csv'), index=True)
         pd.DataFrame(df_standardised).to_csv(os.path.join(outPath, 'full_dataset/data/protAbundance_standardised.csv'), index=True)
-        
+      
         ### run function to validate protein abundance data
         validate_proteindata(data=df,
                              data_standardised = df_standardised, 
                              metadata = metadata)
         
         return df, df_standardised
-
 
 ### make outdir
 def make_outdir(out_path,
