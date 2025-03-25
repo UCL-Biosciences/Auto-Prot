@@ -324,7 +324,9 @@ def run_anova(row, metadata):
 
 def volcano_plot(anova_lm_df,
                   config,
-                  Volcano_y_data
+                  Volcano_y_data,
+                  pair_name,
+                  n_prot
                   ):
     """
     Adds an inset zoomed-in plot to a volcano plot if necessary.
@@ -332,9 +334,14 @@ def volcano_plot(anova_lm_df,
     # Define y-axis cutoff threshold
     fdr_cut_off = config.get("volcano_y_cutoff") # note this is in terms of FDR for readability, converted to -log10() here:
     y_cutoff = -np.log10(fdr_cut_off)
+    LFC_threshold = config.get("LFC_threshold") # for colouring blue
+    FDR_threshold = -np.log10(config.get("FDR_threshold"))
     # Determine if an inset is needed (i.e., if any points exceed the y-axis limit)
     max_y_value = np.max(anova_lm_df['Log10_FDR_P_Value'])
     truncate = max_y_value > y_cutoff
+    # plot title
+    plot_title = 'Protein Abundance Log Fold Change for treatments \n' + pair_name + '(n = ' + str(n_prot) + ')'
+    Volcano_y_axis = config.get("LFC_plot_p_or_FDRp")
     # if max y NOT above the cutoff, do normal plot
     if not truncate:
         # Create the figure and axis for plotting
@@ -352,7 +359,7 @@ def volcano_plot(anova_lm_df,
         # Customize the plot
         plt.axvline(x=LFC_threshold, color='red', linestyle='--', linewidth=1)
         plt.axvline(x=-LFC_threshold, color='red', linestyle='--', linewidth=1)
-        ax.axhline(y=threshold_value, color='red', linestyle='--', linewidth=1)
+        ax.axhline(y=FDR_threshold, color='red', linestyle='--', linewidth=1)
         plt.title(plot_title, fontsize=16)
         plt.xlabel('Log2 Fold Change (LFC)', fontsize=12)
         plt.ylabel(Volcano_y_axis, fontsize=12)
@@ -388,7 +395,7 @@ def volcano_plot(anova_lm_df,
         # Customize the plot
         plt.axvline(x=LFC_threshold, color='red', linestyle='--', linewidth=1)
         plt.axvline(x=-LFC_threshold, color='red', linestyle='--', linewidth=1)
-        plt.axhline(y=threshold_value, color='red', linestyle='--', linewidth=1)
+        plt.axhline(y=FDR_threshold, color='red', linestyle='--', linewidth=1)
         plt.title(plot_title, fontsize=16)
         plt.xlabel('Log2 Fold Change (LFC)', fontsize=12)
         plt.ylabel(Volcano_y_axis, fontsize=12)
@@ -456,7 +463,7 @@ def make_volcano(df_pair: pd.DataFrame,
     lm_path = os.path.join(output_dir, 'data', pair_name, 'lm_output.csv')
     anova_lm_df.to_csv(lm_path, index=False)
     # make plot
-    fig, ax = volcano_plot(anova_lm_df, config, Volcano_y_data)
+    fig, ax = volcano_plot(anova_lm_df, config, Volcano_y_data, pair_name, n_prot)
     plot_path = os.path.join(output_dir, 'plots', pair_name, 'volcano_plot.png')
     fig.savefig(plot_path, dpi=300)
     plt.close()
