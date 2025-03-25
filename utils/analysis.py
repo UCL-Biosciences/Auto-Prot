@@ -325,7 +325,6 @@ def run_anova(row, metadata):
 def volcano_plot(anova_lm_df,
                   config,
                   plot_title,
-                  Volcano_y_data,
                   pair_name,
                   n_prot
                   ):
