@@ -15,6 +15,14 @@ import sklearn.ensemble
 from sklearn.experimental import enable_iterative_imputer
 from sklearn.preprocessing import StandardScaler
 
+from sklearn.impute import KNNImputer
+
+from sklearn.linear_model import BayesianRidge
+
+from sklearn.experimental import enable_iterative_imputer
+from sklearn.impute import IterativeImputer
+from sklearn.ensemble import HistGradientBoostingRegressor
+
 # specify location of errors to standard output
 logging.basicConfig(level=logging.ERROR, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -121,23 +129,41 @@ def clean_data(df, file_path = None, metadata = None, outPath = None):
 #####
 #####
             df = df.replace(0, np.nan)
-            # df = df[df.isnull().mean(axis=1) <= 0.33]
-            #### impute and normalise from AlphaStats functions #####
+            df = df[df.isnull().mean(axis=1) <= 0.2]
+            #### impute and normalise from AlphaPepStats functions #####
             ### log2 all vals
             df_log2 = np.log2(df + 1)
             # Note It has been shown that normalizing the data first and then imputing the data performs better, than the other way around (Karpievitch et al. 2012). 
-            # This preprocessing order is also acquired in AlphaStats (unless preprocessing is done in several steps).
+            # This preprocessing order is also acquired in AlphaPepStats (unless preprocessing is done in several steps).
+            #### normalise ####
+            # Subtract the median of each sample (column) from each value
+            df_median_norm = df_log2.sub(df_log2.median(axis=0), axis=1)
+            # Transpose: sklearn expects features in columns, samples in rows
+            df_median_t = df_median_norm.T  # shape: samples × proteins
+            df_median_t.columns = df_median_t.columns.astype(str)
+            # Setup imputer with a tree-based model (good for non-linear patterns)
+            # estimator = HistGradientBoostingRegressor(max_iter=100, max_depth=10, random_state=0)
+            # imputer = IterativeImputer(estimator=BayesianRidge(), max_iter=3, random_state=0)
+            imputer = KNNImputer(n_neighbors=5)
+            # Fit and transform
+            imputed_array = imputer.fit_transform(df_median_t)
+            # Reconstruct the imputed dataframe
+            df_imp = pd.DataFrame(imputed_array, index=df_median_t.index, columns=df_median_t.columns).T  # transpose back
+            # df_log2_T = df_log2.T
+            # df_log2_T.columns = df_log2_T.columns.astype(str)
+            # qt = sklearn.preprocessing.QuantileTransformer(random_state=0)
+            # normalized_array = qt.fit_transform(df_log2_T).transpose()
+            # minmax = sklearn.preprocessing.MinMaxScaler()
+            # scaler = sklearn.preprocessing.PowerTransformer()
+            # minmaxed_array = minmax.fit_transform(df_log2)
+            # normalized_array = scaler.fit_transform(minmaxed_array)
+            # df_norm = pd.DataFrame(normalized_array, index=df_log2.index, columns=df_log2.columns )
             #### impute ####
             ## using random forest approach, which the AlphStats paper says performs best
-            imp = sklearn.ensemble.HistGradientBoostingRegressor(max_depth=10, max_iter=100, random_state=0)
-            imp = sklearn.impute.IterativeImputer(random_state=0, estimator=imp)
-            imputation_array = imp.fit_transform(df_log2.values)
-            df_imp = pd.DataFrame( imputation_array, index=df.index, columns=df.columns)
-            #### normalise
-            df_log2_T = df_imp.T
-            df_log2_T.columns = df_log2_T.columns.astype(str)
-            normaliser = sklearn.preprocessing.Normalizer()
-            df_norm = pd.DataFrame(normaliser.fit_transform(df_log2_T).T,  index=df.index, columns=df.columns)
+            # imp = sklearn.ensemble.HistGradientBoostingRegressor(max_depth=10, max_iter=100, random_state=0)
+            # imp = sklearn.impute.IterativeImputer(random_state=0, estimator=imp)
+            # imputation_array = imp.fit_transform(df_log2_T)
+            # df_imp = pd.DataFrame( imputation_array, index=df.index, columns=df.columns)
             # minmax = sklearn.preprocessing.MinMaxScaler()
             # scaler = sklearn.preprocessing.StandardScaler()
             # minmaxed_array = minmax.fit_transform(df_log2.values.transpose())
@@ -154,8 +180,10 @@ def clean_data(df, file_path = None, metadata = None, outPath = None):
             ### view distributions after different steps #####
             #### By Sample ######
             # List of dataframes and titles for the subplots
-            dfs = [df, df_log2, df_imp, df_norm ]
-            titles = ['Raw Intensities', 'Log₂ Transformed', 'Imputed from log', 'Imputed then Normalised']
+            dfs = [df, df_log2, df_median_norm, df_imp ]
+            titles = ['Raw Intensities', 'Log₂ Transformed', 'Sample-Median Normalised', 'Normalised then Imputed']
+            # dfs = [df, df_log2, df_imp, df_norm ]
+            # titles = ['Raw Intensities', 'Log₂ Transformed', 'Imputed from log', 'Imputed then Normalised']
             # Set up the figure with a 2x2 grid
             fig, axes = plt.subplots(2, 2, figsize=(15, 10))
             axes = axes.flatten()
@@ -206,7 +234,7 @@ def clean_data(df, file_path = None, metadata = None, outPath = None):
             plt.savefig(plot_path, dpi=300)
             plt.close()
             ## which df to use?
-            df = df_log2
+            df = df_imp
             #####
 #####
             # some proteins do not produce any associated genes. these values are left blank in the index
@@ -222,17 +250,7 @@ def clean_data(df, file_path = None, metadata = None, outPath = None):
             # drop rows with duplicated index values <<<< This is a weird quirk of the phosphoproteomics data. Need to find a way of uniquely identifying rows. Added to github issue
             df = df[df.index.duplicated(keep=False) == False]
             #### We also want to remove low abundance proteins. Explained in the docs
-            #### But in short, zero abundances are hard to interpret - is the protein really absent or did you just not see it by chance?
-            # 1. Remove proteins where abundance is 0 in all samples for any treatment
-            for treatment in metadata['treatment'].unique():
-                treatment_samples = metadata.loc[metadata['treatment'] == treatment, 'sample_rep'].tolist()  # Get sample names
-                mask_all_zero = (df[treatment_samples] == 0).all(axis=1)
-                df = df.loc[~mask_all_zero]
-            # 2. Remove proteins where abundance is 0 in ≥50% of all samples
-            mask_half_zero = (df == 0).sum(axis=1) >= (df.shape[1] / 2)
-            df = df.loc[~mask_half_zero]
     df = df.drop_duplicates()
-    df = df.dropna(axis=0) # where there are missing values, we will remove the protein (rows), not the sample (cols)   
     if 'proteindata' in file_path:
         return df, nrow_original
     else:

@@ -303,9 +303,9 @@ def run_anova(row, metadata):
             # Compute group means (sorted alphabetically)
             group_means = data.groupby("treatment")["Abundance"].mean().sort_index()
             grp1_name = group_means.index.tolist()[0]
-            grp1_mean = group_means.iloc[0] + 1 ## add small constant for LFC
+            grp1_mean = group_means.iloc[0] # + 1 ## add small constant for LFC
             grp2_name = group_means.index.tolist()[1]
-            grp2_mean = group_means.iloc[1] + 1 ## add small constant for LFC
+            grp2_mean = group_means.iloc[1] # + 1 ## add small constant for LFC
             fc = ( grp1_mean ) / ( grp2_mean )
             log2fc = np.log2( fc )
             #return outputs
@@ -721,10 +721,10 @@ def run_analysis(df: pd.DataFrame,
     ##### Analyses for all treatment groups #####
     # Generate histogram
     print("Generating histogram")
-    generate_histogram(df,
-                        output_dir,
-                        metadata,
-                        json_out) 
+    # generate_histogram(df,
+    #                     output_dir,
+    #                     metadata,
+    #                     json_out) 
 
     # Perform PCA and save results
     print("Performing PCA...")
