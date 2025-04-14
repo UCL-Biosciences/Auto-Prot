@@ -324,7 +324,7 @@ def make_volcano(df_pair: pd.DataFrame,
                  output_dir: str,
                  pair_name: str,
                  config: dict,
-                 metadata: pd.DataFrame = None
+                 metadata_pair: pd.DataFrame = None
                  ) -> pd.DataFrame:
     """
     fit linear model for each protein. Calls run_anova, defined above
@@ -339,29 +339,50 @@ def make_volcano(df_pair: pd.DataFrame,
     Returns:
         df_model_out (pd.DataFrame): gene name, F statistic, p value, FDR corrected p value.
     """
-    anova_lm_df = df_pair.apply(run_anova, axis=1, metadata=metadata).dropna()
-    n_prot = anova_lm_df.shape[0]
-    plot_title = 'Protein Abundance Log Fold Change for treatments \n' + pair_name + '(n = ' + str(n_prot) + ')'
+    #### calculate DE using limma (R package) ####
+    pair_data_path = os.path.join(output_dir, 'data', pair_name, 'protAbundance.csv')
+    df_pair.to_csv(pair_data_path, index = True)
+    # Save sample metadata
+    pair_metadata_path = os.path.join(output_dir, 'data', pair_name, 'metadata.csv')
+    metadata_pair.to_csv(pair_metadata_path, index=False)
+    # Define where to save the limma results
+    pair_result_path = os.path.join(output_dir, 'data', pair_name, 'limma_results.csv')
+    # run R script - note: r-limma-env conda env required
+    subprocess.run([
+    "conda", "run", "-n", "r-limma-env",
+    "Rscript", "utils/DE-limma.R",
+    pair_data_path.replace("\\", "/"),
+    pair_metadata_path.replace("\\", "/"),
+    pair_result_path.replace("\\", "/")
+    ], check=True)
+    # read results back in
+    diffExpr_df = pd.read_csv(pair_result_path, index_col=0)
+    n_prot = diffExpr_df.shape[0]
+    diffExpr_df['Log10_FDR_P_Value'] = -np.log10(diffExpr_df['adj.P.Val'])
+    diffExpr_df['Log10_unadjusted_p_Value'] = -np.log10(diffExpr_df['P.Value'])
+    # anova_lm_df = df_pair.apply(run_anova, axis=1, metadata=metadata).dropna()
+    # n_prot = anova_lm_df.shape[0]
     # Apply FDR correction (Benjamini-Hochberg)
-    _, fdr_corrected_pvals, _, _ = multipletests(anova_lm_df["p_value"].values , method="fdr_bh")
+    # _, fdr_corrected_pvals, _, _ = multipletests(anova_lm_df["p_value"].values , method="fdr_bh")
     # Add FDR-adjusted p-values to DataFrame
-    anova_lm_df["FDR_p_value"] = fdr_corrected_pvals
+    # anova_lm_df["FDR_p_value"] = fdr_corrected_pvals
     # and -log10(FDR) for plot
-    anova_lm_df['Log10_FDR_P_Value'] = -np.log10(anova_lm_df['FDR_p_value'])
-    anova_lm_df['Log10_unadjusted_p_Value'] = -np.log10(anova_lm_df['p_value'])
+    # anova_lm_df['Log10_FDR_P_Value'] = -np.log10(anova_lm_df['FDR_p_value'])
+    # anova_lm_df['Log10_unadjusted_p_Value'] = -np.log10(anova_lm_df['p_value'])
     ### whether to plot the -log10(p_value) i.e. unadjusted or -log10(FDR_p_value) is specified in json field "LFC_plot_p_or_FDRp"
     Volcano_y_axis = config.get("LFC_plot_p_or_FDRp")
-    Volcano_y_data = anova_lm_df[Volcano_y_axis]
+    Volcano_y_data = diffExpr_df[Volcano_y_axis]
     # Add the Colour column based on LOG2FC and p_values_FDR
-    anova_lm_df['Colour'] = anova_lm_df.apply(
-        lambda row: 'blue' if (abs(row['Log2_Fold_Change']) > 2 and row['FDR_p_value'] < 0.05) else 'gray', axis=1
+    diffExpr_df['Colour'] = diffExpr_df.apply(
+        lambda row: 'blue' if (abs(row['logFC']) > 2 and row['adj.P.Val'] < 0.05) else 'gray', axis=1
     )
-    lm_path = os.path.join(output_dir, 'data', pair_name, 'lm_output.csv')
-    anova_lm_df.to_csv(lm_path, index=False)
+    diffExpr_path = os.path.join(output_dir, 'data', pair_name, 'limma_output.csv')
+    diffExpr_df.to_csv(diffExpr_path, index=True)
     ### Create volcano plot
+    plot_title = 'Protein Abundance Log Fold Change for treatments \n' + pair_name + '(n = ' + str(n_prot) + ')'    
     sns.scatterplot(
-        data=anova_lm_df, 
-        x='Log2_Fold_Change',  # Log fold change
+        data=diffExpr_df, 
+        x='logFC',  # Log fold change
         y=Volcano_y_data,  # -log10(FDR-corrected p-value)
         hue='Colour',  # Color based on significance
         palette={'blue': 'blue', 'gray': 'gray'},
@@ -383,14 +404,14 @@ def make_volcano(df_pair: pd.DataFrame,
     plt.close()
     # save the top 20 rows to csv for display in final report
     # Sort by a relevant column (modify column name as needed)
-    sorted_df = anova_lm_df.sort_values(by="Log2_Fold_Change", ascending=False, key = abs)
+    sorted_df = diffExpr_df.sort_values(by="logFC", ascending=False, key = abs)
     # Select the top 20 rows
     top_20_df = sorted_df.head(20).round(decimals = 2)
-    top_20_df = top_20_df.round({"p_value":4, "FDR_p_value":4})
+    top_20_df = top_20_df.round({"P.Value":4, "adj.P.Value":4})
     # Save to CSV
     top_prot_path = os.path.join(output_dir, 'data', pair_name, 'top_20_by_LFC.csv')
-    top_20_df.to_csv(top_prot_path, index=False)
-    return anova_lm_df, top_20_df
+    top_20_df.to_csv(top_prot_path, index=True)
+    return diffExpr_df, top_20_df
 
 def plot_abundance(df: pd.DataFrame,
                    top_20_df: pd.DataFrame,
@@ -499,16 +520,13 @@ def enrichment_analysis(anova_lm_df: pd.DataFrame,
     ##### G Profiler options #####
     # for ORA, just need a list of genes
     pathway_query_genes = anova_lm_df.loc[
-    (anova_lm_df['FDR_p_value'] < 0.05) ##################################### change back to FDR_p_value
-    ]['Gene']
+    (anova_lm_df['adj.P.Val'] < 0.05)
+    ].index
     # in the case of phosphoproteomic data, gene names have a double __ with phosphorylation state added,
     # for now, we remove the phospho data from this set of genes
     # may want to look at separately later
     if any(isinstance(gene, str) and '__' in gene for gene in pathway_query_genes):
         pathway_query_genes = [str(gene).split("__")[0] for gene in pathway_query_genes]
-    # for GSEA, query genes can be weighted e.g. genes_weighted = {'BRCA1': 2.3, 'TP53': 1.8, 'AKT1': -1.2, 'MTOR': -2.1}
-    genes_weighted_dict = anova_lm_df[ (anova_lm_df[[ 'FDR_p_value' ]]<0.05).all(axis=1) ] \
-    .set_index('Gene')['Log2_Fold_Change'].to_dict()
     # pathway database can be REAC, GO or KEGG. Also less common but available: CORUM, HPA, TF and MIRNA
     # defaults to REAC
     source=['GO']
@@ -764,9 +782,9 @@ def run_analysis(df: pd.DataFrame,
         print("Generating volcano plot for pair ", pair_name, "...")
         anova_lm_df, top_20_df = make_volcano(df_pair,
                                               output_dir,
-                                              metadata=metadata_pair,
                                               pair_name = pair_name,
-                                              config = config)
+                                              config = config,
+                                              metadata_pair = metadata_pair)
         results_name = 'df_lm_' + pair_name
         results['results_name'] = anova_lm_df
         # Find overrepresented pathways and save output
