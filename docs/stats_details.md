@@ -25,9 +25,5 @@ Alphastats recommends using a Random Forest approach. The pipeline can use pytho
     - `max_iter` reduced to 3 (default 10)
     - `n_nearest_features` to 30 (default all features). How many other proteins to use when imputing. This takes the 50 most correlated proteins, with the assumption that they will be the most informative. Improves performance but also removes influence of noisy/unrelated proteins.
 
-#### Standardisation
-
-
 ## Fold change
-
 We add +1 to each group when calculating fold change. Avoids /0 problems. Adding the minimum count to avoid influencing FC.
