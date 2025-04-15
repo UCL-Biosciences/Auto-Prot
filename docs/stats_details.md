@@ -6,15 +6,26 @@ A bit more detail on important calculations.
 
 Include details of packages used and others available
 
+This tool is designed to produce a reasonable first exploration of your data. However, no single approach works optimally for all datasets. You should check the data look sensible before drawing strong conclusions. Are the distributions as you would expect after logging, normalising and imputing? Do any technical replicates cluster tightly? Is there variation within or among treatments? Do the different clustering methods agree? Answers to these questions will tell you how stable the results are.
+
+You are of course welcome (and encouraged) to adjust the code to work best for your dataset. [AlphaPepStats](https://github.com/MannLabs/alphapeptstats) has a more comprehensive set of options for pre-processing data, which can be added to this tool by editing the `data_processing.py` script.
+
+As always, we appreciate feedback and suggestions. Please create issues or get in touch - details on main README file.
+
+#### Normalisation
+We saw considerable variability in mean and total abundance among samples and treatments. This can look like lots of proteins are overexpressed in a given treatment group, but reflects overall sample abundance (i.e. a sampling artefact) rather than genuine differences per protein. To address this, we normalise by dividing all values by the sample median. 
+
 #### Imputation
 Alphastats recommends using a Random Forest approach. The pipeline can use python functions `HistGradientBoostingRegressor` and `IterativeImputer` but with more than 1,000 proteins, it becomes very slow with default parameters. There are some we have tweaked to reduce imputation time:
 - HistGradientBoostingRegressor
-  -   `max_iter` reduced to 50 (default 100)
-  -   `min_samples_leaf` to 3 (default 31)
-  -   `max_depth` to 5 (default is unconstrained)
+  -   `max_iter` reduced to 30 (default 100)
+  -   `min_samples_leaf` to 5 (default 31)
+  -   `max_depth` to 4 (default is unconstrained)
 -   IterativeImputer
-    - `max_iter` reduced to 5 (default 10)
-    - `n_nearest_features` to 50 (default all features). How many other proteins to use when imputing. This takes the 50 most correlated proteins, with the assumption that they will be the most informative. Improves performance but also removes influence of noisy/unrelated proteins.
+    - `max_iter` reduced to 3 (default 10)
+    - `n_nearest_features` to 30 (default all features). How many other proteins to use when imputing. This takes the 50 most correlated proteins, with the assumption that they will be the most informative. Improves performance but also removes influence of noisy/unrelated proteins.
+
+#### Standardisation
 
 
 ## Fold change
