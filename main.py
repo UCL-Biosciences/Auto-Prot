@@ -79,7 +79,7 @@ def main():
                 raise ValueError(f"No matches found for subset: {subset}")
             # Create a new output directory for the subset
             subset_outPath = os.path.join(outPath, 'subsets', subset.replace(" ", "_"))
-            dp.make_outdir(subset_outPath)
+            dp.make_outdir(subset_outPath, make_subdirs = True)
             # Run analysis for the subset
             print(f"Running analysis for {subset}...")
             analysis_results = an.run_analysis(

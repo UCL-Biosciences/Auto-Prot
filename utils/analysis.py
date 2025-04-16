@@ -340,13 +340,13 @@ def make_volcano(df_pair: pd.DataFrame,
         df_model_out (pd.DataFrame): gene name, F statistic, p value, FDR corrected p value.
     """
     #### calculate DE using limma (R package) ####
-    pair_data_path = os.path.join(output_dir, 'data', pair_name, 'protAbundance.csv')
+    pair_data_path = os.path.join(output_dir, 'data', pair_name, 'prots.csv')
     df_pair.to_csv(pair_data_path, index = True)
     # Save sample metadata
     pair_metadata_path = os.path.join(output_dir, 'data', pair_name, 'metadata.csv')
     metadata_pair.to_csv(pair_metadata_path, index=False)
     # Define where to save the limma results
-    pair_result_path = os.path.join(output_dir, 'data', pair_name, 'limma_results.csv')
+    pair_result_path = os.path.join(output_dir, 'data', pair_name, 'limmaOut.csv')
     # run R script - note: r-limma-env conda env required
     subprocess.run([
     "conda", "run", "-n", "r-limma-env",
@@ -400,6 +400,8 @@ def make_volcano(df_pair: pd.DataFrame,
     # Save plot and PCA data
     #plt.xlim(-4, 4)
     plot_path = os.path.join(output_dir, 'plots', pair_name, 'volcano_plot.png')
+    if os.name == 'nt':
+        plot_path = '\\\\?\\' + os.path.abspath(plot_path)
     plt.savefig(plot_path, dpi=300)
     plt.close()
     # save the top 20 rows to csv for display in final report
@@ -410,6 +412,8 @@ def make_volcano(df_pair: pd.DataFrame,
     top_20_df = top_20_df.round({"P.Value":4, "adj.P.Value":4})
     # Save to CSV
     top_prot_path = os.path.join(output_dir, 'data', pair_name, 'top_20_by_LFC.csv')
+    if os.name == 'nt':
+        top_prot_path = '\\\\?\\' + os.path.abspath(top_prot_path)
     top_20_df.to_csv(top_prot_path, index=True)
     return diffExpr_df, top_20_df
 
@@ -698,7 +702,7 @@ def combine_csv_files(filename,
     combined_df = pd.concat(combined_data, ignore_index=True)
     # Generate output filename if not provided
     if output_filename is None:
-        output_filename = os.path.join(output_dir, f"plots/combined_{output_filename}")
+        output_filename = os.path.join(output_dir, f"data/combined_{filename}")
         ## windows sometimes rejects long paths. Workaround:
         if os.name == 'nt':
             output_filename = '\\\\?\\' + os.path.abspath(output_filename)
@@ -746,17 +750,17 @@ def run_analysis(df: pd.DataFrame,
 
     # Perform PCA and save results
     print("Performing PCA...")
-    pca_results = generate_pca(df_standardised, output_dir, metadata=metadata)
+    pca_results = generate_pca(df.T, output_dir, metadata=metadata)
     results['pca'] = pca_results
 
     # Perform MDS and save results
     print("Performing MDS...")
-    mds_coords_df = generate_MDS(df_standardised, output_dir, metadata=metadata)
+    mds_coords_df = generate_MDS(df.T, output_dir, metadata=metadata)
     results['mds'] = mds_coords_df
 
     # Generate and save heatmap
     print("Generating heatmap...")
-    df_heatmap = generate_heatmap(df_standardised, output_dir)
+    df_heatmap = generate_heatmap(df.T, output_dir)
     results['heatmap'] = df_heatmap
 
     # Look at overlaps of differnential abundance

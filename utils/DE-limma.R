@@ -1,7 +1,7 @@
-cat("R version: ", R.version.string, "\n")
-cat("limma version: ", as.character(packageVersion("limma")), "\n")
-cat("Working directory: ", getwd(), "\n")
-cat("R_HOME: ", Sys.getenv("R_HOME"), "\n")
+# cat("R version: ", R.version.string, "\n")
+# cat("limma version: ", as.character(packageVersion("limma")), "\n")
+# cat("Working directory: ", getwd(), "\n")
+# cat("R_HOME: ", Sys.getenv("R_HOME"), "\n")
 
 
 ##### Calculate differential protein expression using limma #####
@@ -56,8 +56,6 @@ if (length(treatment) != ncol(df)) {
 
 # Build design matrix and run limma
 design <- model.matrix(~ treatment)
-cat("Design matrix:\n")
-print(design)
 
 # Fit model
 fit <- lmFit(df, design)

@@ -1,5 +1,7 @@
 {
 
+    "df_to_use" : "df_imp",
+    
     "speices" : "hsapiens",
     "pcomponents" : 2,
     "outPath" : "path",

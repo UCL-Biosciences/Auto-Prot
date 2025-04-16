@@ -12,6 +12,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import sklearn
 import sklearn.ensemble
+import time
 from sklearn.experimental import enable_iterative_imputer
 from sklearn.preprocessing import StandardScaler
 
@@ -144,11 +145,11 @@ def clean_data(df, file_path = None, metadata = None, outPath = None):
             # Setup imputer with a tree-based model (good for non-linear patterns)
             # estimator = HistGradientBoostingRegressor(max_iter=100, max_depth=10, random_state=0)
             # imputer = IterativeImputer(estimator=BayesianRidge(), max_iter=3, random_state=0)
-            imputer = KNNImputer(n_neighbors=5)
+            # imputer = KNNImputer(n_neighbors=5)
             # Fit and transform
-            imputed_array = imputer.fit_transform(df_median_t)
+            # imputed_array = imputer.fit_transform(df_median_t)
             # Reconstruct the imputed dataframe
-            df_imp = pd.DataFrame(imputed_array, index=df_median_t.index, columns=df_median_t.columns).T  # transpose back
+            # df_imp = pd.DataFrame(imputed_array, index=df_median_t.index, columns=df_median_t.columns).T  # transpose back
             # df_log2_T = df_log2.T
             # df_log2_T.columns = df_log2_T.columns.astype(str)
             # qt = sklearn.preprocessing.QuantileTransformer(random_state=0)
@@ -160,10 +161,16 @@ def clean_data(df, file_path = None, metadata = None, outPath = None):
             # df_norm = pd.DataFrame(normalized_array, index=df_log2.index, columns=df_log2.columns )
             #### impute ####
             ## using random forest approach, which the AlphStats paper says performs best
-            # imp = sklearn.ensemble.HistGradientBoostingRegressor(max_depth=10, max_iter=100, random_state=0)
-            # imp = sklearn.impute.IterativeImputer(random_state=0, estimator=imp)
+            # df_test = df_median_t.iloc[:, 0:2000]
+            estimator = sklearn.ensemble.HistGradientBoostingRegressor( max_iter=30, max_depth = 4, min_samples_leaf= 5, random_state=0)
+            imputer = sklearn.impute.IterativeImputer( max_iter = 3, tol = 0.01, random_state=0, estimator=estimator, verbose = 2, n_nearest_features = 30)
+            # Time the imputation
+            start = time.time()
+            imputation_array = imputer.fit_transform(df_median_t)
+            end = time.time()
+            print(f"Imputation took {end - start:.2f} seconds")
             # imputation_array = imp.fit_transform(df_log2_T)
-            # df_imp = pd.DataFrame( imputation_array, index=df.index, columns=df.columns)
+            df_imp = pd.DataFrame( imputation_array.transpose(), index=df.index, columns=df.columns)
             # minmax = sklearn.preprocessing.MinMaxScaler()
             # scaler = sklearn.preprocessing.StandardScaler()
             # minmaxed_array = minmax.fit_transform(df_log2.values.transpose())
@@ -263,7 +270,8 @@ def clean_data(df, file_path = None, metadata = None, outPath = None):
 def preprocess_data(file_path,
                     metadata=None,
                     json_out = None,
-                    outPath = None):
+                    outPath = None,
+                    config = None):
     """
     Full preprocessing pipeline: load, clean, and normalize column names.
 
