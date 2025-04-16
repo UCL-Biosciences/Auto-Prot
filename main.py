@@ -20,9 +20,9 @@ def main():
     """
     Main script to run the complete data analysis pipeline.
     """
-    # Check environment
-    if not "VSCODE_PID" in os.environ:
-        env.compare_envs()
+    # Check environment - needs fixing
+    # if not "VSCODE_PID" in os.environ:
+    #     env.compare_envs()
     # File paths
     # getting repo dir automatically is useful as should mean we don't need to specify
     # machine-specific paths and code should run on different users' machines

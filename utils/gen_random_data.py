@@ -32,10 +32,11 @@ REPO_ROOT=get_repo_root()
 
 human_genes_file = os.path.join(REPO_ROOT, 'input/data/human_genes.txt')
 genes = pd.read_csv(human_genes_file)['Symbol'].dropna().unique().tolist()
-random.seed(0) # for repeatability
+random.seed(0) # for repeatability for python random generator
 sampled_genes = random.sample(genes, n_genes)
 
 ##### generate df with random numbers (set seed for repeatability)
+## note setting seed again for numpy's random generator.
 np.random.seed(0) ; df =  pd.DataFrame(np.random.randint(10,10000, 
                                                          size=(len(sampled_genes),
                                                                len(sample_replicates))),

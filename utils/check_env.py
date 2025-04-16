@@ -42,7 +42,15 @@ def load_yaml_env(file_path):
     """Loads the dependencies from the specified YAML file."""
     with open(file_path, 'r') as file:
         env_data = yaml.safe_load(file)
-        return set(env_data.get('dependencies', []))
+        deps = env_data.get('dependencies', [])
+        all_packages = set()
+        #return set(env_data.get('dependencies', []))
+        for dep in deps:
+            if isinstance(dep, str):
+                all_packages.add(dep)
+            elif isinstance(dep, dict) and 'pip' in dep:
+                all_packages.update(dep['pip'])
+    return all_packages
 
 def get_installed_packages():
     """Returns a set of installed packages with versions in the current conda environment."""

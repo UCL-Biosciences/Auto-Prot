@@ -35,7 +35,7 @@ There are four stages of pre-processing shown here. The raw values, the log2 val
 
 #### Distributions of samples
 
-<img src="../output/plots/boxplots_preProcessing_all_treatments_plot.png" width="800" height="800">
+<img src="../output/plots/boxplots_preProcessing_all_samples_plot.png" width="800" height="800">
 
 ## Analysis
 
@@ -79,7 +79,7 @@ The table below summarises the most overrepresented pathways.
 
 The plot underneath shows the extent of the overrepresentation and the -log10 p-value.
 
-<img src="../output/full_dataset/plots/combined_pathway_enrichment_plot.png" width="800" height="400">
+{{ENRICHMENT_PLOT}}
 
 
 ## Report Generation Info
