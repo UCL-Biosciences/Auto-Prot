@@ -265,8 +265,9 @@ def make_volcano(df_pair: pd.DataFrame,
         alpha=0.7  # Transparency for points
     )
     # Customize the plot
-    plt.axvline(x=2, color='red', linestyle='--', linewidth=1)  # Threshold for LFC > 1
-    plt.axvline(x=-2, color='red', linestyle='--', linewidth=1)  # Threshold for LFC < -1
+    plt.axvline(x=2, color='red', linestyle='--', linewidth=1)
+    plt.axvline(x=-2, color='red', linestyle='--', linewidth=1) 
+    plt.axhline(y=-np.log10(0.05), color='red', linestyle='--', linewidth=1) 
     plt.title(plot_title, fontsize=16)
     plt.xlabel('Log2 Fold Change (LFC)', fontsize=12)
     plt.ylabel(Volcano_y_axis, fontsize=12)

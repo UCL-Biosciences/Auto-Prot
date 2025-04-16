@@ -13,15 +13,15 @@ from check_env import get_repo_root
 #### set number parameters ####
 n_treatments = 2
 n_genes = 1000
-samples = list('ABCDEFGHIJ')
-n_replicates = 2
+samples = list('ABCDEF')
+n_replicates = 5
 
 ## good solution for combining. Print sample_replicate and loop through samples and 1:max number of replicates (exclusive)
 sample_replicates = [f"{sample}_{replicate}" for sample in samples for replicate in range(1, n_replicates + 1)]
 col_names = list(map(lambda x:'prot_abundance_'+str(x),sample_replicates)) # col names have a string before as we expect real data will
 
 ### total number of samples = samples * n_replicates
-n_total_samp_rep = len(samples * n_replicates)
+n_total_samp_rep = len(samples) * n_replicates
 n_samples_per_treatment = int(n_total_samp_rep/n_treatments)
 
 # Create the treatment list
@@ -35,13 +35,44 @@ genes = pd.read_csv(human_genes_file)['Symbol'].dropna().unique().tolist()
 random.seed(0) # for repeatability for python random generator
 sampled_genes = random.sample(genes, n_genes)
 
-##### generate df with random numbers (set seed for repeatability)
-## note setting seed again for numpy's random generator.
-np.random.seed(0) ; df =  pd.DataFrame(np.random.randint(10,10000, 
-                                                         size=(len(sampled_genes),
-                                                               len(sample_replicates))),
-                                                               index=sampled_genes,
-                                                               columns=col_names )
+# Generate gene-specific distribution parameters
+gene_means = np.random.uniform(3, 5, size=n_genes)        # shift the abundance centre
+gene_sigmas = np.random.uniform(0.3, 1.5, size=n_genes)   # vary the spread
+
+# Draw log-normal values per protein
+data = np.array([
+    np.random.lognormal(mean=mu, sigma=sigma, size=n_total_samp_rep)
+    for mu, sigma in zip(gene_means, gene_sigmas)
+])
+
+# Build DataFrame
+df = pd.DataFrame(data, index=sampled_genes, columns=col_names)
+
+
+
+
+
+
+# ##### generate df with random numbers (set seed for repeatability)
+# ## note setting seed again for numpy's random generator.
+# np.random.seed(0)
+
+# # Generate a global pool of abundance values (log-normal distributed)
+# global_values = np.random.lognormal(mean=10, sigma=0.5, size=(len(sampled_genes), len(sample_replicates)))
+
+# # Shuffle and reshape into a DataFrame: each value is independent
+# np.random.shuffle(global_values)
+# df = pd.DataFrame(
+#     global_values.reshape(n_genes, n_total_samp_rep),
+#     index=sampled_genes,
+#     columns=col_names
+# )
+
+# df = pd.DataFrame(
+#     np.random.lognormal(mean=4, sigma=1, size=(len(sampled_genes), len(sample_replicates))),
+#     index=sampled_genes,
+#     columns=col_names
+# )
 
 ### we are going to randomly change some numbers to create some differences to test pathway enrichment
 # Define the number of spiked proteins (5% of total genes)
@@ -57,15 +88,15 @@ cols_for_set_1 = list(map(lambda x:'prot_abundance_'+str(x),sample_replicates[:n
 cols_for_set_2 = list(map(lambda x:'prot_abundance_'+str(x),sample_replicates[n_samples_per_treatment:]))
 
 # Apply spiking
-df.loc[spike_set_1, cols_for_set_1] *= 5  # Spike first set in first treatment group
-df.loc[spike_set_2, cols_for_set_2] *= 5  # Spike second set in second treatment group
+df.loc[spike_set_1, cols_for_set_1] *= 4  # Spike first set in first treatment group
+df.loc[spike_set_2, cols_for_set_2] *= 4  # Spike second set in second treatment group
 
 # Randomly set 5% of the DataFrame values to NA
 mask = np.random.rand(*df.shape) < 0.05
 df = df.mask(mask)
 
 # save to file
-df.to_csv(os.path.join(REPO_ROOT, 'input/data/proteindata.csv'), index=False)
+df.to_csv(os.path.join(REPO_ROOT, 'input/data/proteindata.csv'), index=True)
 
 ###### create metadata
 metadata_df = pd.DataFrame({
