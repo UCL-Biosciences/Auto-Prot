@@ -78,7 +78,7 @@ def normalise_column_names(df, file_path=None, metadata = None):
             df = df.set_index(genes_columns[0])
     return df
 
-def clean_data(df, file_path = None, metadata = None, outPath = None):
+def clean_data(df, file_path = None, metadata = None, outPath = None, config= None):
     """
     Perform basic cleaning on the data: first filter protein data to include only protein abundance cols 
     and make sure they are all present.
@@ -127,8 +127,6 @@ def clean_data(df, file_path = None, metadata = None, outPath = None):
             # Rename columns in data_in based on the mapping
             df = df.rename(columns=rename_mapping)
             nrow_original = len(df.index)
-#####
-#####
             df = df.replace(0, np.nan)
             df = df[df.isnull().mean(axis=1) <= 0.2]
             #### impute and normalise from AlphaPepStats functions #####
@@ -142,25 +140,8 @@ def clean_data(df, file_path = None, metadata = None, outPath = None):
             # Transpose: sklearn expects features in columns, samples in rows
             df_median_t = df_median_norm.T  # shape: samples × proteins
             df_median_t.columns = df_median_t.columns.astype(str)
-            # Setup imputer with a tree-based model (good for non-linear patterns)
-            # estimator = HistGradientBoostingRegressor(max_iter=100, max_depth=10, random_state=0)
-            # imputer = IterativeImputer(estimator=BayesianRidge(), max_iter=3, random_state=0)
-            # imputer = KNNImputer(n_neighbors=5)
-            # Fit and transform
-            # imputed_array = imputer.fit_transform(df_median_t)
-            # Reconstruct the imputed dataframe
-            # df_imp = pd.DataFrame(imputed_array, index=df_median_t.index, columns=df_median_t.columns).T  # transpose back
-            # df_log2_T = df_log2.T
-            # df_log2_T.columns = df_log2_T.columns.astype(str)
-            # qt = sklearn.preprocessing.QuantileTransformer(random_state=0)
-            # normalized_array = qt.fit_transform(df_log2_T).transpose()
-            # minmax = sklearn.preprocessing.MinMaxScaler()
-            # scaler = sklearn.preprocessing.PowerTransformer()
-            # minmaxed_array = minmax.fit_transform(df_log2)
-            # normalized_array = scaler.fit_transform(minmaxed_array)
-            # df_norm = pd.DataFrame(normalized_array, index=df_log2.index, columns=df_log2.columns )
             #### impute ####
-            ## using random forest approach, which the AlphStats paper says performs best
+            # Setup imputer using random forest approach (see docs for refs)
             # df_test = df_median_t.iloc[:, 0:2000]
             estimator = sklearn.ensemble.HistGradientBoostingRegressor( max_iter=30, max_depth = 4, min_samples_leaf= 5, random_state=0)
             imputer = sklearn.impute.IterativeImputer( max_iter = 3, tol = 0.01, random_state=0, estimator=estimator, verbose = 2, n_nearest_features = 30)
@@ -171,26 +152,11 @@ def clean_data(df, file_path = None, metadata = None, outPath = None):
             print(f"Imputation took {end - start:.2f} seconds")
             # imputation_array = imp.fit_transform(df_log2_T)
             df_imp = pd.DataFrame( imputation_array.transpose(), index=df.index, columns=df.columns)
-            # minmax = sklearn.preprocessing.MinMaxScaler()
-            # scaler = sklearn.preprocessing.StandardScaler()
-            # minmaxed_array = minmax.fit_transform(df_log2.values.transpose())
-            # normalized_array = scaler.fit_transform(minmaxed_array).transpose()
-            # df_norm = pd.DataFrame(normalized_array, index=df_log2.index, columns=df_log2.columns )
-            #### impute ####
-            ## using random forest approach, which the AlphStats paper says performs best
-            # imp = sklearn.ensemble.HistGradientBoostingRegressor(max_depth=10, max_iter=100, random_state=0)
-            # imp = sklearn.impute.IterativeImputer(random_state=0, estimator=imp)
-            # imputation_array = imp.fit_transform(df_log2.values)
-            # df_imp = pd.DataFrame(
-            #             imputation_array, index=df.index, columns=df.columns
-            #         )
             ### view distributions after different steps #####
             #### By Sample ######
             # List of dataframes and titles for the subplots
             dfs = [df, df_log2, df_median_norm, df_imp ]
             titles = ['Raw Intensities', 'Log₂ Transformed', 'Sample-Median Normalised', 'Normalised then Imputed']
-            # dfs = [df, df_log2, df_imp, df_norm ]
-            # titles = ['Raw Intensities', 'Log₂ Transformed', 'Imputed from log', 'Imputed then Normalised']
             # Set up the figure with a 2x2 grid
             fig, axes = plt.subplots(2, 2, figsize=(15, 10))
             axes = axes.flatten()
@@ -211,7 +177,6 @@ def clean_data(df, file_path = None, metadata = None, outPath = None):
                 # Remove redundant legends in subplots (optional)
                 if ax != axes[0]:
                     ax.get_legend().remove()
-            ##
             # Add a single legend for the entire figure
             handles, labels = axes[0].get_legend_handles_labels()
             fig.legend(handles, labels, title='Treatment', loc='upper right')
@@ -241,9 +206,8 @@ def clean_data(df, file_path = None, metadata = None, outPath = None):
             plt.savefig(plot_path, dpi=300)
             plt.close()
             ## which df to use?
-            df = df_imp
-            #####
-#####
+            df_to_use = config.get("df_to_use")
+            df = locals()[df_to_use]
             # some proteins do not produce any associated genes. these values are left blank in the index
             # we replace the NaNs with Unknown-Gene-X, where X is a unique number for each unknown gene.\
             # Convert index to a Series to manipulate NaNs
@@ -291,9 +255,7 @@ def preprocess_data(file_path,
     #         df, row_nan_count = clean_data(df, file_path = file_path, metadata=metadata) 
     
     if 'metadata' in file_path:
-        df = clean_data(df, file_path = file_path)
-#### df['protein_abundance_name'] = df['protein_abundance_name'].str.lower().str.replace(' ', '_')
-        
+        df = clean_data(df, file_path = file_path, config = config)        
         # generate some info to go into html report
         # Compute treatment-wise sample counts
         treatment_counts = df['treatment'].value_counts().to_dict()
@@ -318,7 +280,7 @@ def preprocess_data(file_path,
 
     
     if 'proteindata' in file_path:
-        df, nrow_original = clean_data(df, file_path = file_path, metadata=metadata, outPath = outPath) 
+        df, nrow_original = clean_data(df, file_path = file_path, metadata=metadata, outPath = outPath, config = config) 
         
         #### protein summary
         NUM_PROTS = len(df.index)
@@ -348,27 +310,11 @@ def preprocess_data(file_path,
         with open(json_out, "w") as f:
             json.dump(existing_data, f, indent=4)
 
-        #### Standardising
-        # PCAs find ways of maximising the distance between samples.
-        # That means if we have a variable that has a much higher (or lower) range/scale than others
-        # the PCA will be biased by that. We can scale the data so that they contribute to the PCA based
-        # on the variation among samples within each variable rather than biasing towards those that are particularly variable
-        # Standardising the features
-        # standardscaler standardises: standardised score = ( sample - mean ) / SD
-        # column-wise, i.e. by protein, not sample.
-        df_T = df.T
-        df_T.columns = df_T.columns.astype(str)
-        df_scaled = StandardScaler().fit_transform(df_T)  # scale the data
-        df_standardised = pd.DataFrame(df_scaled, index = df_T.index, columns = df_T.columns) # add additional data
-        pd.DataFrame(df).to_csv(os.path.join(outPath, 'data/protAbundance.csv'), index=False)
-        pd.DataFrame(df_standardised).to_csv(os.path.join(outPath, 'data/protAbundance_standardised.csv'), index=False)
-        
         ### run function to validate protein abundance data
         validate_proteindata(data=df,
-                             data_standardised = df_standardised, 
                              metadata = metadata)
         
-        return df, df_standardised
+        return df
 
 
 ### make outdir
@@ -430,7 +376,6 @@ def validate_metadata(metadata):
     
 ### Validation protein abundance data ###
 def validate_proteindata(data,
-                         data_standardised,
                          metadata):
     ##### checks for raw protein abundance data #####
     # Check if data is empty
@@ -459,20 +404,3 @@ def validate_proteindata(data,
     # Check for missing values (NaNs) in the entire DataFrame
     if data.isna().any().any():
         raise ValueError("Error: The protein abundance df contains missing (NaN) values!")
-    ##### checks for standardised protein abundance data #####
-    # Check for missing values (NaNs) in the entire DataFrame
-    if data_standardised.isna().any().any():
-        raise ValueError("Error: The standardised protein abundance df contains missing (NaN) values!")
-    ### check mean ~0 and variance ~1
-    # Calculate column-wise mean and variance
-    mean_vals = data_standardised.mean()
-    var_vals = data_standardised.var(ddof=0) # ddof = 0 divides deviance by N-1 for sample var. Default divides by N and gives population var.
-    # Define tolerance for deviation from expected values
-    mean_tolerance = 1e-6  # Mean should be very close to 0
-    var_tolerance = 0.1    # Variance should be around 1, allowing small deviations
-    # Check mean is close to 0
-    if not np.all(np.abs(mean_vals) < mean_tolerance):
-        raise ValueError("Error: Standardised data mean is not sufficiently close to 0.")
-    # Check variance is close to 1
-    if not np.all(np.abs(var_vals - 1) < var_tolerance):
-        raise ValueError("Error: Standardised data variance is not sufficiently close to 1.")

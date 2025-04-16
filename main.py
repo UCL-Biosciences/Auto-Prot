@@ -38,18 +38,21 @@ def main():
     # Data processing
     print("Loading and processing data...")
 
+    ### Read in configuration data, stored in a json
+    with open(config_path, "r") as f:
+        config = json.load(f)
+
     # metadata
     metadata = dp.preprocess_data(file_path=metadataPath,
                                   json_out=json_out,
                                   outPath = outPath)
     # protein abundance data
-    df_protAbundance, df_protAbundance_standardised = dp.preprocess_data(file_path=proteinDataPath,
-                                                                         metadata=metadata,
-                                                                         json_out=json_out,
-                                                                         outPath = outPath)    
-    ### Read in configuration data, stored in a json
-    with open(config_path, "r") as f:
-        config = json.load(f)
+    df_protAbundance = dp.preprocess_data(file_path=proteinDataPath,
+                                          metadata=metadata,
+                                          json_out=json_out,
+                                          outPath = outPath,
+                                          config = config)    
+    
     print("Data loaded and processed...")
     # Analysis
     print("Running analysis...")
@@ -59,7 +62,6 @@ def main():
         full_outPath=os.path.join(outPath, "full_dataset")
         dp.make_outdir(full_outPath)
         analysis_results = an.run_analysis(df = df_protAbundance,
-                                            df_standardised = df_protAbundance_standardised,
                                             metadata = metadata,
                                             json_out=json_out,
                                             output_dir = full_outPath,
@@ -73,7 +75,6 @@ def main():
             print(f"Processing subset: {subset}")
             # Subset data based on index search term
             subset_df = df_protAbundance[df_protAbundance.index.str.contains(subset, regex=False)]
-            subset_df_standardised = df_protAbundance_standardised.loc[:, df_protAbundance_standardised.columns.str.contains(subset, regex=False)]
             # Raise an error if no matching rows are found
             if subset_df.empty:
                 raise ValueError(f"No matches found for subset: {subset}")
@@ -84,7 +85,6 @@ def main():
             print(f"Running analysis for {subset}...")
             analysis_results = an.run_analysis(
                 df=subset_df,
-                df_standardised=subset_df_standardised,
                 metadata=metadata,
                 json_out=json_out,
                 output_dir=subset_outPath,

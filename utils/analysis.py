@@ -1,7 +1,6 @@
 ### Perform data analysis ###
 
-## Using objects created previously: metadata, df_protAbundance, df_protAbundance_standardised
-
+## Using objects created previously: metadata, df_protAbundance
 import os
 import subprocess
 import json
@@ -30,67 +29,7 @@ warnings.filterwarnings("ignore", message="Negative binomial dispersion paramete
 # Suppress only ConvergenceWarning
 warnings.simplefilter("ignore", ConvergenceWarning)
 
-def generate_histogram(df: pd.DataFrame,
-                        output_dir: str,
-                        metadata: pd.DataFrame,
-                        json_out: dict): 
-    """
-    Generate histograms showing distributions for the different treatments
-
-    Args:
-        df (pd.DataFrame): protein abundance data.
-        output_dir (str): Directory to save the output
-        metadata (pd.DF): sample metadata
-        config (dict): configuration info for the pipeline. we add mean and sd per treatment, which can go into report
-        json_out (str): File for saving information to go into the final repo
-
-    Returns:
-        
-    """
-    ### to create histograms, need to re format
-    # need cols: sample replicate, treatment, abundance
-    df_long = df.melt(var_name='Sample', value_name='Abundance', ignore_index=False)
-    df_long = df_long.reset_index().rename(columns={'index': 'Protein'})  # Ensure 'Protein' column exists
-    df_long = df_long.merge(metadata[['sample_rep', 'treatment']], left_on='Sample', right_on='sample_rep')
-    # Log-transform the abundance values to make it easier to see
-    df_long['Log_Abundance'] = np.log1p(df_long['Abundance'])
-    # Create the figure
-    plt.figure(figsize=(10, 6))
-    ax = sns.kdeplot(data=df_long, x='Log_Abundance', hue='treatment', common_norm=False, linewidth=2)
-    # Force legend display
-    handles, labels = ax.get_legend_handles_labels()
-    if handles:
-        ax.legend(handles=handles, labels=labels, title="Treatment")
-    # Set labels and title
-    plt.xlabel("Log(Protein Abundance + 1)")
-    plt.ylabel("Density")
-    plt.title("Density of Log-Transformed Protein Abundance by Treatment")
-    # Save plot and PCA data
-    plot_path = os.path.join(output_dir, 'plots', 'histogram_all_treatments_plot.png')
-    plt.savefig(plot_path, dpi=300)
-    plt.close()
-    ### for the full dataset, we want to record the mean and SD for abundance for each treatment ###
-    if "full_dataset" in output_dir:
-        # Compute mean Abundance per treatment
-        mean_abundance = df_long.groupby('treatment')['Abundance'].mean().round().astype('int')
-        mean_for_json = ", ".join([f"{mean}: {int(n):,}" for mean, n in mean_abundance.items()])
-        sd_abundance = df_long.groupby('treatment')['Abundance'].std().round().astype('int')
-        sd_for_json = ", ".join([f"{sd}: {int(n):,}" for sd, n in sd_abundance.items()])
-        # read data from json file
-        with open(json_out, "r") as f:
-            existing_data = json.load(f)
-        abundance_stats = {
-                "MEAN_ABUNDANCE": mean_for_json,
-                "SD_ABUNDANCE": sd_for_json
-        }
-        # Append new data
-        existing_data.update(abundance_stats)
-        # Write back to JSON file
-        with open(json_out, "w") as f:
-            json.dump(existing_data, f, indent=4)
-
-
-def generate_pca(df_standardised: pd.DataFrame,
+def generate_pca(df: pd.DataFrame,
                  output_dir: str,
                  metadata: pd.DataFrame = None,
                  components: int = 2) -> pd.DataFrame:
@@ -98,7 +37,7 @@ def generate_pca(df_standardised: pd.DataFrame,
     Perform PCA on the given DataFrame and save the results as a plot.
 
     Args:
-        df_standardised (pd.DataFrame): Standardised protein abundance data.
+        df (pd.DataFrame): protein abundance data.
         output_dir (str): Directory to save the PCA plot and data.
         metadata (pd.DF): sample metadata
         components (int): Number of principal components to compute.
@@ -108,14 +47,14 @@ def generate_pca(df_standardised: pd.DataFrame,
     """
     # Perform PCA
     pca = PCA(n_components=components)
-    principal_components = pca.fit_transform(df_standardised)
-    n_prot = df_standardised.shape[1]
+    principal_components = pca.fit_transform(df)
+    n_prot = df.shape[1]
     plot_title = 'PCA Plot (n proteins = ' + str(n_prot) + ')'
     # Create DataFrame with PCA results
     df_PCA = pd.DataFrame(
         data=principal_components,
         columns=[f'principal component {i + 1}' for i in range(components)],
-        index = pd.DataFrame(df_standardised).index
+        index = pd.DataFrame(df).index
     )
     # pull over treatment from metadata
     # df_PCA . look up by index . and map to
@@ -159,14 +98,14 @@ def generate_pca(df_standardised: pd.DataFrame,
     print(f"PCA data saved to {data_path}")
     return df_PCA
 
-def generate_MDS(df_standardised: pd.DataFrame,
+def generate_MDS(df: pd.DataFrame,
                  output_dir: str,
                  metadata: pd.DataFrame = None) -> pd.DataFrame:
     """
     Perform MDS on the given DataFrame and save the results as a plot.
 
     Args:
-        df_standardised (pd.DataFrame): Standardised protein abundance data.
+        df (pd.DataFrame): protein abundance data.
         output_dir (str): Directory to save the plot and data.
         metadata (pd.DF): sample metadata
 
@@ -175,8 +114,8 @@ def generate_MDS(df_standardised: pd.DataFrame,
     """
     # Perform MDS
     # pdist(x) computes the Euclidean distances between each pair of points in an array
-    dissimilarity_array = pdist(df_standardised, metric='euclidean')
-    n_prot = df_standardised.shape[1]
+    dissimilarity_array = pdist(df, metric='euclidean')
+    n_prot = df.shape[1]
     plot_title = 'MDS Dissimilarity based on Protein Abundance (n proteins = ' + str(n_prot) + ')'
     # suqareform() returns the matrix
     dissimilarity_matrix = squareform(dissimilarity_array)
@@ -190,7 +129,7 @@ def generate_MDS(df_standardised: pd.DataFrame,
     # Convert the NMDS coordinates (nmds_coords) to a pandas DataFrame
     mds_coords_df = pd.DataFrame(mds_coords,
                                  columns=['MDS1', 'MDS2'],
-                                 index = pd.DataFrame(df_standardised).index)
+                                 index = pd.DataFrame(df).index)
     # pull over treatment from metadata
     # df_PCA . look up by index . and map to
     # metadata . temporarily set index to sample_id [ and find treatment ]
@@ -224,13 +163,13 @@ def generate_MDS(df_standardised: pd.DataFrame,
     return mds_coords_df
 
 
-def generate_heatmap(df_standardised: pd.DataFrame,
+def generate_heatmap(df: pd.DataFrame,
                  output_dir: str) -> pd.DataFrame:
     """
-    Generate a heatmap using the standardised data
+    Generate a heatmap using the abundance data
 
     Args:
-        df_standardised (pd.DataFrame): Standardised protein abundance data.
+        df (pd.DataFrame): protein abundance data.
         output_dir (str): Directory to save the PCA plot and data.
 
     Returns:
@@ -238,8 +177,8 @@ def generate_heatmap(df_standardised: pd.DataFrame,
     """
     #### need the other orientation for heatmap
     # transpose and add sample ids as colnames
-    df_heat = pd.DataFrame(df_standardised.T)
-    df_heat.columns = df_standardised.index
+    df_heat = pd.DataFrame(df.T)
+    df_heat.columns = df.index
     n_prot = df_heat.shape[0]
     plot_title = 'heatmap of euclidean distance (n protein = ' + str(n_prot) + ')'
     # Create clustermap
@@ -265,61 +204,6 @@ def generate_heatmap(df_standardised: pd.DataFrame,
     print(f"heatmap saved to {plot_path}")
     return df_heat
 
-# Function to run ANOVA for each protein
-def run_anova(row, metadata):
-    """
-    fit linear models and ANOVA models to assess differences between treatment groups. Called by make_volcano
-
-    Args:
-        row : iterating through rows with df.apply()
-        metadata (pd.DF): sample metadata
-        
-    Returns:
-        
-    """
-    gene_name = row.name  # Use row index as gene name
-    data = pd.DataFrame(row)  # Convert row to DataFrame
-    data.columns=['Abundance'] # rename column so can be used in model
-    # Map sample_id to treatment
-    data["treatment"] = data.index.map(metadata.set_index("sample_rep")["treatment"])
-    ### count data are usually modelled with a generalised linear model with a negative binomial error distribution
-    ### However, abundance data often violate the assumption of poisson GLMs that mean = variance
-    ### To deal with this "overdispersion", we use a generalised linear model with a negative binomial error distribution 
-    ### this won't work for cases where all values are 0 as we can't estimate deviance (or deviance returns NaN)
-    ### exclude these for now.
-    if (data["Abundance"] == 0).all():
-        print("All values are zero. NB GLM cannot be fitted. For gene ", gene_name)
-    if (data["Abundance"] != 0).any():
-        model = smf.negativebinomial('Abundance ~ C(treatment)', data=data).fit(disp=0)
-        ## some times these models fail to estimate parameters. Only continue when models have been fitted correctly
-        if not np.any(np.isnan(model.bse)):
-            # For generalISED linear models, we can't run anova tests to look at how much variance is explained by the different parameters.
-            # instead, we use the Wald statistic. Wald stat is the coefficient divided by the standard error.
-            # This is good because the wald statistic will be higher - indicating stronger effect - when there is less variation (less noise) and/or a larger sample size - both contribute to stronger evidence
-            # larger wald stat = stronger evidence. Wald test stat is the chi2 value
-            wald_test = model.wald_test_terms(scalar = True)
-            wald_stat, p_value = wald_test.table.loc["C(treatment)", "statistic"], wald_test.table.loc["C(treatment)", "pvalue"]
-            #### Extract group means and LFC
-            # Compute group means (sorted alphabetically)
-            group_means = data.groupby("treatment")["Abundance"].mean().sort_index()
-            grp1_name = group_means.index.tolist()[0]
-            grp1_mean = group_means.iloc[0] # + 1 ## add small constant for LFC
-            grp2_name = group_means.index.tolist()[1]
-            grp2_mean = group_means.iloc[1] # + 1 ## add small constant for LFC
-            fc = ( grp1_mean ) / ( grp2_mean )
-            log2fc = np.log2( fc )
-            #return outputs
-            results_anova = pd.Series({"Gene": gene_name,
-                            "Group_1": grp1_name,
-                            "Group_1_mean": grp1_mean,
-                            "Group_2": grp2_name,
-                            "Group_2_mean": grp2_mean,
-                            "Raw_Fold_Change": fc,
-                            "Log2_Fold_Change": log2fc,
-                            "Wald_stat": wald_stat,
-                            "p_value": p_value})
-            return results_anova
-
 def make_volcano(df_pair: pd.DataFrame,
                  output_dir: str,
                  pair_name: str,
@@ -327,7 +211,7 @@ def make_volcano(df_pair: pd.DataFrame,
                  metadata_pair: pd.DataFrame = None
                  ) -> pd.DataFrame:
     """
-    fit linear model for each protein. Calls run_anova, defined above
+    fit model for each protein. Calls limma script
 
     Args:
         df (pd.DataFrame): protein abundance data.
@@ -360,15 +244,6 @@ def make_volcano(df_pair: pd.DataFrame,
     n_prot = diffExpr_df.shape[0]
     diffExpr_df['Log10_FDR_P_Value'] = -np.log10(diffExpr_df['adj.P.Val'])
     diffExpr_df['Log10_unadjusted_p_Value'] = -np.log10(diffExpr_df['P.Value'])
-    # anova_lm_df = df_pair.apply(run_anova, axis=1, metadata=metadata).dropna()
-    # n_prot = anova_lm_df.shape[0]
-    # Apply FDR correction (Benjamini-Hochberg)
-    # _, fdr_corrected_pvals, _, _ = multipletests(anova_lm_df["p_value"].values , method="fdr_bh")
-    # Add FDR-adjusted p-values to DataFrame
-    # anova_lm_df["FDR_p_value"] = fdr_corrected_pvals
-    # and -log10(FDR) for plot
-    # anova_lm_df['Log10_FDR_P_Value'] = -np.log10(anova_lm_df['FDR_p_value'])
-    # anova_lm_df['Log10_unadjusted_p_Value'] = -np.log10(anova_lm_df['p_value'])
     ### whether to plot the -log10(p_value) i.e. unadjusted or -log10(FDR_p_value) is specified in json field "LFC_plot_p_or_FDRp"
     Volcano_y_axis = config.get("LFC_plot_p_or_FDRp")
     Volcano_y_data = diffExpr_df[Volcano_y_axis]
@@ -718,7 +593,6 @@ def combine_csv_files(filename,
 ##########################################################################
 
 def run_analysis(df: pd.DataFrame,
-                 df_standardised: pd.DataFrame,
                  metadata: pd.DataFrame,
                  output_dir: str,
                  config: dict, 
@@ -728,7 +602,6 @@ def run_analysis(df: pd.DataFrame,
 
     Parameters:
         df (pd.DataFrame): Raw protein abundance data.
-        df_standardised (pd.DataFrame): Standardised protein abundance data.
         metadata (pd.DataFrame): Metadata containing sample information.
         output_dir (str): Directory to save analysis outputs.
         json_out (str): File for saving information to go into the final report
@@ -741,12 +614,6 @@ def run_analysis(df: pd.DataFrame,
     results = {}
 
     ##### Analyses for all treatment groups #####
-    # Generate histogram
-    print("Generating histogram")
-    # generate_histogram(df,
-    #                     output_dir,
-    #                     metadata,
-    #                     json_out) 
 
     # Perform PCA and save results
     print("Performing PCA...")

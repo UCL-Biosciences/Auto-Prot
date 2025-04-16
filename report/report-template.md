@@ -15,22 +15,27 @@ Read on to see some common proteomics outputs,  including:
 * Hierarchical clustering (dend with heatmap)
 * Distributions of proteins by treatment (violin, box, or dot)
 * Table of proteins, associated genes, LFC and corrected p value
-* Upset plot
 * Pathway/functional enrichment (ORA, GSEA)
 
 ## Exprimental and Data Summary
+### Proteins
+From an initial $NUM_PROTS_OG proteins, $NUM_PROTS_REMOVED with NA values were removed, leaving $NUM_PROTS proteins in the dataset. The median abundance per protein was $MEDIAN_AVERAGE_ABUNDANCE (range: $MIN_AVERAGE_ABUNDANCE - $MAX_AVERAGE_ABUNDANCE).
+
 ### Samples
 The data contain $NUM_SAMPLES samples from $NUM_TREATMENTS treatment groups ($TREATMENTS). The distribution of proteins in the different treatments is shown below. It is important to check that they look as you expect. If you think samples in the different treatments should have roughly similar distributions, is that what you see? It is also worth checking the means and standard deviations of the different groups:
 
 Mean abundances across treatments: $MEAN_ABUNDANCE
 Standard deviations across treatments: $SD_ABUNDANCE
 
-<img src="../output/full_dataset/plots/histogram_all_treatments_plot.png" width="600" height="450">
+There are four stages of pre-processing shown here. The raw values, the log2 values, the values normalised for total sample abundance, and the normalised and imputed values. See docs for more info.
 
-### Proteins
-From an initial $NUM_PROTS_OG proteins, $NUM_PROTS_REMOVED with NA values were removed, leaving $NUM_PROTS proteins in the dataset. The median abundance per protein was $MEDIAN_AVERAGE_ABUNDANCE (range: $MIN_AVERAGE_ABUNDANCE - $MAX_AVERAGE_ABUNDANCE).
+#### Distributions of treatments
 
-***** distribution of all proteins ******
+<img src="../output/plots/KDE_preProcessing_all_treatments_plot.png" width="600" height="600">
+
+#### Distributions of samples
+
+<img src="../output/plots/boxplots_preProcessing_all_treatments_plot.png" width="800" height="800">
 
 ## Analysis
 
@@ -64,12 +69,6 @@ Volcano plots highlight differential protein abundance between two conditions, w
 Here, we show the top 20 proteins by absolute difference in log2 fold change, including the protein, associated genes, treatment means, LFC, and FDR-corrected p value.
 
 {{TOP_20_PROTS}}
-
-#### Shared and Differential Abundance
-We may want to know how many protein abundances are unique to each treatment and if there are any proteins with different abundances in multiple treatments. We use a venn diagram to show this when there are two or three treatments. For four or more treatments, we show the overlaps using an upset plot. Both plots highlight shared and unique proteins, helping to identify overlaps or exclusivity between groups. Verify data quality by checking for unexpected patterns, such as overly large or small intersections. Focus on intersections of interest, such as proteins unique to a condition or shared across all.
-
-########## Venn or Upset plot here ##########
-########## wait until plan for zeroes/missings ##########
 
 ### Pathway/functional enrichment (ORA, GSEA)
 We have identified proteins that are different among treatment groups. Now we look at the functions associated with these proteins (and related genes) to see if any functions or pathways are particularly common. Specifically, we are looking for pathways that are overrepresented relative to all known functions for our dataset.
