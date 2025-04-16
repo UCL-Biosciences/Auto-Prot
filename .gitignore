@@ -1,4 +1,11 @@
+
 input/data/metadata.csv
 input/data/proteindata.csv
 output/*
 configs/auto-prot-config.json
+__pycache__/
+*.pyc
+
+# Bytecode
+__pycache__/
+*.pyc

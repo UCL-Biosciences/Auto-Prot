@@ -68,7 +68,7 @@ Volcano plots highlight differential protein abundance between two conditions, w
 #### Table of Differentially Expressed Proteins
 Here, we show the top 20 proteins by absolute difference in log2 fold change, including the protein, associated genes, treatment means, LFC, and FDR-corrected p value.
 
-{{TOP_20_PROTS}}
+{{TOP_LFC_PROTS}}
 
 ### Pathway/functional enrichment (ORA, GSEA)
 We have identified proteins that are different among treatment groups. Now we look at the functions associated with these proteins (and related genes) to see if any functions or pathways are particularly common. Specifically, we are looking for pathways that are overrepresented relative to all known functions for our dataset.

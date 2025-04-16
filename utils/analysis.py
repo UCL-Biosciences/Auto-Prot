@@ -22,7 +22,9 @@ from statsmodels.tools.sm_exceptions import ConvergenceWarning
 from glob import glob
 from PIL import Image
 from pathlib import Path
+from matplotlib import patches
 
+import fnmatch
 
 ##### there is a warning to suppress when fitting models
 warnings.filterwarnings("ignore", message="Negative binomial dispersion parameter alpha not set. Using default value alpha=1.0.")
@@ -291,98 +293,12 @@ def make_volcano(df_pair: pd.DataFrame,
     if os.name == 'nt':
         top_prot_path = '\\\\?\\' + os.path.abspath(top_prot_path)
     top_20_df.to_csv(top_prot_path, index=True)
-    return diffExpr_df, top_20_df
+    return diffExpr_df
 
-def plot_abundance(df: pd.DataFrame,
-                   top_20_df: pd.DataFrame,
-                   metadata: pd.DataFrame,
-                 output_dir: str) :
-    """
-    generate box plots of abundances of most differentially abundant proteins
-
-    Args:
-        df (pd.DataFrame): df with raw abundance
-        top_20_df (pd.DataFrame):  abundance data for top 20 proteins by LFC
-        metadata (pd.DataFrame): project metadata
-        output_dir (str): Directory to save the output.
-
-    Returns:
-    """
-    top_10_df = top_20_df.head(10)
-    top_10_df = top_10_df.merge(
-        df,
-        left_on='Gene',
-        right_index=True,
-        how = 'left'
-    ).set_index( 'Gene' )
-    top_10_df = top_10_df.loc[:, top_10_df.columns.isin(metadata['sample_rep'])].T
-    top_10_df['treatment'] = top_10_df.index.map(metadata.set_index('sample_rep')['treatment'])
-    # rename index
-    top_10_df.index.name = 'sample_rep'
-    if top_10_df.isna().any().any():
-        raise ValueError(f"Error: Missing data in protein abundances. Expected only complete data")
-    # Create the panel of 10 plots with gene names added
-    fig, axes = plt.subplots(2, 5, figsize=(20, 10), sharey=False)  # Set sharey=False for varying scales
-    # Flatten the axes array for easier iteration
-    axes = axes.flatten()
-
-    treatment_levels = top_10_df['treatment'].unique()
-
-    ##### Generate plots for each protein ######
-    for i, protein in enumerate(top_10_df.columns.drop('treatment')):
-        # Create the data for this protein
-        plot_data = pd.DataFrame({
-            'Abundance': top_10_df[protein],
-            'Treatment': top_10_df['treatment']
-        })
-        # Create the boxplot with points overlaid
-        sns.boxplot(
-            data=plot_data,
-            x='Treatment',
-            y='Abundance',
-            ax=axes[i],
-            hue='Treatment',
-            legend=False,
-            palette={treatment_levels[0]: 'blue', treatment_levels[1]: 'orange'},
-            showmeans=True,
-            meanline=True
-        )
-        sns.stripplot(
-            data=plot_data,
-            x='Treatment',
-            y='Abundance',
-            color='black',
-            alpha=0.7,
-            jitter=True,
-            ax=axes[i]
-        )
-        # Customize each subplot
-        axes[i].set_title(f'{protein} Abundance', fontsize=12)
-        axes[i].set_xlabel('Treatment', fontsize=10)
-        axes[i].set_ylabel('Abundance', fontsize=10)
-    # Adjust layout to avoid overlap and show the plot
-    plt.tight_layout()
-    # Save plot and PCA data
-    plot_path = os.path.join(output_dir, 'plots', 'abundance_top10_plot.png')
-    plt.savefig(plot_path, dpi=300)
-    plt.close()
-
-def plot_venn(anova_lm_df: pd.DataFrame,
-                        output_dir: str) :
-    """
-    generate box plots of abundances of most differentially abundant proteins
-
-    Args:
-        df (pd.DataFrame): df with raw abundance
-        top_20_df (pd.DataFrame):  abundance data for top 20 proteins by LFC
-        metadata (pd.DataFrame): project metadata
-        output_dir (str): Directory to save the output.
-
-    Returns:
-    """
 
 def enrichment_analysis(anova_lm_df: pd.DataFrame,
                         pair_name: str,
+                        config: dict,
                         output_dir: str) :
     """
     run enrichment analysis to identify overrepresented genes, functions and pathways
@@ -395,12 +311,14 @@ def enrichment_analysis(anova_lm_df: pd.DataFrame,
     Returns:
         enrichment data (pd.DataFrame)
     """    
+    # threshold to define genes of interest
+    LFC_threshold = config.get("LFC_threshold")
     ##### Calculate enrichment #####
     gp = GProfiler(return_dataframe=True)
     ##### G Profiler options #####
     # for ORA, just need a list of genes
     pathway_query_genes = anova_lm_df.loc[
-    (anova_lm_df['adj.P.Val'] < 0.05)
+    ((anova_lm_df['adj.P.Val'] < 0.05) & (abs(anova_lm_df['logFC']) >= LFC_threshold))
     ].index
     # in the case of phosphoproteomic data, gene names have a double __ with phosphorylation state added,
     # for now, we remove the phospho data from this set of genes
@@ -429,7 +347,7 @@ def enrichment_analysis(anova_lm_df: pd.DataFrame,
             all_results = all_results
         )  # REAC for Reactome
         ### save results to file
-        enrichment_path = os.path.join(output_dir, 'data', pair_name, 'pathway_enrichment.csv')
+        enrichment_path = os.path.join(output_dir, 'data', pair_name, ( pair_name + '_pathway_enrichment.csv') )
         ## windows sometimes rejects long paths. Workaround:
         if os.name == 'nt':
             enrichment_path = '\\\\?\\' + os.path.abspath(enrichment_path)
@@ -459,7 +377,7 @@ def enrichment_analysis(anova_lm_df: pd.DataFrame,
         # Adjust layout to ensure labels are fully visible
         plt.tight_layout()
         # Save plot data
-        plot_path = os.path.join(output_dir, 'plots', pair_name, 'pathway_enrichment_plot.png')
+        plot_path = os.path.join(output_dir, 'plots', pair_name, ( pair_name + '_pathway_enrichment_plot.png'))
         ## windows sometimes rejects long paths. Workaround:
         if os.name == 'nt':
             plot_path = '\\\\?\\' + os.path.abspath(plot_path)
@@ -551,7 +469,7 @@ def combine_csv_files(filename,
     csv_files = []
     for root, dirs, files in os.walk(output_dir):
         for file in files:
-            if file == filename:
+            if fnmatch.fnmatch(file, filename):  # supports wildcards like * and ?
                 csv_files.append(os.path.join(root, file))
     # # Search for matching CSV files in subdirectories
     # search_pattern = os.path.join(output_dir, "data", "**", filename)
@@ -631,12 +549,6 @@ def run_analysis(df: pd.DataFrame,
     df_heatmap = generate_heatmap(df.T, output_dir)
     results['heatmap'] = df_heatmap
 
-    # Look at overlaps of differnential abundance
-
-    #### if 2 or 3 groups, Venn
-
-    #### if 4 or more, upset
-
     ###### Pairwise Analyses #####
     # if there are > 2 treatment groups, pairwise analyses will have to be run separately for each pair of treatments
     treatment_pairs = list(itertools.combinations(metadata['treatment'].unique(), 2))
@@ -652,17 +564,18 @@ def run_analysis(df: pd.DataFrame,
             os.mkdir(os.path.join(output_dir, 'data', pair_name))
         # Generate and save volcano plot
         print("Generating volcano plot for pair ", pair_name, "...")
-        anova_lm_df, top_20_df = make_volcano(df_pair,
-                                              output_dir,
-                                              pair_name = pair_name,
-                                              config = config,
-                                              metadata_pair = metadata_pair)
+        anova_lm_df = make_volcano(df_pair,
+                                   output_dir,
+                                   metadata_pair=metadata_pair,
+                                   pair_name = pair_name,
+                                   config = config)
         results_name = 'df_lm_' + pair_name
-        results['results_name'] = anova_lm_df
+        results[results_name] = anova_lm_df
         # Find overrepresented pathways and save output
         print("Running enrichment analysis for pair ", pair_name, "...")
         enrichment_analysis(anova_lm_df,
                             pair_name,
+                            config,
                             output_dir
                             )
 
@@ -675,12 +588,15 @@ def run_analysis(df: pd.DataFrame,
                   search_term = "pathway_enrichment_plot.png",
                   output_dir=output_dir) 
     
-    # Combine the top 10 most differentially abundant proteins
-    combine_csv_files(filename="top_20_by_LFC.csv",
-                      output_dir=output_dir)
+    # Combine most DE proteins for each treatment pair
+    combine_csv_files(filename="limmaOut.csv",
+                      output_dir=output_dir,
+                      output_filename = os.path.join(output_dir, f"data/combined_topLFC.csv"))
+    
     # Combine pathway enrichment data
-    combine_csv_files(filename="pathway_enrichment.csv",
-                      output_dir=output_dir)
+    combine_csv_files(filename="*pathway_enrichment.csv",
+                      output_dir=output_dir,
+                      output_filename = os.path.join(output_dir, f"data/combined_top_pathway_enrichment.csv"))
 
     ### write to file the version of this script
     REPO_ROOT = get_repo_root()
