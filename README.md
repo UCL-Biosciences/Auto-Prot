@@ -25,6 +25,8 @@ This repository contains the Auto-Proteomics analysis pipeline for generating st
 Create the environment and download dependencies using the information in configuration files: `conda env create -f configs/auto-prot-env-YOUR-OS-HERE.yml`. Which version you use will depend on whether you are using a Windows machine or a Mac.
 Acivate the environment with: `conda activate auto-proteomics`
 
+*Optional* After creating the conda environment, run: `pre-commit install`. This sets up automatic code formatting and linting before each commit.
+
 ### 4. Generate outputs
 #### Input
 Make sure your data are in `data/proteindata.csv` and `data/metadata.csv` (requirements below). If you don't add your files to the `data` folder, you can generate an example dataset by running `python utils/gen_random_data.py`
