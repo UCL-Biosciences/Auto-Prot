@@ -1,40 +1,41 @@
 ### Perform data analysis ###
 
 ## Using objects created previously: metadata, df_protAbundance
+import fnmatch
+import itertools
+import json
 import os
 import subprocess
-import json
-import pandas as pd
-import numpy as np
-import seaborn as sns
+import warnings
+
 import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import seaborn as sns
+from gprofiler import GProfiler
+from PIL import Image
+from scipy.spatial.distance import pdist, squareform
 from sklearn.decomposition import PCA
 from sklearn.manifold import MDS
-from scipy.spatial.distance import pdist, squareform
-import statsmodels.api as sm
-import statsmodels.formula.api as smf
-from statsmodels.stats.multitest import multipletests
-from gprofiler import GProfiler
-from utils.check_env import get_repo_root
-import itertools
-import warnings
 from statsmodels.tools.sm_exceptions import ConvergenceWarning
-from glob import glob
-from PIL import Image
-from pathlib import Path
-from matplotlib import patches
 
-import fnmatch
+from utils.check_env import get_repo_root
 
 ##### there is a warning to suppress when fitting models
-warnings.filterwarnings("ignore", message="Negative binomial dispersion parameter alpha not set. Using default value alpha=1.0.")
+warnings.filterwarnings(
+    "ignore",
+    message="Negative binomial dispersion parameter alpha not set. Using default value alpha=1.0.",
+)
 # Suppress only ConvergenceWarning
 warnings.simplefilter("ignore", ConvergenceWarning)
 
-def generate_pca(df: pd.DataFrame,
-                 output_dir: str,
-                 metadata: pd.DataFrame = None,
-                 components: int = 2) -> pd.DataFrame:
+
+def generate_pca(
+    df: pd.DataFrame,
+    output_dir: str,
+    metadata: pd.DataFrame = None,
+    components: int = 2,
+) -> pd.DataFrame:
     """
     Perform PCA on the given DataFrame and save the results as a plot.
 
@@ -51,48 +52,50 @@ def generate_pca(df: pd.DataFrame,
     pca = PCA(n_components=components)
     principal_components = pca.fit_transform(df)
     n_prot = df.shape[1]
-    plot_title = 'PCA Plot (n proteins = ' + str(n_prot) + ')'
+    plot_title = "PCA Plot (n proteins = " + str(n_prot) + ")"
     # Create DataFrame with PCA results
     df_PCA = pd.DataFrame(
         data=principal_components,
-        columns=[f'principal component {i + 1}' for i in range(components)],
-        index = pd.DataFrame(df).index
+        columns=[f"principal component {i + 1}" for i in range(components)],
+        index=pd.DataFrame(df).index,
     )
     # pull over treatment from metadata
     # df_PCA . look up by index . and map to
     # metadata . temporarily set index to sample_id [ and find treatment ]
-    df_PCA['treatment'] = df_PCA.index.map(metadata.set_index('sample_rep')['treatment'])
+    df_PCA["treatment"] = df_PCA.index.map(
+        metadata.set_index("sample_rep")["treatment"]
+    )
     # Calculate variance explained by each component
     explained_variance = pca.explained_variance_ratio_
     pc_labels = [
-        f'PC{i + 1} ({round(var * 100, 2)}%)'
+        f"PC{i + 1} ({round(var * 100, 2)}%)"
         for i, var in enumerate(explained_variance[:components])
     ]
     # Plot PCA
     plt.figure(figsize=(4, 3))
     plot_pca = sns.scatterplot(
         data=df_PCA,
-        x='principal component 1',
-        y='principal component 2',
-        hue='treatment'
+        x="principal component 1",
+        y="principal component 2",
+        hue="treatment",
     )
     # Annotate points with sample IDs
     for i in range(df_PCA.shape[0]):
         plt.text(
-            x=df_PCA['principal component 1'][i] + 0.1, 
-            y=df_PCA['principal component 2'][i] + 0.1,
+            x=df_PCA["principal component 1"][i] + 0.1,
+            y=df_PCA["principal component 2"][i] + 0.1,
             s=df_PCA.index[i],  # Sample ID
             fontsize=9,
-            ha='center',
-            va='bottom'
+            ha="center",
+            va="bottom",
         )
     # Set labels and title
     plot_pca.set(xlabel=pc_labels[0], ylabel=pc_labels[1])
     plt.title(plot_title)
     plt.tight_layout()
     # Save plot and PCA data
-    plot_path = os.path.join(output_dir, 'plots', 'pca_plot.png')
-    data_path = os.path.join(output_dir, 'data', 'pca_data.csv')
+    plot_path = os.path.join(output_dir, "plots", "pca_plot.png")
+    data_path = os.path.join(output_dir, "data", "pca_data.csv")
     plt.savefig(plot_path, dpi=300)
     plt.close()
     df_PCA.to_csv(data_path, index=False)
@@ -100,9 +103,10 @@ def generate_pca(df: pd.DataFrame,
     print(f"PCA data saved to {data_path}")
     return df_PCA
 
-def generate_MDS(df: pd.DataFrame,
-                 output_dir: str,
-                 metadata: pd.DataFrame = None) -> pd.DataFrame:
+
+def generate_MDS(
+    df: pd.DataFrame, output_dir: str, metadata: pd.DataFrame = None
+) -> pd.DataFrame:
     """
     Perform MDS on the given DataFrame and save the results as a plot.
 
@@ -116,47 +120,56 @@ def generate_MDS(df: pd.DataFrame,
     """
     # Perform MDS
     # pdist(x) computes the Euclidean distances between each pair of points in an array
-    dissimilarity_array = pdist(df, metric='euclidean')
+    dissimilarity_array = pdist(df, metric="euclidean")
     n_prot = df.shape[1]
-    plot_title = 'MDS Dissimilarity based on Protein Abundance (n proteins = ' + str(n_prot) + ')'
+    plot_title = (
+        "MDS Dissimilarity based on Protein Abundance (n proteins = "
+        + str(n_prot)
+        + ")"
+    )
     # suqareform() returns the matrix
     dissimilarity_matrix = squareform(dissimilarity_array)
     # Perform NMDS
-    mds = MDS(n_components=2, # n_components is number of dimensions
-            dissimilarity="precomputed", # we calculate above
-            random_state=42,
-            metric = True ) 
+    mds = MDS(
+        n_components=2,  # n_components is number of dimensions
+        dissimilarity="precomputed",  # we calculate above
+        random_state=42,
+        metric=True,
+    )
     # Fit the data  and return the embedded coordinates.
-    mds_coords = mds.fit_transform(dissimilarity_matrix) # If dissimilarity=='precomputed', the input should be the dissimilarity matrix.
+    mds_coords = mds.fit_transform(
+        dissimilarity_matrix
+    )  # If dissimilarity=='precomputed', the input should be the dissimilarity matrix.
     # Convert the NMDS coordinates (nmds_coords) to a pandas DataFrame
-    mds_coords_df = pd.DataFrame(mds_coords,
-                                 columns=['MDS1', 'MDS2'],
-                                 index = pd.DataFrame(df).index)
+    mds_coords_df = pd.DataFrame(
+        mds_coords, columns=["MDS1", "MDS2"], index=pd.DataFrame(df).index
+    )
     # pull over treatment from metadata
     # df_PCA . look up by index . and map to
     # metadata . temporarily set index to sample_id [ and find treatment ]
-    mds_coords_df['treatment'] = mds_coords_df.index.map(metadata.set_index('sample_rep')['treatment'])
+    mds_coords_df["treatment"] = mds_coords_df.index.map(
+        metadata.set_index("sample_rep")["treatment"]
+    )
     #### Generate NMDS plot
-    plot_nmds = sns.scatterplot(data = mds_coords_df, x = 'MDS1', y = 'MDS2',
-                    hue = 'treatment')
+    plot_nmds = sns.scatterplot(data=mds_coords_df, x="MDS1", y="MDS2", hue="treatment")
     ## seaborn returns an axis-object rather than a figure, so you can still alter features of it. E.g. axes names:
-    plot_nmds.set(xlabel = 'MDS 1', ylabel = 'MDS 2')
+    plot_nmds.set(xlabel="MDS 1", ylabel="MDS 2")
     # Add sample IDs from the 'target' column with an offset
     for i in range(mds_coords_df.shape[0]):
         plt.text(
-            x=mds_coords_df['MDS1'][i] + 1,  # Add a small x-offset
-            y=mds_coords_df['MDS2'][i] + 1,  # Add a small y-offset
+            x=mds_coords_df["MDS1"][i] + 1,  # Add a small x-offset
+            y=mds_coords_df["MDS2"][i] + 1,  # Add a small y-offset
             s=mds_coords_df.index[i],
             fontsize=9,
-            ha='center',  # Horizontal alignment
-            va='bottom'   # Vertical alignment
+            ha="center",  # Horizontal alignment
+            va="bottom",  # Vertical alignment
         )
     # Set labels and title
     plt.title(plot_title)
     plt.tight_layout()
     # Save plot and PCA data
-    plot_path = os.path.join(output_dir, 'plots', 'mds_plot.png')
-    data_path = os.path.join(output_dir, 'data', 'mds_data.csv')
+    plot_path = os.path.join(output_dir, "plots", "mds_plot.png")
+    data_path = os.path.join(output_dir, "data", "mds_data.csv")
     plt.savefig(plot_path, dpi=300)
     plt.close()
     mds_coords_df.to_csv(data_path, index=False)
@@ -165,8 +178,7 @@ def generate_MDS(df: pd.DataFrame,
     return mds_coords_df
 
 
-def generate_heatmap(df: pd.DataFrame,
-                 output_dir: str) -> pd.DataFrame:
+def generate_heatmap(df: pd.DataFrame, output_dir: str) -> pd.DataFrame:
     """
     Generate a heatmap using the abundance data
 
@@ -175,43 +187,51 @@ def generate_heatmap(df: pd.DataFrame,
         output_dir (str): Directory to save the PCA plot and data.
 
     Returns:
-        
+
     """
     #### need the other orientation for heatmap
     # transpose and add sample ids as colnames
     df_heat = pd.DataFrame(df.T)
     df_heat.columns = df.index
     n_prot = df_heat.shape[0]
-    plot_title = 'heatmap of euclidean distance (n protein = ' + str(n_prot) + ')'
+    plot_title = "heatmap of euclidean distance (n protein = " + str(n_prot) + ")"
     # Create clustermap
-    heatmap = sns.clustermap(df_heat, 
-                    #annot=True, 
-                    fmt=".2f",
-                    cmap="viridis")
+    heatmap = sns.clustermap(
+        df_heat,
+        # annot=True,
+        fmt=".2f",
+        cmap="viridis",
+    )
     # Move x-axis labels (column names) to the top
     heatmap.ax_heatmap.xaxis.set_ticks_position("top")  # Move ticks to the top
     heatmap.ax_heatmap.xaxis.set_label_position("top")  # Move axis label to the top
     # Remove dendrogram tick labels
-    heatmap.ax_heatmap.set_xticks(np.arange(len(df_heat.columns)))  # Set tick positions for columns
-    heatmap.ax_heatmap.set_xticklabels(df_heat.columns, rotation=45, ha='left')  # Use only column names
+    heatmap.ax_heatmap.set_xticks(
+        np.arange(len(df_heat.columns))
+    )  # Set tick positions for columns
+    heatmap.ax_heatmap.set_xticklabels(
+        df_heat.columns, rotation=45, ha="left"
+    )  # Use only column names
     # Explicitly disable extra tick labels from the dendrogram
-    heatmap.ax_heatmap.tick_params(axis='x', which='both', bottom=False, top=True)
+    heatmap.ax_heatmap.tick_params(axis="x", which="both", bottom=False, top=True)
     # Set labels and title
     plt.title(plot_title)
     # plt.tight_layout()
     # Save plot and PCA data
-    plot_path = os.path.join(output_dir, 'plots', 'heatmap_plot.png')
+    plot_path = os.path.join(output_dir, "plots", "heatmap_plot.png")
     plt.savefig(plot_path, dpi=300)
     plt.close()
     print(f"heatmap saved to {plot_path}")
     return df_heat
 
-def make_volcano(df_pair: pd.DataFrame,
-                 output_dir: str,
-                 pair_name: str,
-                 config: dict,
-                 metadata_pair: pd.DataFrame = None
-                 ) -> pd.DataFrame:
+
+def make_volcano(
+    df_pair: pd.DataFrame,
+    output_dir: str,
+    pair_name: str,
+    config: dict,
+    metadata_pair: pd.DataFrame = None,
+) -> pd.DataFrame:
     """
     fit model for each protein. Calls limma script
 
@@ -226,80 +246,99 @@ def make_volcano(df_pair: pd.DataFrame,
         df_model_out (pd.DataFrame): gene name, F statistic, p value, FDR corrected p value.
     """
     #### calculate DE using limma (R package) ####
-    pair_data_path = os.path.join(output_dir, 'data', pair_name, 'prots.csv')
-    df_pair.to_csv(pair_data_path, index = True)
+    pair_data_path = os.path.join(output_dir, "data", pair_name, "prots.csv")
+    df_pair.to_csv(pair_data_path, index=True)
     # Save sample metadata
-    pair_metadata_path = os.path.join(output_dir, 'data', pair_name, 'metadata.csv')
+    pair_metadata_path = os.path.join(output_dir, "data", pair_name, "metadata.csv")
     metadata_pair.to_csv(pair_metadata_path, index=False)
     # Define where to save the limma results
-    pair_result_path = os.path.join(output_dir, 'data', pair_name, 'limmaOut.csv')
+    pair_result_path = os.path.join(output_dir, "data", pair_name, "limma_output.csv")
     # run R script - note: r-limma-env conda env required
-    subprocess.run([
-    "conda", "run", "-n", "r-limma-env",
-    "Rscript", "utils/DE-limma.R",
-    pair_data_path.replace("\\", "/"),
-    pair_metadata_path.replace("\\", "/"),
-    pair_result_path.replace("\\", "/")
-    ], check=True)
+    subprocess.run(
+        [
+            "conda",
+            "run",
+            "-n",
+            "r-limma-env",
+            "Rscript",
+            "utils/DE-limma.R",
+            pair_data_path.replace("\\", "/"),
+            pair_metadata_path.replace("\\", "/"),
+            pair_result_path.replace("\\", "/"),
+        ],
+        check=True,
+    )
     # read results back in
     diffExpr_df = pd.read_csv(pair_result_path, index_col=0)
     n_prot = diffExpr_df.shape[0]
-    diffExpr_df['Log10_FDR_P_Value'] = -np.log10(diffExpr_df['adj.P.Val'])
-    diffExpr_df['Log10_unadjusted_p_Value'] = -np.log10(diffExpr_df['P.Value'])
+    diffExpr_df["Log10_FDR_P_Value"] = -np.log10(diffExpr_df["adj.P.Val"])
+    diffExpr_df["Log10_unadjusted_p_Value"] = -np.log10(diffExpr_df["P.Value"])
     ### whether to plot the -log10(p_value) i.e. unadjusted or -log10(FDR_p_value) is specified in json field "LFC_plot_p_or_FDRp"
+    LFC_threshold = config.get("LFC_threshold")
+    FDR_threshold = config.get("FDR_threshold")
     Volcano_y_axis = config.get("LFC_plot_p_or_FDRp")
     Volcano_y_data = diffExpr_df[Volcano_y_axis]
     # Add the Colour column based on LOG2FC and p_values_FDR
-    diffExpr_df['Colour'] = diffExpr_df.apply(
-        lambda row: 'blue' if (abs(row['logFC']) > 2 and row['adj.P.Val'] < 0.05) else 'gray', axis=1
+    diffExpr_df["Colour"] = diffExpr_df.apply(
+        lambda row: (
+            "blue"
+            if (abs(row["logFC"]) > LFC_threshold and row["adj.P.Val"] < FDR_threshold)
+            else "gray"
+        ),
+        axis=1,
     )
-    diffExpr_path = os.path.join(output_dir, 'data', pair_name, 'limma_output.csv')
+    diffExpr_path = os.path.join(output_dir, "data", pair_name, "limma_output.csv")
     diffExpr_df.to_csv(diffExpr_path, index=True)
     ### Create volcano plot
-    plot_title = 'Protein Abundance Log Fold Change for treatments \n' + pair_name + '(n = ' + str(n_prot) + ')'    
+    plot_title = (
+        "Protein Abundance Log Fold Change for treatments \n"
+        + pair_name
+        + "(n = "
+        + str(n_prot)
+        + ")"
+    )
     sns.scatterplot(
-        data=diffExpr_df, 
-        x='logFC',  # Log fold change
+        data=diffExpr_df,
+        x="logFC",  # Log fold change
         y=Volcano_y_data,  # -log10(FDR-corrected p-value)
-        hue='Colour',  # Color based on significance
-        palette={'blue': 'blue', 'gray': 'gray'},
+        hue="Colour",  # Color based on significance
+        palette={"blue": "blue", "gray": "gray"},
         legend=False,  # No legend for this plot
-        alpha=0.7  # Transparency for points
+        alpha=0.7,  # Transparency for points
     )
     # Customize the plot
-    plt.axvline(x=2, color='red', linestyle='--', linewidth=1)
-    plt.axvline(x=-2, color='red', linestyle='--', linewidth=1) 
-    plt.axhline(y=-np.log10(0.05), color='red', linestyle='--', linewidth=1) 
+    plt.axvline(x=LFC_threshold, color="red", linestyle="--", linewidth=1)
+    plt.axvline(x=-LFC_threshold, color="red", linestyle="--", linewidth=1)
+    plt.axhline(y=-np.log10(FDR_threshold), color="red", linestyle="--", linewidth=1)
     plt.title(plot_title, fontsize=16)
-    plt.xlabel('Log2 Fold Change (LFC)', fontsize=12)
+    plt.xlabel("Log2 Fold Change (LFC)", fontsize=12)
     plt.ylabel(Volcano_y_axis, fontsize=12)
-    plt.grid(True, linestyle='--', alpha=0.6)
+    plt.grid(True, linestyle="--", alpha=0.6)
     # Set symmetrical x-axis
     # Save plot and PCA data
-    #plt.xlim(-4, 4)
-    plot_path = os.path.join(output_dir, 'plots', pair_name, 'volcano_plot.png')
-    if os.name == 'nt':
-        plot_path = '\\\\?\\' + os.path.abspath(plot_path)
+    # plt.xlim(-4, 4)
+    plot_path = os.path.join(output_dir, "plots", pair_name, "volcano_plot.png")
+    if os.name == "nt":
+        plot_path = "\\\\?\\" + os.path.abspath(plot_path)
     plt.savefig(plot_path, dpi=300)
     plt.close()
     # save the top 20 rows to csv for display in final report
     # Sort by a relevant column (modify column name as needed)
-    sorted_df = diffExpr_df.sort_values(by="logFC", ascending=False, key = abs)
+    sorted_df = diffExpr_df.sort_values(by="logFC", ascending=False, key=abs)
     # Select the top 20 rows
-    top_20_df = sorted_df.head(20).round(decimals = 2)
-    top_20_df = top_20_df.round({"P.Value":4, "adj.P.Value":4})
+    top_20_df = sorted_df.head(20).round(decimals=2)
+    top_20_df = top_20_df.round({"P.Value": 4, "adj.P.Value": 4})
     # Save to CSV
-    top_prot_path = os.path.join(output_dir, 'data', pair_name, 'top_20_by_LFC.csv')
-    if os.name == 'nt':
-        top_prot_path = '\\\\?\\' + os.path.abspath(top_prot_path)
+    top_prot_path = os.path.join(output_dir, "data", pair_name, "top_20_by_LFC.csv")
+    if os.name == "nt":
+        top_prot_path = "\\\\?\\" + os.path.abspath(top_prot_path)
     top_20_df.to_csv(top_prot_path, index=True)
     return diffExpr_df
 
 
-def enrichment_analysis(anova_lm_df: pd.DataFrame,
-                        pair_name: str,
-                        config: dict,
-                        output_dir: str) :
+def enrichment_analysis(
+    anova_lm_df: pd.DataFrame, pair_name: str, config: dict, output_dir: str
+):
     """
     run enrichment analysis to identify overrepresented genes, functions and pathways
 
@@ -310,88 +349,104 @@ def enrichment_analysis(anova_lm_df: pd.DataFrame,
 
     Returns:
         enrichment data (pd.DataFrame)
-    """    
+    """
     # threshold to define genes of interest
     LFC_threshold = config.get("LFC_threshold")
+    FDR_threshold = config.get("FDR_threshold")
     ##### Calculate enrichment #####
     gp = GProfiler(return_dataframe=True)
     ##### G Profiler options #####
     # for ORA, just need a list of genes
     pathway_query_genes = anova_lm_df.loc[
-    ((anova_lm_df['adj.P.Val'] < 0.05) & (abs(anova_lm_df['logFC']) >= LFC_threshold))
+        (
+            (anova_lm_df["adj.P.Val"] < FDR_threshold)
+            & (abs(anova_lm_df["logFC"]) >= LFC_threshold)
+        )
     ].index
     # in the case of phosphoproteomic data, gene names have a double __ with phosphorylation state added,
     # for now, we remove the phospho data from this set of genes
     # may want to look at separately later
-    if any(isinstance(gene, str) and '__' in gene for gene in pathway_query_genes):
+    if any(isinstance(gene, str) and "__" in gene for gene in pathway_query_genes):
         pathway_query_genes = [str(gene).split("__")[0] for gene in pathway_query_genes]
     # pathway database can be REAC, GO or KEGG. Also less common but available: CORUM, HPA, TF and MIRNA
     # defaults to REAC
-    source=['GO']
-    plot_title = 'Pathway Enrichment (' + source[0] + ')' 
+    source = ["GO"]
+    plot_title = "Pathway Enrichment (" + source[0] + ")"
     # p value threshold defaults to 0.05
-    p_threshold=0.05
+    p_threshold = 0.05
     # all results returns all results, not just those below p threshold
     all_results = False
     # a background set can be specified e.g. background=["BRCA1", "TP53", "AKT1", "MTOR", "EGFR", "MYC"]
     # multiple testing correction can be g_SCS (default, Set Counts and Sizes), bonferroni, or fdr
     # from quick look, g_SCS seems to be similar to bonferroni, which are both less strict than fdr.
-    significance_threshold_method='g_SCS'
+    significance_threshold_method = "g_SCS"
     ##### Running pathway enrichment #####
     if len(pathway_query_genes) > 0:
-        pathway_result = gp.profile(organism='hsapiens',
+        pathway_result = gp.profile(
+            organism="hsapiens",
             query=list(pathway_query_genes),
             sources=source,
-            user_threshold = p_threshold,
-            significance_threshold_method = significance_threshold_method,
-            all_results = all_results
+            user_threshold=p_threshold,
+            significance_threshold_method=significance_threshold_method,
+            all_results=all_results,
         )  # REAC for Reactome
         ### save results to file
-        enrichment_path = os.path.join(output_dir, 'data', pair_name, ( pair_name + '_pathway_enrichment.csv') )
+        enrichment_path = os.path.join(
+            output_dir, "data", pair_name, (pair_name + "_pathway_enrichment.csv")
+        )
         ## windows sometimes rejects long paths. Workaround:
-        if os.name == 'nt':
-            enrichment_path = '\\\\?\\' + os.path.abspath(enrichment_path)
-        pathway_result.round({'precision': 2, 'recall':2}).to_csv(enrichment_path, index=False)
+        if os.name == "nt":
+            enrichment_path = "\\\\?\\" + os.path.abspath(enrichment_path)
+        pathway_result.round({"precision": 2, "recall": 2}).to_csv(
+            enrichment_path, index=False
+        )
         ##### Plot enrichment #####
-        pathway_plot_df = pathway_result.sort_values('p_value', ascending = True).head(20)
-        pathway_plot_df['-log10(p_value)'] = -np.log10(pathway_plot_df['p_value'])
+        pathway_plot_df = pathway_result.sort_values("p_value", ascending=True).head(20)
+        pathway_plot_df["-log10(p_value)"] = -np.log10(pathway_plot_df["p_value"])
         # Setting up the plot using Seaborn and Matplotlib adjustments
         # plt.figure(figsize=(15, 20))
-        #ax = plt.gca()
+        # ax = plt.gca()
         sns.relplot(
-            data = pathway_plot_df,
-            x = "-log10(p_value)",
-            y = "name",
-            size = "recall", # the proportion of query genes associated with the term
-            color = "green",
-            height=15,       # Adjust figure height for better fit
-            aspect=0.5       # Maintain a suitable aspect ratio)
+            data=pathway_plot_df,
+            x="-log10(p_value)",
+            y="name",
+            size="recall",  # the proportion of query genes associated with the term
+            color="green",
+            height=15,  # Adjust figure height for better fit
+            aspect=0.5,  # Maintain a suitable aspect ratio)
         )
         # Adjustments for axes padding and limits
         # Adjustments for labels and titles
-        plt.xlabel('-log10(p-value)', fontsize=14)
-        plt.ylabel('Pathway Names', fontsize=14)
+        plt.xlabel("-log10(p-value)", fontsize=14)
+        plt.ylabel("Pathway Names", fontsize=14)
         plt.title(plot_title, fontsize=16)
         plt.xticks(fontsize=12)
         plt.yticks(fontsize=12)  # Ensure y-axis labels are readable
         # Adjust layout to ensure labels are fully visible
         plt.tight_layout()
         # Save plot data
-        plot_path = os.path.join(output_dir, 'plots', pair_name, ( pair_name + '_pathway_enrichment_plot.png'))
+        plot_path = os.path.join(
+            output_dir, "plots", pair_name, (pair_name + "_pathway_enrichment_plot.png")
+        )
         ## windows sometimes rejects long paths. Workaround:
-        if os.name == 'nt':
-            plot_path = '\\\\?\\' + os.path.abspath(plot_path)
-        plt.savefig(plot_path, dpi=300, bbox_inches="tight")  # bbox_inches ensures labels aren't cut off
+        if os.name == "nt":
+            plot_path = "\\\\?\\" + os.path.abspath(plot_path)
+        plt.savefig(
+            plot_path, dpi=300, bbox_inches="tight"
+        )  # bbox_inches ensures labels aren't cut off
         plt.close()
         return pathway_result
-    
+
+
 #### combine plots made for different treatment groups
-def combine_plots(search_term,
-                  search_path,
-                  output_dir, 
-                  output_filename = None,
-                  img_size=(800, 600),
-                  max_cols=3):
+def combine_plots(
+    search_term,
+    search_path,
+    output_dir,
+    output_filename=None,
+    img_size=(800, 600),
+    max_cols=3,
+):
     """
     Finds all images matching the search_term in subdirectories of search_path,
     arranges them in a grid with up to max_cols columns, and saves a single PNG.
@@ -406,15 +461,15 @@ def combine_plots(search_term,
     Returns:
     - str: Path to the saved combined image, or None if no images found.
     """
-    if os.name == 'nt':
-        search_path = '\\\\?\\' + os.path.abspath(search_path)
+    if os.name == "nt":
+        search_path = "\\\\?\\" + os.path.abspath(search_path)
     # Find all matching images
     image_paths = []
-    for root, dirs, files in os.walk(search_path):
+    for root, _, files in os.walk(search_path):
         for file in files:
             if search_term in file:
                 image_paths.append(os.path.join(root, file))
-    image_paths = [img for img in image_paths if 'combined_volcano_plot.png' not in img]
+    image_paths = [img for img in image_paths if "combined_volcano_plot.png" not in img]
     # image_paths = sorted(glob(os.path.join(search_path, "**", search_term), recursive=True))
     if not image_paths:
         print(f"No plots found for '{search_term}'.")
@@ -424,11 +479,15 @@ def combine_plots(search_term,
     # Determine grid layout
     cols = min(max_cols, len(images))
     rows = len(images) // cols
-    rows = (len(images) + cols - 1) // cols  # Round up to fit all images by adding cols - 1
+    rows = (
+        len(images) + cols - 1
+    ) // cols  # Round up to fit all images by adding cols - 1
     # Create a blank canvas
     combined_width = cols * img_size[0]
     combined_height = rows * img_size[1]
-    combined_image = Image.new("RGB", (combined_width, combined_height), (255, 255, 255)) # 255,255,255 specifies background colour = white
+    combined_image = Image.new(
+        "RGB", (combined_width, combined_height), (255, 255, 255)
+    )  # 255,255,255 specifies background colour = white
     # Paste images into grid
     for idx, img in enumerate(images):
         x_offset = (idx % cols) * img_size[0]
@@ -436,20 +495,21 @@ def combine_plots(search_term,
         combined_image.paste(img, (x_offset, y_offset))
     # Generate output filename if not provided
     if output_filename is None:
-        output_filename = os.path.join(output_dir, f"plots/combined_{search_term.replace('.png', '')}.png")
+        output_filename = os.path.join(
+            output_dir, f"plots/combined_{search_term.replace('.png', '')}.png"
+        )
         ## windows sometimes rejects long paths. Workaround:
-        if os.name == 'nt':
-            output_filename = '\\\\?\\' + os.path.abspath(output_filename)
+        if os.name == "nt":
+            output_filename = "\\\\?\\" + os.path.abspath(output_filename)
     # Save the final image
     combined_image.save(output_filename)
     print(f"Combined plot saved to: {output_filename}")
 
+
 ### for combining data from different treatments for display in the report ###
-def combine_csv_files(filename,
-                      output_dir,
-                      output_filename=None,
-                      top_n=10,
-                      new_column="treatment_pair"):
+def combine_csv_files(
+    filename, output_dir, output_filename=None, top_n=10, new_column="treatment_pair"
+):
     """
     General function to combine CSV files from subdirectories into a single file.
 
@@ -467,7 +527,7 @@ def combine_csv_files(filename,
     """
     # Find all matching images
     csv_files = []
-    for root, dirs, files in os.walk(output_dir):
+    for root, _, files in os.walk(output_dir):
         for file in files:
             if fnmatch.fnmatch(file, filename):  # supports wildcards like * and ?
                 csv_files.append(os.path.join(root, file))
@@ -482,14 +542,14 @@ def combine_csv_files(filename,
     combined_data = []
     # Process each found CSV file
     for file in csv_files:
-        if os.name == 'nt':
-            file = '\\\\?\\' + os.path.abspath(file)
+        if os.name == "nt":
+            file = "\\\\?\\" + os.path.abspath(file)
         # Extract the folder name (used as the category column)
-        folder_name = os.path.basename(os.path.dirname(file))  
+        folder_name = os.path.basename(os.path.dirname(file))
         # Read CSV and select top `n` rows
         df = pd.read_csv(file).head(top_n)
         # Add the extracted folder name as a new column
-        df[new_column] = folder_name  
+        df[new_column] = folder_name
         # Append to the list
         combined_data.append(df)
     # Merge all data
@@ -498,8 +558,8 @@ def combine_csv_files(filename,
     if output_filename is None:
         output_filename = os.path.join(output_dir, f"data/combined_{filename}")
         ## windows sometimes rejects long paths. Workaround:
-        if os.name == 'nt':
-            output_filename = '\\\\?\\' + os.path.abspath(output_filename)
+        if os.name == "nt":
+            output_filename = "\\\\?\\" + os.path.abspath(output_filename)
     # Ensure output directory exists
     os.makedirs(os.path.dirname(output_filename), exist_ok=True)
     # Save combined CSV
@@ -511,11 +571,14 @@ def combine_csv_files(filename,
 #### This is the main function for analysing data, combining the above ###
 ##########################################################################
 
-def run_analysis(df: pd.DataFrame,
-                 metadata: pd.DataFrame,
-                 output_dir: str,
-                 config: dict, 
-                 json_out: str) -> dict:
+
+def run_analysis(
+    df: pd.DataFrame,
+    metadata: pd.DataFrame,
+    output_dir: str,
+    config: dict,
+    json_out: str,
+) -> dict:
     """
     Full analysis pipeline: performs PCA,
 
@@ -537,75 +600,93 @@ def run_analysis(df: pd.DataFrame,
     # Perform PCA and save results
     print("Performing PCA...")
     pca_results = generate_pca(df.T, output_dir, metadata=metadata)
-    results['pca'] = pca_results
+    results["pca"] = pca_results
 
     # Perform MDS and save results
     print("Performing MDS...")
     mds_coords_df = generate_MDS(df.T, output_dir, metadata=metadata)
-    results['mds'] = mds_coords_df
+    results["mds"] = mds_coords_df
 
     # Generate and save heatmap
     print("Generating heatmap...")
     df_heatmap = generate_heatmap(df.T, output_dir)
-    results['heatmap'] = df_heatmap
+    results["heatmap"] = df_heatmap
 
     ###### Pairwise Analyses #####
     # if there are > 2 treatment groups, pairwise analyses will have to be run separately for each pair of treatments
-    treatment_pairs = list(itertools.combinations(metadata['treatment'].unique(), 2))
+    treatment_pairs = list(itertools.combinations(metadata["treatment"].unique(), 2))
 
     for pair in treatment_pairs:
         print("starting analysis for pair ", pair)
-        metadata_pair = metadata[metadata['treatment'].isin(pair)]
-        df_pair = df[metadata_pair['sample_rep'].tolist()]
-        pair_name = "_".join(map(str, pair) )
-        if not os.path.exists(os.path.join(output_dir, 'plots', pair_name)):
-            os.mkdir(os.path.join(output_dir, 'plots', pair_name))
-        if not os.path.exists(os.path.join(output_dir, 'data', pair_name)):
-            os.mkdir(os.path.join(output_dir, 'data', pair_name))
+        metadata_pair = metadata[metadata["treatment"].isin(pair)]
+        df_pair = df[metadata_pair["sample_rep"].tolist()]
+        pair_name = "_".join(map(str, pair))
+        if not os.path.exists(os.path.join(output_dir, "plots", pair_name)):
+            os.mkdir(os.path.join(output_dir, "plots", pair_name))
+        if not os.path.exists(os.path.join(output_dir, "data", pair_name)):
+            os.mkdir(os.path.join(output_dir, "data", pair_name))
         # Generate and save volcano plot
         print("Generating volcano plot for pair ", pair_name, "...")
-        anova_lm_df = make_volcano(df_pair,
-                                   output_dir,
-                                   metadata_pair=metadata_pair,
-                                   pair_name = pair_name,
-                                   config = config)
-        results_name = 'df_lm_' + pair_name
+        anova_lm_df = make_volcano(
+            df_pair,
+            output_dir,
+            metadata_pair=metadata_pair,
+            pair_name=pair_name,
+            config=config,
+        )
+        results_name = "df_lm_" + pair_name
         results[results_name] = anova_lm_df
         # Find overrepresented pathways and save output
         print("Running enrichment analysis for pair ", pair_name, "...")
-        enrichment_analysis(anova_lm_df,
-                            pair_name,
-                            config,
-                            output_dir
-                            )
+        enrichment_analysis(anova_lm_df, pair_name, config, output_dir)
 
     # combine plots from different pairs
-    combine_plots(search_path = output_dir,
-                  search_term = "volcano_plot.png",
-                  output_dir=output_dir) 
-    
-    combine_plots(search_path = output_dir,
-                  search_term = "pathway_enrichment_plot.png",
-                  output_dir=output_dir) 
-    
+    combine_plots(
+        search_path=output_dir, search_term="volcano_plot.png", output_dir=output_dir
+    )
+
+    combine_plots(
+        search_path=output_dir,
+        search_term="pathway_enrichment_plot.png",
+        output_dir=output_dir,
+    )
+
     # Combine most DE proteins for each treatment pair
-    combine_csv_files(filename="limmaOut.csv",
-                      output_dir=output_dir,
-                      output_filename = os.path.join(output_dir, f"data/combined_topLFC.csv"))
-    
+    combine_csv_files(
+        filename="limma_output.csv",
+        output_dir=output_dir,
+        output_filename=os.path.join(output_dir, "data/combined_topLFC.csv"),
+    )
+
     # Combine pathway enrichment data
-    combine_csv_files(filename="*pathway_enrichment.csv",
-                      output_dir=output_dir,
-                      output_filename = os.path.join(output_dir, f"data/combined_top_pathway_enrichment.csv"))
+    combine_csv_files(
+        filename="*pathway_enrichment.csv",
+        output_dir=output_dir,
+        output_filename=os.path.join(
+            output_dir, "data/combined_top_pathway_enrichment.csv"
+        ),
+    )
 
     ### write to file the version of this script
     REPO_ROOT = get_repo_root()
-    analysis_version =  subprocess.check_output(["git", "log", "-n", "1", "--format=%H", "--", 
-                                                 os.path.join(REPO_ROOT, 'utils/analysis.py'),
-                                                 ]).strip().decode("utf-8")
+    analysis_version = (
+        subprocess.check_output(
+            [
+                "git",
+                "log",
+                "-n",
+                "1",
+                "--format=%H",
+                "--",
+                os.path.join(REPO_ROOT, "utils/analysis.py"),
+            ]
+        )
+        .strip()
+        .decode("utf-8")
+    )
 
     # read data from json file
-    with open(json_out, "r") as f:
+    with open(json_out) as f:
         existing_data = json.load(f)
 
     analysis_meta = {"ANALYSIS_VERSION": analysis_version}
@@ -616,6 +697,6 @@ def run_analysis(df: pd.DataFrame,
     # Write back to JSON file
     with open(json_out, "w") as f:
         json.dump(existing_data, f, indent=4)
-    
+
     print("Analysis pipeline completed.")
     return results
