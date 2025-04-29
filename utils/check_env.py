@@ -46,7 +46,7 @@ def get_active_env():
 
 
 def load_yaml_env(file_path):
-    """Loads the dependencies from the specified YAML file."""
+    """Loads the package=version strings from the YAML file."""
     with open(file_path) as file:
         env_data = yaml.safe_load(file)
         deps = env_data.get("dependencies", [])
@@ -56,7 +56,10 @@ def load_yaml_env(file_path):
             if isinstance(dep, str):
                 all_packages.add(dep)
             elif isinstance(dep, dict) and "pip" in dep:
-                all_packages.update(dep["pip"])
+                for pip_dep in dep["pip"]:
+                    # Convert 'package==version' to 'package=version' for comparison
+                    normalized = pip_dep.replace("==", "=")
+                    all_packages.add(normalized)
     return all_packages
 
 

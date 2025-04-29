@@ -23,8 +23,8 @@ def main():
     Main script to run the complete data analysis pipeline.
     """
     # Check environment - needs fixing
-    # if not "VSCODE_PID" in os.environ:
-    #     env.compare_envs()
+    if not "VSCODE_PID" in os.environ:
+        env.compare_envs()
     # File paths
     # getting repo dir automatically is useful as should mean we don't need to specify
     # machine-specific paths and code should run on different users' machines
@@ -80,12 +80,7 @@ def main():
         for subset in subset_terms:
             print(f"Processing subset: {subset}")
             # Subset data based on index search term
-            subset_df = df_protAbundance[
-                df_protAbundance.index.str.contains(subset, regex=False)
-            ]
-            # Raise an error if no matching rows are found
-            if subset_df.empty:
-                raise ValueError(f"No matches found for subset: {subset}")
+            subset_df = dp.get_subset(df_protAbundance, subset)
             # Create a new output directory for the subset
             subset_outPath = os.path.join(outPath, "subsets", subset.replace(" ", "_"))
             dp.make_outdir(subset_outPath, make_subdirs=True)

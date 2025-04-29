@@ -466,3 +466,14 @@ def validate_proteindata(data, metadata):
         raise ValueError(
             "Error: The protein abundance df contains missing (NaN) values!"
         )
+
+## helper function for subsetting based on phosphoproteomics. data to subset for must be indicated in protein abundance index, and must match subset term in config.
+def get_subset(df, subset_term):
+    """
+    Subsets a dataframe based on a search term in the index.
+    Raises ValueError if no matches are found.
+    """
+    subset_df = df[df.index.str.contains(subset_term, regex=False)]
+    if subset_df.empty:
+        raise ValueError(f"No matches found for subset: {subset_term}")
+    return subset_df
