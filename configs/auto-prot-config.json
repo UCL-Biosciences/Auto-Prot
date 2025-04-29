@@ -10,7 +10,7 @@
     
     "analyse_full_dataset": true,
     "subsets" : [ "Phospho (STY)" ],
-    "analyse_subsets": true,
+    "analyse_subsets": false,
 
 
     "LFC_plot_p_or_FDRp": "Log10_FDR_P_Value",
