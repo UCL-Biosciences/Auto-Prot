@@ -15,7 +15,7 @@ import utils.analysis as an
 # More detail in relevant files and on github.
 import utils.check_env as env
 import utils.data_processing as dp
-
+from utils.data_utils import get_subset
 
 ##### Define main function for creating outputs
 def main():
@@ -45,11 +45,11 @@ def main():
         config = json.load(f)
 
     # metadata
-    metadata = dp.preprocess_data(
+    metadata = dp.process_data(
         file_path=metadataPath, json_out=json_out, outPath=outPath
     )
     # protein abundance data
-    df_protAbundance = dp.preprocess_data(
+    df_protAbundance = dp.process_data(
         file_path=proteinDataPath,
         metadata=metadata,
         json_out=json_out,
@@ -80,7 +80,7 @@ def main():
         for subset in subset_terms:
             print(f"Processing subset: {subset}")
             # Subset data based on index search term
-            subset_df = dp.get_subset(df_protAbundance, subset)
+            subset_df = get_subset(df_protAbundance, subset)
             # Create a new output directory for the subset
             subset_outPath = os.path.join(outPath, "subsets", subset.replace(" ", "_"))
             dp.make_outdir(subset_outPath, make_subdirs=True)
