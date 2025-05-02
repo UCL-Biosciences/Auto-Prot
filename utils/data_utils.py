@@ -2,6 +2,8 @@
 ### Data utils
 ## general functions for data handling
 
+import pandas as pd
+
 def normalise_column_names(df, file_path=None, metadata=None):
     """
     Standardise column names by making them lowercase and replacing spaces with underscores.
@@ -88,10 +90,10 @@ def validate_proteindata(data, metadata):
     if data.empty:
         raise ValueError("Error: The protein abundance data is empty.")
     # Check if row indices (proteins) are unique
-    if not data.index.is_unique:
+    if not data.index.str.lower().is_unique:
         raise ValueError("Error: Protein identifiers (row indices) must be unique.")
     # Check if column names (samples) are unique
-    if not data.columns.is_unique:
+    if not data.columns.str.lower().is_unique:
         raise ValueError("Error: Sample identifiers (columns) must be unique.")
     # Validate protein abundance columns from metadata
     # names of abundance columns:

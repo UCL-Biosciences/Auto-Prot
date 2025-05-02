@@ -6,15 +6,23 @@ import pandas as pd
 
 def load_data(file_path):
     """
-    Load a CSV or TSV into a DataFrame.
+    Load a CSV or TSV into a DataFrame and strip whitespace from strings.
     Raises ValueError if format unsupported.
     """
     if file_path.endswith(".csv"):
-        return pd.read_csv(file_path)
+        df = pd.read_csv(file_path)
     elif file_path.endswith(".tsv"):
-        return pd.read_csv(file_path, sep="\t")
+        df = pd.read_csv(file_path, sep="\t")
     else:
         raise ValueError("Unsupported file format. Please use CSV or TSV.")
+
+    # Strip whitespace from column names
+    df.columns = df.columns.str.strip()
+
+    # Strip whitespace from string entries (cell values)
+    df = df.applymap(lambda x: x.strip() if isinstance(x, str) else x)
+
+    return df
 
 ### make outdir
 def make_outdir(out_path, make_subdirs=True):

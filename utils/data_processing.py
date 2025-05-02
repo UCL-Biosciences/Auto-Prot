@@ -12,7 +12,7 @@ import sklearn
 import sklearn.preprocessing
 
 
-from utils.data_io import load_data, make_outdir
+from utils.data_io import load_data
 from utils.data_utils import normalise_column_names, validate_metadata, validate_proteindata
 import utils.data_preprocess as dpp
 
@@ -25,6 +25,8 @@ logging.basicConfig(
 #### a few steps for cleaning metadata
 ## rename protein abundance vars, make a unique sample_replicate id, create a colour for each treatment group
 def clean_meta(df, json_out):
+    df["sample_id"] = df["sample_id"].astype(str).str.strip()
+    df["treatment"] = df["treatment"].astype(str).str.strip()
     df["protein_abundance_name"] = (
             df["protein_abundance_name"].str.lower().str.replace(" ", "_")
         )
