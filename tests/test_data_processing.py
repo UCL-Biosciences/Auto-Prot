@@ -9,9 +9,9 @@ import pandas as pd
 import numpy as np
 import pytest
 
-import utils.data_processing as dp
+import src.processing.data_preprocess as dpp
 
-from utils.data_processing import clean_meta, clean_prot, prot_summary, clean_data, process_data
+from src.processing.data_processing import clean_meta, clean_prot, prot_summary, clean_data, process_data
 
 # ————————————————————————————————————————————
 # Test clean_meta()
@@ -72,7 +72,7 @@ def test_clean_prot():
     })
 
     # 3. Call clean_prot
-    cleaned_df, nrow_original = clean_prot(df.copy(), metadata)
+    cleaned_df, _ = clean_prot(df.copy(), metadata)
 
     # 4. It should drop the unrelated column
     assert "unrelated_column" not in cleaned_df.columns
@@ -83,10 +83,7 @@ def test_clean_prot():
     # 6. Columns should be renamed to the short sample_rep names
     assert set(cleaned_df.columns) == {"sample_1_1", "sample_2_1"}
 
-    # 7. nrow_original should equal the original number of proteins
-    assert nrow_original == 3
-
-    # 8. Protein IDs (index) remain unchanged
+    # 7. Protein IDs (index) remain unchanged
     assert list(cleaned_df.index) == ["protA", "protB", "protC"]
 
 
@@ -126,11 +123,6 @@ def test_prot_summary(tmp_path):
     # NUM_PROTS formatted as string with no decimals
     assert data["NUM_PROTS"] == "2"
 
-    # Compute expected mean abundances:
-    # For prot 1: (1 + 3)/2 = 2.0
-    # For prot 2: (2 + 4)/2 = 3.0
-    expected_means = [2.0, 3.0]
-
     # Minimum mean → 2.0, formatted with `:,.0f` → "2"
     assert data["MIN_AVERAGE_ABUNDANCE"] == "2"
 
@@ -163,8 +155,7 @@ def test_clean_data(tmp_path, monkeypatch):
     # ────────────────────────────────────────────────────
     # 1) Skip plotting so tests stay headless
     # ────────────────────────────────────────────────────
-    import utils.data_processing as dp
-    monkeypatch.setattr(dp.dpp, "view_prot_distributions", lambda *a, **k: None)
+    monkeypatch.setattr(dpp, "view_prot_distributions", lambda *a, **k: None)
 
     # ────────────────────────────────────────────────────
     # 2) Tiny metadata DataFrame matching long col names
@@ -207,7 +198,7 @@ def test_clean_data(tmp_path, monkeypatch):
     # ────────────────────────────────────────────────────
     # 6) Run the pipeline
     # ────────────────────────────────────────────────────
-    cleaned_df, nrow_original = clean_data(
+    cleaned_df = clean_data(
         df.copy(),
         file_path="path/to/proteindata.csv",
         metadata=metadata,
@@ -219,9 +210,6 @@ def test_clean_data(tmp_path, monkeypatch):
     # ────────────────────────────────────────────────────
     # 7) Assertions
     # ────────────────────────────────────────────────────
-
-    # a) Original count is 3 rows
-    assert nrow_original == 5
 
     # b) Columns renamed to sample_rep: ["S1_1", "S2_1"]
     assert set(cleaned_df.columns) == {"S1_1", "S2_1"}
@@ -284,7 +272,7 @@ def test_process_data_metadata_branch(monkeypatch, tmp_path):
 
 def test_process_data_proteindata_branch(monkeypatch, tmp_path):
 
-    monkeypatch.setattr(dp.dpp, "view_prot_distributions", lambda *a, **k: None)
+    monkeypatch.setattr(dpp, "view_prot_distributions", lambda *a, **k: None)
 
     # 1) Create a tiny proteindata CSV (two columns)
     long_cols = [

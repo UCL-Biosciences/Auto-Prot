@@ -12,9 +12,9 @@ import sklearn
 import sklearn.preprocessing
 
 
-from code.utils.data_io import load_data
-from code.utils.data_utils import normalise_column_names, validate_metadata, validate_proteindata
-import code.processing.data_preprocess as dpp
+from src.utils.data_io import load_data
+from src.utils.data_utils import normalise_column_names, validate_metadata, validate_proteindata
+import src.processing.data_preprocess as dpp
 
 
 # specify location of errors to standard output
@@ -254,7 +254,7 @@ def process_data(file_path, metadata=None, json_out=None, outPath=None, config=N
         validate_metadata(df)
 
     if "proteindata" in file_path:
-        df, _ = clean_data(
+        df = clean_data(
             df_renamed, file_path=file_path, metadata=metadata, outPath=outPath, config=config, json_out=json_out
         )
         ### run function to validate protein abundance data

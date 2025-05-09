@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from utils.data_preprocess import process_prot_data, view_prot_distributions
+from src.processing.data_preprocess import process_prot_data, view_prot_distributions
 
 
 #########
@@ -21,7 +21,7 @@ def test_process_prot_data_full_pipeline():
         "protein_abundance_name": ["s1", "s2", "s3", "s4", "s5"]
     })
 
-    result = process_prot_data(df.copy(), metadata, config={})
+    result = process_prot_data(df.copy())
 
     # Expect all keys returned
     assert set(result.keys()) == {"df", "df_log2", "df_median_norm", "df_imp"}

@@ -2,15 +2,11 @@ import sys
 from pathlib import Path
 import pandas as pd
 import pytest
-from utils.data_utils import validate_metadata, validate_proteindata
+from src.utils.data_utils import validate_metadata, validate_proteindata, get_subset
 
 
 # Add project root to sys.path
 sys.path.append(str(Path(__file__).resolve().parents[1]))
-
-import pytest
-import pandas as pd
-from utils.data_utils import get_subset
 
 # ————————————————————————————————————————————
 # 
