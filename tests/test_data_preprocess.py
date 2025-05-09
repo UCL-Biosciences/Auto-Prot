@@ -7,14 +7,18 @@ from src.processing.data_preprocess import process_prot_data, view_prot_distribu
 # test process_prot_data (log, median normalise, impute)
 #########
 
+
 def test_process_prot_data_full_pipeline():
-    df = pd.DataFrame({
-        "s1": [0, 1, 2, 3],
-        "s2": [4, 5, 6, 0],
-        "s3": [0, 8, 0, 10],
-        "s4": [0, 11, 12, 13],
-        "s5": [0, 14, 15, 16]
-    }, index=["drop_me", "p1", "p2", "p3"])  # drop_me has too many zeros/NaNs
+    df = pd.DataFrame(
+        {
+            "s1": [0, 1, 2, 3],
+            "s2": [4, 5, 6, 0],
+            "s3": [0, 8, 0, 10],
+            "s4": [0, 11, 12, 13],
+            "s5": [0, 14, 15, 16],
+        },
+        index=["drop_me", "p1", "p2", "p3"],
+    )  # drop_me has too many zeros/NaNs
 
     result = process_prot_data(df.copy())
 
@@ -46,22 +50,17 @@ def test_process_prot_data_full_pipeline():
 # test plot creating prot distributions
 #########
 
+
 def test_view_prot_distributions_creates_plots(tmp_path):
-    
+
     # 1. Create dummy DataFrames
     dfs = []
     for _i in range(4):  # one for each subplot
-        dfs.append(pd.DataFrame({
-            "s1": [1, 2, 3],
-            "s2": [4, 5, 6]
-        }))
+        dfs.append(pd.DataFrame({"s1": [1, 2, 3], "s2": [4, 5, 6]}))
     plot_titles = [f"Step {i}" for i in range(4)]
 
     # 2. Create metadata
-    metadata = pd.DataFrame({
-        "sample_rep": ["s1", "s2"],
-        "treatment": ["Ctl", "Drug"]
-    })
+    metadata = pd.DataFrame({"sample_rep": ["s1", "s2"], "treatment": ["Ctl", "Drug"]})
 
     # 3. Create output structure
     out_dir = tmp_path / "output"

@@ -20,6 +20,7 @@ logging.basicConfig(
     level=logging.ERROR, format="%(asctime)s - %(levelname)s - %(message)s"
 )
 
+
 #### a few steps for cleaning metadata
 ## rename protein abundance vars, make a unique sample_replicate id, create a colour for each treatment group
 def clean_meta(df, json_out):
@@ -39,8 +40,8 @@ def clean_meta(df, json_out):
     df["sample_id"] = df["sample_id"].astype(str).str.strip()
     df["treatment"] = df["treatment"].astype(str).str.strip()
     df["protein_abundance_name"] = (
-            df["protein_abundance_name"].str.lower().str.replace(" ", "_")
-        )
+        df["protein_abundance_name"].str.lower().str.replace(" ", "_")
+    )
     df["sample_rep"] = (
         df["sample_id"] + "_" + df["replicate"].astype(str)
     )  # for a unique ID for each sample_replicate
@@ -71,6 +72,7 @@ def clean_meta(df, json_out):
     with open(json_out, "w") as f:
         json.dump(metadata_values, f)
     return df
+
 
 ### clean prot data
 def clean_prot(df, metadata):
@@ -109,6 +111,7 @@ def clean_prot(df, metadata):
     nrow_original = len(df.index)
     return df, nrow_original
 
+
 def prot_summary(df, nrow_original, json_out):
     """
     Append summary statistics about the protein data to a JSON file.
@@ -146,10 +149,12 @@ def prot_summary(df, nrow_original, json_out):
 
     # Write back to JSON file
     with open(json_out, "w") as f:
-        json.dump(existing_data, f, indent=4)     
+        json.dump(existing_data, f, indent=4)
 
 
-def clean_data(df, file_path=None, metadata=None, outPath=None, config=None, json_out=None):
+def clean_data(
+    df, file_path=None, metadata=None, outPath=None, config=None, json_out=None
+):
     """
     Main cleaning function for either metadata or protein abundance data.
 
@@ -173,7 +178,7 @@ def clean_data(df, file_path=None, metadata=None, outPath=None, config=None, jso
         ValueError: If metadata is missing or incomplete when required.
     """
     if "metadata" in file_path:
-        df = clean_meta(df = df, json_out = json_out)
+        df = clean_meta(df=df, json_out=json_out)
     if "proteindata" in file_path:
         if metadata is None:
             raise ValueError("Error: Metadata is required but not provided.")
@@ -203,7 +208,9 @@ def clean_data(df, file_path=None, metadata=None, outPath=None, config=None, jso
             # some proteins do not produce any associated genes. these values are left blank in the index
             # we replace the NaNs with Unknown-Gene-X, where X is a unique number for each unknown gene.\
             # Convert index to a Series to manipulate NaNs
-            index_series = df.index.to_series().astype("object") ## 'object' allows strings and NAs
+            index_series = df.index.to_series().astype(
+                "object"
+            )  ## 'object' allows strings and NAs
             # Find NaN values in index
             nan_mask = index_series.isna()
             # Replace NaNs with "Unknown-gene-N"
@@ -218,12 +225,14 @@ def clean_data(df, file_path=None, metadata=None, outPath=None, config=None, jso
             prot_summary(df, nrow_original, json_out)
 
     df = df.drop_duplicates()
-    
+
     return df
+
 
 ###########################################################################
 #### This is the main function for processing data, combining the above ###
 ###########################################################################
+
 
 def process_data(file_path, metadata=None, json_out=None, outPath=None, config=None):
     """
@@ -247,17 +256,22 @@ def process_data(file_path, metadata=None, json_out=None, outPath=None, config=N
         df_renamed = normalise_column_names(df_in, file_path=file_path)
     if "metadata" in file_path:
         ### clean metadata
-        df = clean_data(df_renamed, file_path=file_path, config=config, json_out=json_out)
+        df = clean_data(
+            df_renamed, file_path=file_path, config=config, json_out=json_out
+        )
         ### run function to validate metadata
         validate_metadata(df)
 
     if "proteindata" in file_path:
         df = clean_data(
-            df_renamed, file_path=file_path, metadata=metadata, outPath=outPath, config=config, json_out=json_out
+            df_renamed,
+            file_path=file_path,
+            metadata=metadata,
+            outPath=outPath,
+            config=config,
+            json_out=json_out,
         )
         ### run function to validate protein abundance data
         validate_proteindata(data=df, metadata=metadata)
-    
+
     return df
-
-

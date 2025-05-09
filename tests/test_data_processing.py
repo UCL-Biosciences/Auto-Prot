@@ -23,14 +23,17 @@ from src.processing.data_processing import (
 # Test clean_meta()
 # ————————————————————————————————————————————
 
+
 def test_clean_meta(tmp_path):
     # 1. Build a tiny metadata DataFrame
-    df = pd.DataFrame({
-        "sample_id": ["S1", "S2", "S1"],
-        "replicate": [1, 1, 2],
-        "protein_abundance_name": ["Prot A", "Prot B", "Prot C"],
-        "treatment": ["Ctl", "Drug", "Ctl"],
-    })
+    df = pd.DataFrame(
+        {
+            "sample_id": ["S1", "S2", "S1"],
+            "replicate": [1, 1, 2],
+            "protein_abundance_name": ["Prot A", "Prot B", "Prot C"],
+            "treatment": ["Ctl", "Drug", "Ctl"],
+        }
+    )
     json_out = tmp_path / "meta_out.json"
 
     # 2. Call clean_meta
@@ -38,7 +41,11 @@ def test_clean_meta(tmp_path):
 
     # 3. Check new columns
     assert "protein_abundance_name" in result.columns
-    assert list(result["protein_abundance_name"].unique()) == ["prot_a", "prot_b", "prot_c"]
+    assert list(result["protein_abundance_name"].unique()) == [
+        "prot_a",
+        "prot_b",
+        "prot_c",
+    ]
     assert "sample_rep" in result.columns
     # sample_rep should be sample_id_replicate
     assert set(result["sample_rep"]) == {"S1_1", "S2_1", "S1_2"}
@@ -58,24 +65,30 @@ def test_clean_meta(tmp_path):
 # Test clean_prot()
 # ————————————————————————————————————————————
 
+
 def test_clean_prot():
     # 1. Create a prot DataFrame with two realistic protein‐abundance columns plus one extra
-    df = pd.DataFrame({
-        "sample_1_protein_measured_etc": [10, "x", 30],
-        "sample_2_protein_measured_etc": [40, 50, 60],
-        "unrelated_column": [7, 8, 9]
-    }, index=["protA", "protB", "protC"])
+    df = pd.DataFrame(
+        {
+            "sample_1_protein_measured_etc": [10, "x", 30],
+            "sample_2_protein_measured_etc": [40, 50, 60],
+            "unrelated_column": [7, 8, 9],
+        },
+        index=["protA", "protB", "protC"],
+    )
 
     # 2. Build corresponding metadata:
     #    - protein_abundance_name matches the long column names
     #    - sample_rep gives the short names we want in the end
-    metadata = pd.DataFrame({
-        "protein_abundance_name": [
-            "sample_1_protein_measured_etc",
-            "sample_2_protein_measured_etc"
-        ],
-        "sample_rep": ["sample_1_1", "sample_2_1"]
-    })
+    metadata = pd.DataFrame(
+        {
+            "protein_abundance_name": [
+                "sample_1_protein_measured_etc",
+                "sample_2_protein_measured_etc",
+            ],
+            "sample_rep": ["sample_1_1", "sample_2_1"],
+        }
+    )
 
     # 3. Call clean_prot
     cleaned_df, _ = clean_prot(df.copy(), metadata)
@@ -97,13 +110,13 @@ def test_clean_prot():
 # Test prot_summary()
 # ————————————————————————————————————————————
 
+
 def test_prot_summary(tmp_path):
     # 1. Prepare a small DataFrame of processed protein abundances:
     #    Two proteins (rows), two samples (columns)
-    df = pd.DataFrame({
-        "sample_1_1": [1.0, 2.0],
-        "sample_2_1": [3.0, 4.0]
-    }, index=["p1", "p2"])
+    df = pd.DataFrame(
+        {"sample_1_1": [1.0, 2.0], "sample_2_1": [3.0, 4.0]}, index=["p1", "p2"]
+    )
     nrow_original = 3  # pretend one protein was removed earlier
 
     # 2. Create a starter JSON file with one existing key
@@ -138,6 +151,7 @@ def test_prot_summary(tmp_path):
     # Median of [2.0, 3.0] is 2.5, `:,.0f` rounds to "2"
     assert data["MEDIAN_AVERAGE_ABUNDANCE"] == "2"
 
+
 # ────────────────────────────────────────────────────
 # Test clean_data without metadata
 # ────────────────────────────────────────────────────
@@ -154,6 +168,7 @@ def test_clean_data_without_metadata():
             json_out="out.json",
         )
 
+
 # ────────────────────────────────────────────────────
 # Test clean_data proteindata happy path
 # ────────────────────────────────────────────────────
@@ -168,14 +183,16 @@ def test_clean_data(tmp_path, monkeypatch):
     # ────────────────────────────────────────────────────
     long_cols = [
         "sample_1_protein_abundance_intensity",
-        "sample_2_protein_abundance_intensity"
+        "sample_2_protein_abundance_intensity",
     ]
-    metadata = pd.DataFrame({
-        "sample_id": ["S1", "S2"],
-        "treatment": ["Ctl", "Drug"],
-        "replicate": [1,    1],
-        "protein_abundance_name": long_cols,
-    })
+    metadata = pd.DataFrame(
+        {
+            "sample_id": ["S1", "S2"],
+            "treatment": ["Ctl", "Drug"],
+            "replicate": [1, 1],
+            "protein_abundance_name": long_cols,
+        }
+    )
     # sample_rep will be ["S1_1","S2_1"] when clean_meta runs
     # **Manually create the sample_rep column** (just like clean_meta would)
     metadata["sample_rep"] = (
@@ -191,10 +208,13 @@ def test_clean_data(tmp_path, monkeypatch):
     # ────────────────────────────────────────────────────
     # 4) Build proteindata DataFrame with zeros & non-numeric
     # ────────────────────────────────────────────────────
-    df = pd.DataFrame({
-        long_cols[0]: [1,  0, "x", 6, 6],
-        long_cols[1]: [4,  5, 6, 6, 6],
-    }, index=[np.nan, "p2", "p3", "p4", "p4"])
+    df = pd.DataFrame(
+        {
+            long_cols[0]: [1, 0, "x", 6, 6],
+            long_cols[1]: [4, 5, 6, 6, 6],
+        },
+        index=[np.nan, "p2", "p3", "p4", "p4"],
+    )
 
     # ────────────────────────────────────────────────────
     # 5) Pick the “raw” DataFrame after process_prot_data
@@ -228,7 +248,6 @@ def test_clean_data(tmp_path, monkeypatch):
     assert cleaned_df.index.is_unique
 
 
-
 def write_csv(path, df):
     df.to_csv(path, index=False)
 
@@ -237,19 +256,22 @@ def write_csv(path, df):
 # Test full clean function with metadata
 # ────────────────────────────────────────────────────
 
+
 def test_process_data_metadata_branch(monkeypatch, tmp_path):
-    
+
     # 1) Create a tiny metadata CSV
     long_cols = [
         "sample_1_protein_abundance_intensity",
-        "sample_2_protein_abundance_intensity"
+        "sample_2_protein_abundance_intensity",
     ]
-    metadata = pd.DataFrame({
-        "sample_id": ["S1", "S2"],
-        "treatment": ["Ctl", "Drug"],
-        "replicate": [1,    1],
-        "protein_abundance_name": long_cols,
-    })
+    metadata = pd.DataFrame(
+        {
+            "sample_id": ["S1", "S2"],
+            "treatment": ["Ctl", "Drug"],
+            "replicate": [1, 1],
+            "protein_abundance_name": long_cols,
+        }
+    )
     # sample_rep will be ["S1_1","S2_1"] when clean_meta runs
     # **Manually create the sample_rep column** (just like clean_meta would)
     metadata["sample_rep"] = (
@@ -272,9 +294,11 @@ def test_process_data_metadata_branch(monkeypatch, tmp_path):
     summary = json.loads(json_out.read_text())
     assert "NUM_SAMPLES" in summary
 
+
 # ────────────────────────────────────────────────────
 # Test process protein data
 # ────────────────────────────────────────────────────
+
 
 def test_process_data_proteindata_branch(monkeypatch, tmp_path):
 
@@ -283,29 +307,34 @@ def test_process_data_proteindata_branch(monkeypatch, tmp_path):
     # 1) Create a tiny proteindata CSV (two columns)
     long_cols = [
         "sample_1_protein_abundance_intensity",
-        "sample_2_protein_abundance_intensity"
+        "sample_2_protein_abundance_intensity",
     ]
-    prot_df = pd.DataFrame({
-        long_cols[0]: [1,  0, "x", 6, 6],
-        long_cols[1]: [4,  5, 6, 6, 6],
-    }, index=[np.nan, "p2", "p3", "p4", "p4"])
+    prot_df = pd.DataFrame(
+        {
+            long_cols[0]: [1, 0, "x", 6, 6],
+            long_cols[1]: [4, 5, 6, 6, 6],
+        },
+        index=[np.nan, "p2", "p3", "p4", "p4"],
+    )
 
     prot_path = tmp_path / "my_proteindata.csv"
     write_csv(prot_path, prot_df)
 
     # 2) Build matching metadata (so clean_data won’t error)
-    metadata = pd.DataFrame({
-        "sample_id": ["S1", "S2"],
-        "treatment": ["Ctl", "Drug"],
-        "replicate": [1,    1],
-        "protein_abundance_name": long_cols,
-    })
+    metadata = pd.DataFrame(
+        {
+            "sample_id": ["S1", "S2"],
+            "treatment": ["Ctl", "Drug"],
+            "replicate": [1, 1],
+            "protein_abundance_name": long_cols,
+        }
+    )
     # sample_rep will be ["S1_1","S2_1"] when clean_meta runs
     # **Manually create the sample_rep column** (just like clean_meta would)
     metadata["sample_rep"] = (
         metadata["sample_id"] + "_" + metadata["replicate"].astype(str)
     )
-    
+
     # 2. Create a starter JSON file with one existing key
     json_out = tmp_path / "prot_summary.json"
     initial = {"FOO": 123}
@@ -317,7 +346,7 @@ def test_process_data_proteindata_branch(monkeypatch, tmp_path):
         metadata=metadata,
         json_out=json_out,
         outPath=str(tmp_path),
-        config={"df_to_use": "df"}
+        config={"df_to_use": "df"},
     )
 
     # 4) Should return a DataFrame (the cleaned & renamed data)

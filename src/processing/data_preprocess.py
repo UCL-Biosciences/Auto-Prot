@@ -55,7 +55,9 @@ def impute_prot_data(df, df_median_t):
     mean_before = df_median_t.mean(axis=1)  # rows = samples
 
     # Means per sample AFTER (transpose df_imp to match)
-    mean_after = df_imp.T.mean(axis=1)  # rows = samples. note df_imp needs transposing to match df_median_t
+    mean_after = df_imp.T.mean(
+        axis=1
+    )  # rows = samples. note df_imp needs transposing to match df_median_t
 
     # SDs per sample BEFORE
     sd_before = df_median_t.std(axis=1)
@@ -66,8 +68,11 @@ def impute_prot_data(df, df_median_t):
     # Warn if any column changed too much
     for col, shift in shift_in_sds.items():
         if shift > 0.2:
-            print(f"⚠️ Warning: Imputation shifted sample '{col}' mean by {shift:.2f} SDs")
+            print(
+                f"⚠️ Warning: Imputation shifted sample '{col}' mean by {shift:.2f} SDs"
+            )
     return df_imp
+
 
 def process_prot_data(df):
     """
@@ -111,6 +116,7 @@ def process_prot_data(df):
         "df_imp": df_imp,
     }
 
+
 def view_prot_distributions(dfs, plot_titles, metadata, outPath):
     """
     Visualise protein abundance distributions before and after processing.
@@ -129,7 +135,7 @@ def view_prot_distributions(dfs, plot_titles, metadata, outPath):
         Saves boxplot and KDE plots as PNG files in the output directory.
     """
     ### view distributions after different steps #####
-    ### for each sample as boxplots    
+    ### for each sample as boxplots
     # Set up the figure with a 2x2 grid
     fig, axes = plt.subplots(2, 2, figsize=(15, 10))
     axes = axes.flatten()
@@ -143,9 +149,7 @@ def view_prot_distributions(dfs, plot_titles, metadata, outPath):
         )
         # Plot boxplots: each sample's distribution is shown on the x-axis.
         # The boxes are colored by treatment.
-        sns.boxplot(
-            x="sample_rep", y="intensity", data=long_df, hue="treatment", ax=ax
-        )
+        sns.boxplot(x="sample_rep", y="intensity", data=long_df, hue="treatment", ax=ax)
         ax.set_title(title)
         ax.set_xlabel("Sample ID")
         ax.set_ylabel("Intensity")

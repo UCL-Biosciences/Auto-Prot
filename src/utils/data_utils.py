@@ -1,4 +1,3 @@
-
 ### Data utils
 ## general functions for data handling
 
@@ -37,7 +36,7 @@ def normalise_column_names(df, file_path=None):
         )
         df["pg.genes"] = (
             df["pg.genes"]
-            + "__" # having double __ after genes allows easier splitting later on
+            + "__"  # having double __ after genes allows easier splitting later on
             + df["ptm.modificationtitle"]
             + "_"
             + df["ptm.siteaa"]
@@ -50,6 +49,7 @@ def normalise_column_names(df, file_path=None):
         if genes_columns:  # If any column contains 'pg.genes'
             df = df.set_index(genes_columns[0])
     return df
+
 
 ## helper function for subsetting based on phosphoproteomics. data to subset for must be indicated in protein abundance index, and must match subset term in config.
 def get_subset(df, subset_term):
@@ -71,7 +71,6 @@ def get_subset(df, subset_term):
     if subset_df.empty:
         raise ValueError(f"No matches found for subset: {subset_term}")
     return subset_df
-
 
 
 ### Validation metadata function ###
@@ -169,4 +168,3 @@ def validate_proteindata(data, metadata):
         raise ValueError(
             "Error: The protein abundance df contains missing (NaN) values!"
         )
-

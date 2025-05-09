@@ -20,10 +20,10 @@ def test_get_repo_root_when_git_succeeds(tmp_path, monkeypatch):
     fake_root = tmp_path / "myrepo"
     # 2. Create a CompletedProcess object as subprocess.run would
     completed = subprocess.CompletedProcess(
-        args=["git", "rev-parse"],        # the command that was “run”
-        returncode=0,                      # indicates success
-        stdout=str(fake_root) + "\n",      # stdout is the fake path + newline
-        stderr=""
+        args=["git", "rev-parse"],  # the command that was “run”
+        returncode=0,  # indicates success
+        stdout=str(fake_root) + "\n",  # stdout is the fake path + newline
+        stderr="",
     )
     # 3. Monkeypatch subprocess.run so it always returns our fake result
     monkeypatch.setattr(subprocess, "run", lambda *args, **kwargs: completed)
@@ -40,9 +40,11 @@ def test_get_repo_root_when_not_git_repo(tmp_path, monkeypatch):
     If `git rev-parse` fails (raises CalledProcessError),
     get_repo_root() should fall back to os.getcwd().
     """
+
     # 1. Make subprocess.run raise the git-error
     def fake_run(*args, **kwargs):
         raise subprocess.CalledProcessError(returncode=1, cmd=args[0])
+
     monkeypatch.setattr(subprocess, "run", fake_run)
 
     # 2. Fake the current working directory
