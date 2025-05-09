@@ -12,9 +12,9 @@ import sklearn
 import sklearn.preprocessing
 
 
-from utils.data_io import load_data
-from utils.data_utils import normalise_column_names, validate_metadata, validate_proteindata
-import utils.data_preprocess as dpp
+from code.utils.data_io import load_data
+from code.utils.data_utils import normalise_column_names, validate_metadata, validate_proteindata
+import code.processing.data_preprocess as dpp
 
 
 # specify location of errors to standard output
@@ -25,6 +25,19 @@ logging.basicConfig(
 #### a few steps for cleaning metadata
 ## rename protein abundance vars, make a unique sample_replicate id, create a colour for each treatment group
 def clean_meta(df, json_out):
+    """
+    Clean metadata for downstream use.
+
+    Standardises string fields, generates a unique sample + replicate ID (`sample_rep`), assigns
+    colour labels to treatment groups, and writes summary info to a JSON file.
+
+    Args:
+        df (pd.DataFrame): Metadata containing sample and treatment info.
+        json_out (str): Path to JSON file where summary info will be saved.
+
+    Returns:
+        pd.DataFrame: Cleaned and augmented metadata.
+    """
     df["sample_id"] = df["sample_id"].astype(str).str.strip()
     df["treatment"] = df["treatment"].astype(str).str.strip()
     df["protein_abundance_name"] = (
@@ -63,6 +76,19 @@ def clean_meta(df, json_out):
 
 ### clean prot data
 def clean_prot(df, metadata):
+    """
+    Filter and rename protein abundance columns using metadata.
+
+    Ensures only valid sample columns are kept, converts non-numeric entries to NaN,
+    and simplifies long sample names using metadata.
+
+    Args:
+        df (pd.DataFrame): Raw protein abundance DataFrame.
+        metadata (pd.DataFrame): Metadata containing valid sample names and mappings.
+
+    Returns:
+        Tuple[pd.DataFrame, int]: Cleaned DataFrame and original number of proteins (rows).
+    """
     # Filter columns based on metadata['protein_abundance_name']
     # extract column names to keep
     valid_columns = metadata["protein_abundance_name"].tolist()
@@ -86,6 +112,16 @@ def clean_prot(df, metadata):
     return df, nrow_original
 
 def prot_summary(df, nrow_original, json_out):
+    """
+    Append summary statistics about the protein data to a JSON file.
+
+    Calculates number of proteins retained/removed and min/max/median mean abundance per protein.
+
+    Args:
+        df (pd.DataFrame): Cleaned protein abundance DataFrame.
+        nrow_original (int): Number of proteins before filtering.
+        json_out (str): Path to JSON file to update.
+    """
     #### protein summary
     NUM_PROTS = len(df.index)
     NUM_PROTS_REMOVED = nrow_original - NUM_PROTS
@@ -117,20 +153,26 @@ def prot_summary(df, nrow_original, json_out):
 
 def clean_data(df, file_path=None, metadata=None, outPath=None, config=None, json_out=None):
     """
-    Perform basic cleaning on the data: first filter protein data to include only protein abundance cols
-    and make sure they are all present.
-    Non-numeric protein abundances are converted to NaNs, then duplicate rows or rows with NAs are removed.
+    Main cleaning function for either metadata or protein abundance data.
 
-    Parameters:
-    - df (pd.DataFrame): The dataframe to clean.
-    - metadata (pd.DataFrame): Optional metadata dataframe containing 'protein_abundance_name'.
+    Cleans metadata (if file_path includes 'metadata') or processes protein data
+    with transformation, normalisation, imputation, and summary export.
+    Renames unknown genes from NA to "Unknown-gene-1" and removes duplicate rows.
+    Produces plots of distributions after different processing steps.
+
+    Args:
+        df (pd.DataFrame): Raw data to clean.
+        file_path (str): Path or identifier indicating file type.
+        metadata (pd.DataFrame, optional): Metadata required for protein data cleaning.
+        outPath (str, optional): Directory where plots will be saved.
+        config (dict, optional): Configuration dict, must include 'df_to_use'.
+        json_out (str, optional): Path to JSON file to write summary info.
 
     Returns:
-    - pd.DataFrame: Cleaned dataframe.
+        pd.DataFrame | Tuple[pd.DataFrame, int]: Cleaned data, plus original row count if protein data.
 
     Raises:
-    - ValueError: If metadata is not provided or does not contain 'protein_abundance_name'.
-
+        ValueError: If metadata is missing or incomplete when required.
     """
     if "metadata" in file_path:
         df = clean_meta(df = df, json_out = json_out)
@@ -147,7 +189,7 @@ def clean_data(df, file_path=None, metadata=None, outPath=None, config=None, jso
             ### pre process protein abundance data
             ## replace 0 with NA, remove prots with lots of missing data
             ## log2 transform, normalise using each sample's median, and impute using random forest
-            dfs = dpp.process_prot_data(df, metadata, config)
+            dfs = dpp.process_prot_data(df)
             ## to be shown when plotting distributions
             plot_titles = [
                 "Raw Intensities",
@@ -163,7 +205,7 @@ def clean_data(df, file_path=None, metadata=None, outPath=None, config=None, jso
             # some proteins do not produce any associated genes. these values are left blank in the index
             # we replace the NaNs with Unknown-Gene-X, where X is a unique number for each unknown gene.\
             # Convert index to a Series to manipulate NaNs
-            index_series = df.index.to_series()
+            index_series = df.index.to_series().astype("object") ## 'object' allows strings and NAs
             # Find NaN values in index
             nan_mask = index_series.isna()
             # Replace NaNs with "Unknown-gene-N"
@@ -178,11 +220,8 @@ def clean_data(df, file_path=None, metadata=None, outPath=None, config=None, jso
             prot_summary(df, nrow_original, json_out)
 
     df = df.drop_duplicates()
-    if "proteindata" in file_path:
-        return df, nrow_original
-    else:
-        return df
-
+    
+    return df
 
 ###########################################################################
 #### This is the main function for processing data, combining the above ###
@@ -190,29 +229,37 @@ def clean_data(df, file_path=None, metadata=None, outPath=None, config=None, jso
 
 def process_data(file_path, metadata=None, json_out=None, outPath=None, config=None):
     """
-    Full preprocessing pipeline: load, clean, and normalize column names.
+    End-to-end data preprocessing pipeline.
 
-    Parameters:
-    - file_path (str): Path to the data file.
+    Loads and standardises data, cleans based on file type,
+    and validates metadata or protein abundance input.
+
+    Args:
+        file_path (str): Path to CSV or TSV file to load.
+        metadata (pd.DataFrame, optional): Metadata to use for proteindata cleaning.
+        json_out (str, optional): Path to write summary info.
+        outPath (str, optional): Directory to save plots and output.
+        config (dict, optional): Configuration dict for processing logic.
 
     Returns:
-    - pd.DataFrame: Preprocessed dataframe.
+        pd.DataFrame: Cleaned and validated data.
     """
-    df = load_data(file_path)
-    if df is not None:
-        df = normalise_column_names(df, file_path=file_path)
+    df_in = load_data(file_path)
+    if df_in is not None:
+        df_renamed = normalise_column_names(df_in, file_path=file_path)
     if "metadata" in file_path:
         ### clean metadata
-        df = clean_data(df, file_path=file_path, config=config, json_out=json_out)
+        df = clean_data(df_renamed, file_path=file_path, config=config, json_out=json_out)
         ### run function to validate metadata
         validate_metadata(df)
 
     if "proteindata" in file_path:
-        df, nrow_original = clean_data(
-            df, file_path=file_path, metadata=metadata, outPath=outPath, config=config, json_out=json_out
+        df, _ = clean_data(
+            df_renamed, file_path=file_path, metadata=metadata, outPath=outPath, config=config, json_out=json_out
         )
         ### run function to validate protein abundance data
         validate_proteindata(data=df, metadata=metadata)
+    
     return df
 
 

@@ -19,7 +19,7 @@ from sklearn.decomposition import PCA
 from sklearn.manifold import MDS
 from statsmodels.tools.sm_exceptions import ConvergenceWarning
 
-from utils.check_env import get_repo_root
+from code.utils.check_env import get_repo_root
 
 ##### there is a warning to suppress when fitting models
 warnings.filterwarnings(
@@ -261,7 +261,7 @@ def make_volcano(
             "-n",
             "r-limma-env",
             "Rscript",
-            "utils/DE-limma.R",
+            "code/r_scripts/DE-limma.R",
             pair_data_path.replace("\\", "/"),
             pair_metadata_path.replace("\\", "/"),
             pair_result_path.replace("\\", "/"),

@@ -7,15 +7,16 @@
 import json
 import os
 
-import utils.analysis as an
+import code.analysis.analysis as an
 
 ## Import functions
 # Functions are saved in separate files and imported here
 # Separated by module
 # More detail in relevant files and on github.
-import utils.check_env as env
-import utils.data_processing as dp
-from utils.data_utils import get_subset
+import code.utils.check_env as env
+import code.processing.data_processing as dp
+from code.utils.data_utils import get_subset
+from code.utils.data_io import make_outdir
 
 ##### Define main function for creating outputs
 def main():
@@ -36,7 +37,7 @@ def main():
     json_out = os.path.join(REPO_ROOT, "output/data/data_for_report.json")
     config_path = os.path.join(REPO_ROOT, "configs/auto-prot-config.json")
     # Create the output directory
-    dp.make_outdir(outPath, make_subdirs=True)
+    make_outdir(outPath, make_subdirs=True)
     # Data processing
     print("Loading and processing data...")
 
@@ -64,7 +65,7 @@ def main():
     # if subsetting not required, go through with full datasets
     if config.get("analyse_full_dataset") is True:
         full_outPath = os.path.join(outPath, "full_dataset")
-        dp.make_outdir(full_outPath)
+        make_outdir(full_outPath)
         an.run_analysis(
             df=df_protAbundance,
             metadata=metadata,
@@ -83,7 +84,7 @@ def main():
             subset_df = get_subset(df_protAbundance, subset)
             # Create a new output directory for the subset
             subset_outPath = os.path.join(outPath, "subsets", subset.replace(" ", "_"))
-            dp.make_outdir(subset_outPath, make_subdirs=True)
+            make_outdir(subset_outPath, make_subdirs=True)
             # Run analysis for the subset
             print(f"Running analysis for {subset}...")
             an.run_analysis(

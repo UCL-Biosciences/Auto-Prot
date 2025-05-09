@@ -1,10 +1,16 @@
+import sys
+from pathlib import Path
+
+# Add parent of `code/` to sys.path to import code.utils.check_env
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+
 import json
 import os
 import subprocess
 
 import markdown  # conda env info in configs/auto-prot-env-markdown-macOS.yml
 import pandas as pd
-from check_env import get_repo_root
+from code.utils.check_env import get_repo_root
 
 
 def generate_report_html(

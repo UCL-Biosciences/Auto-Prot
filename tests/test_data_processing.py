@@ -278,6 +278,10 @@ def test_process_data_metadata_branch(monkeypatch, tmp_path):
     summary = json.loads(json_out.read_text())
     assert "NUM_SAMPLES" in summary
 
+# ────────────────────────────────────────────────────
+# Test process protein data
+# ────────────────────────────────────────────────────
+
 def test_process_data_proteindata_branch(monkeypatch, tmp_path):
 
     monkeypatch.setattr(dp.dpp, "view_prot_distributions", lambda *a, **k: None)

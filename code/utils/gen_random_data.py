@@ -9,7 +9,7 @@ import random
 
 import numpy as np
 import pandas as pd
-from check_env import get_repo_root
+from code.utils.check_env import get_repo_root
 
 #### set number parameters ####
 n_treatments = 2
