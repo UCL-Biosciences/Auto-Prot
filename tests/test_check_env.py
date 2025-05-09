@@ -1,14 +1,15 @@
 # Allow pytest to import your project’s code
 import sys
 from pathlib import Path
+
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 
 import os
 import subprocess
-import pytest
 
 # Import the function we want to test
 from src.utils.check_env import get_repo_root
+
 
 def test_get_repo_root_when_git_succeeds(tmp_path, monkeypatch):
     """

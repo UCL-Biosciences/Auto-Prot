@@ -2,20 +2,18 @@
 
 import json
 import logging
-import os
 
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
-import sklearn
-import sklearn.preprocessing
 
-
-from src.utils.data_io import load_data
-from src.utils.data_utils import normalise_column_names, validate_metadata, validate_proteindata
 import src.processing.data_preprocess as dpp
-
+from src.utils.data_io import load_data
+from src.utils.data_utils import (
+    normalise_column_names,
+    validate_metadata,
+    validate_proteindata,
+)
 
 # specify location of errors to standard output
 logging.basicConfig(

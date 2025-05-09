@@ -7,16 +7,17 @@
 import json
 import os
 
-import code.analysis.analysis as an
+import src.analysis.analysis as an
+import src.processing.data_processing as dp
 
 ## Import functions
 # Functions are saved in separate files and imported here
 # Separated by module
 # More detail in relevant files and on github.
-import code.utils.check_env as env
-import code.processing.data_processing as dp
-from code.utils.data_utils import get_subset
-from code.utils.data_io import make_outdir
+import src.utils.check_env as env
+from src.utils.data_io import make_outdir
+from src.utils.data_utils import get_subset
+
 
 ##### Define main function for creating outputs
 def main():
@@ -24,7 +25,7 @@ def main():
     Main script to run the complete data analysis pipeline.
     """
     # Check environment - needs fixing
-    if not "VSCODE_PID" in os.environ:
+    if "VSCODE_PID" not in os.environ:
         env.compare_envs()
     # File paths
     # getting repo dir automatically is useful as should mean we don't need to specify

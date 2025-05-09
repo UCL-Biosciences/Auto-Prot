@@ -1,7 +1,7 @@
-import pandas as pd
 import numpy as np
-from src.processing.data_preprocess import process_prot_data, view_prot_distributions
+import pandas as pd
 
+from src.processing.data_preprocess import process_prot_data, view_prot_distributions
 
 #########
 # test process_prot_data (log, median normalise, impute)
@@ -15,11 +15,6 @@ def test_process_prot_data_full_pipeline():
         "s4": [0, 11, 12, 13],
         "s5": [0, 14, 15, 16]
     }, index=["drop_me", "p1", "p2", "p3"])  # drop_me has too many zeros/NaNs
-
-    metadata = pd.DataFrame({
-        "sample_rep": ["s1", "s2", "s3", "s4", "s5"],
-        "protein_abundance_name": ["s1", "s2", "s3", "s4", "s5"]
-    })
 
     result = process_prot_data(df.copy())
 
@@ -55,7 +50,7 @@ def test_view_prot_distributions_creates_plots(tmp_path):
     
     # 1. Create dummy DataFrames
     dfs = []
-    for i in range(4):  # one for each subplot
+    for _i in range(4):  # one for each subplot
         dfs.append(pd.DataFrame({
             "s1": [1, 2, 3],
             "s2": [4, 5, 6]

@@ -1,7 +1,8 @@
-import os
 import pandas as pd
 import pytest
+
 from src.utils.data_io import load_data, make_outdir
+
 
 def test_load_data_csv(tmp_path):
     path = tmp_path / "test.csv"

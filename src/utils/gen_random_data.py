@@ -3,12 +3,19 @@
 ### for a given number of samples and treatments
 ### gene names downloaded from NCBI and are randomly assigned
 
+import sys
+from pathlib import Path
+
+# Add parent of `src/` to sys.path to import code.utils.check_env
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+
 ##### load libraries
 import os
 import random
 
 import numpy as np
 import pandas as pd
+
 from src.utils.check_env import get_repo_root
 
 #### set number parameters ####

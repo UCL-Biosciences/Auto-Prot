@@ -5,13 +5,19 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 
 import json
-import pandas as pd
+
 import numpy as np
+import pandas as pd
 import pytest
 
 import src.processing.data_preprocess as dpp
-
-from src.processing.data_processing import clean_meta, clean_prot, prot_summary, clean_data, process_data
+from src.processing.data_processing import (
+    clean_data,
+    clean_meta,
+    clean_prot,
+    process_data,
+    prot_summary,
+)
 
 # ————————————————————————————————————————————
 # Test clean_meta()

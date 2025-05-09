@@ -1,18 +1,17 @@
 ### Data pre-processing
 ## log, normalise and impute protein abundance data
 
-import os 
+import os
 import time
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
-
-
+import sklearn.ensemble
 from sklearn.experimental import enable_iterative_imputer  # noqa: F401
 from sklearn.impute import IterativeImputer  # noqa: F401
-import sklearn.ensemble
+
 
 ## impute function
 def impute_prot_data(df, df_median_t):
