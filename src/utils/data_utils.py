@@ -1,8 +1,12 @@
 ### Data utils
 ## general functions for data handling
 
+import fnmatch
+import os
+
 import pandas as pd
 
+from PIL import Image
 
 def normalise_column_names(df, file_path=None):
     """
@@ -168,3 +172,131 @@ def validate_proteindata(data, metadata):
         raise ValueError(
             "Error: The protein abundance df contains missing (NaN) values!"
         )
+
+#### combine plots made for different treatment groups
+def combine_plots(
+    search_term,
+    search_path,
+    output_dir,
+    output_filename=None,
+    img_size=(800, 600),
+    max_cols=3,
+):
+    """
+    Finds all images matching the search_term in subdirectories of search_path,
+    arranges them in a grid with up to max_cols columns, and saves a single PNG.
+
+    Parameters:
+    - search_term (str): The filename pattern to search for (e.g., "volcano_plot.png").
+    - search_path (str): The base directory where images are stored.
+    - output_filename (str): The filename for the combined image (auto-generated if None).
+    - img_size (tuple): (width, height) to resize images.
+    - max_cols (int): Maximum number of columns in the grid.
+
+    Returns:
+    - str: Path to the saved combined image, or None if no images found.
+    """
+    if os.name == "nt":
+        search_path = "\\\\?\\" + os.path.abspath(search_path)
+    # Find all matching images
+    image_paths = []
+    for root, _, files in os.walk(search_path):
+        for file in files:
+            if search_term in file:
+                image_paths.append(os.path.join(root, file))
+    image_paths = [img for img in image_paths if "combined_volcano_plot.png" not in img]
+    # image_paths = sorted(glob(os.path.join(search_path, "**", search_term), recursive=True))
+    if not image_paths:
+        print(f"No plots found for '{search_term}'.")
+        return None
+    # Load and resize images
+    images = [Image.open(img).resize(img_size, Image.LANCZOS) for img in image_paths]
+    # Determine grid layout
+    cols = min(max_cols, len(images))
+    rows = len(images) // cols
+    rows = (
+        len(images) + cols - 1
+    ) // cols  # Round up to fit all images by adding cols - 1
+    # Create a blank canvas
+    combined_width = cols * img_size[0]
+    combined_height = rows * img_size[1]
+    combined_image = Image.new(
+        "RGB", (combined_width, combined_height), (255, 255, 255)
+    )  # 255,255,255 specifies background colour = white
+    # Paste images into grid
+    for idx, img in enumerate(images):
+        x_offset = (idx % cols) * img_size[0]
+        y_offset = (idx // cols) * img_size[1]
+        combined_image.paste(img, (x_offset, y_offset))
+    # Generate output filename if not provided
+    if output_filename is None:
+        output_filename = os.path.join(
+            output_dir, f"plots/combined_{search_term.replace('.png', '')}.png"
+        )
+        ## windows sometimes rejects long paths. Workaround:
+        if os.name == "nt":
+            output_filename = "\\\\?\\" + os.path.abspath(output_filename)
+    # Save the final image
+    combined_image.save(output_filename)
+    print(f"Combined plot saved to: {output_filename}")
+
+
+### for combining data from different treatments for display in the report ###
+def combine_csv_files(
+    filename, output_dir, output_filename=None, top_n=10, new_column="treatment_pair"
+):
+    """
+    General function to combine CSV files from subdirectories into a single file.
+
+    Parameters:
+    - filename (str): The name of the CSV file to search for (e.g., "top_20_by_LFC.csv").
+    - output_dir (str): The root directory where data folders are stored.
+    - output_filename (str or None): The output filename for the combined CSV.
+                                     If None, it's auto-generated based on `filename`.
+    - top_n (int): Number of rows to take from each CSV file.
+    - new_column (str): Column name to store the extracted folder name (e.g., "treatment_pair").
+
+    Returns:
+    - pd.DataFrame: The combined DataFrame.
+    - str: The path where the final CSV is saved.
+    """
+    # Find all matching images
+    csv_files = []
+    for root, _, files in os.walk(output_dir):
+        for file in files:
+            if fnmatch.fnmatch(file, filename):  # supports wildcards like * and ?
+                csv_files.append(os.path.join(root, file))
+    # # Search for matching CSV files in subdirectories
+    # search_pattern = os.path.join(output_dir, "data", "**", filename)
+    # csv_files = glob(os.path.join(output_dir, "data", "*", filename)) + glob(os.path.join(output_dir, "data", "*", "*", filename))
+    # csv_files = sorted(glob(search_pattern, recursive=True))
+    # check if csv files exist
+    if not csv_files:
+        print(f"No files found matching '{filename}'.")
+        return None, None
+    combined_data = []
+    # Process each found CSV file
+    for file in csv_files:
+        if os.name == "nt":
+            file = "\\\\?\\" + os.path.abspath(file)
+        # Extract the folder name (used as the category column)
+        folder_name = os.path.basename(os.path.dirname(file))
+        # Read CSV and select top `n` rows
+        df = pd.read_csv(file).head(top_n)
+        # Add the extracted folder name as a new column
+        df[new_column] = folder_name
+        # Append to the list
+        combined_data.append(df)
+    # Merge all data
+    combined_df = pd.concat(combined_data, ignore_index=True)
+    # Generate output filename if not provided
+    if output_filename is None:
+        output_filename = os.path.join(output_dir, f"data/combined_{filename}")
+        ## windows sometimes rejects long paths. Workaround:
+        if os.name == "nt":
+            output_filename = "\\\\?\\" + os.path.abspath(output_filename)
+    # Ensure output directory exists
+    os.makedirs(os.path.dirname(output_filename), exist_ok=True)
+    # Save combined CSV
+    combined_df.to_csv(output_filename, index=False)
+    print(f"Combined file saved at: {output_filename}")
