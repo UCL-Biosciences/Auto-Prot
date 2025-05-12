@@ -32,18 +32,29 @@ def run_analysis(
     json_out: str,
 ) -> dict:
     """
-    Full analysis pipeline: performs PCA,
+    Runs the full analysis pipeline for a protein abundance dataset, including clustering (PCA, MDS, heatmap) 
+    sample-level visualisations and pairwise comparisons (differential abundance, volcano plot, pathway enrichment).
 
-    Parameters:
-        df (pd.DataFrame): Raw protein abundance data.
-        metadata (pd.DataFrame): Metadata containing sample information.
-        output_dir (str): Directory to save analysis outputs.
-        json_out (str): File for saving information to go into the final report
+    The pipeline includes:
+        - PCA, MDS, and heatmap generation for all samples
+        - Pairwise differential abundance analysis using limma (via an R script)
+        - Optional functional enrichment analysis using g:Profiler. Default is GO
+        - Aggregation of plots and results into summary files
+
+    Args:
+        df (pd.DataFrame): Protein abundance data (columns = samples, rows = proteins or features).
+        metadata (pd.DataFrame): Sample metadata, including 'sample_rep' and 'treatment' columns.
+        output_dir (str): Path to directory where outputs (plots, data files) will be written.
+        config (dict): Configuration parameters for differential analysis and plotting, including:
+            - "LFC_threshold" (float): Suggested log fold change threshold for classification and plotting.
+            - "FDR_threshold" (float): Suggested p-value threshold for volcano plot annotation.
+            - "LFC_plot_p_or_FDRp" (str): Column to use for y-axis in volcano plot.
+        json_out (str): Path to JSON file where version metadata will be recorded.
 
     Returns:
-        dict: Dictionary containing results from all analyses.
+        dict: Dictionary containing result DataFrames from PCA, MDS, heatmap, and each pairwise analysis.
+              Keys include "pca", "mds", "heatmap", and "df_lm_<pair_name>" for each treatment comparison.
     """
-
     # Initialize results dictionary
     results = {}
 

@@ -180,7 +180,7 @@ def enrichment_analysis(
     all_results = False
     # a background set can be specified e.g. background=["BRCA1", "TP53", "AKT1", "MTOR", "EGFR", "MYC"]
     # multiple testing correction can be g_SCS (default, Set Counts and Sizes), bonferroni, or fdr
-    # from quick look, g_SCS seems to be similar to bonferroni, which are both less strict than fdr.
+    # from quick look, g_SCS seems to be similar to bonferroni
     significance_threshold_method = "g_SCS"
     ##### Running pathway enrichment #####
     if len(pathway_query_genes) > 0:

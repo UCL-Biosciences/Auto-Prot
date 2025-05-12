@@ -1,16 +1,20 @@
 import sys
 from pathlib import Path
 
+import fnmatch
 import pandas as pd
 import pytest
 
-from src.utils.data_utils import get_subset, validate_metadata, validate_proteindata
+from PIL import Image
+
+
+from src.utils.data_utils import get_subset, validate_metadata, validate_proteindata, combine_plots, combine_csv_files
 
 # Add project root to sys.path
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 
 # ————————————————————————————————————————————
-#
+# test get_subset()
 # ————————————————————————————————————————————
 
 
@@ -104,3 +108,114 @@ def test_duplicate_protein_ids_case_insensitive():
     )
     with pytest.raises(ValueError, match="Protein identifiers.*unique"):
         validate_proteindata(df, meta)
+
+
+# ————————————————————————————————————————————
+#  test combine_plots()
+# ————————————————————————————————————————————
+
+@pytest.fixture
+def create_dummy_images(tmp_path):
+    def _create_images(filenames, subdirs=None):
+        subdirs = subdirs or [""]
+        for subdir in subdirs:
+            dir_path = tmp_path / subdir
+            dir_path.mkdir(parents=True, exist_ok=True)
+            for fname in filenames:
+                img_path = dir_path / fname
+                img = Image.new("RGB", (100, 100), (255, 0, 0))
+                img.save(img_path)
+        return tmp_path
+    return _create_images
+
+
+def test_combine_plots_creates_output(tmp_path, create_dummy_images):
+    # Arrange
+    filenames = ["volcano_plot.png", "volcano_plot.png"]
+    search_term = "volcano_plot.png"
+    create_dummy_images(filenames, subdirs=["groupA", "groupB"])
+    output_dir = tmp_path / "output"
+    plots_dir = output_dir / "plots"
+    plots_dir.mkdir(parents=True)  # <-- ensure plots subfolder exists
+
+    expected_output = plots_dir / f"combined_{search_term.replace('.png', '')}.png"
+
+    # Act
+    combine_plots(
+        search_term=search_term,
+        search_path=str(tmp_path),
+        output_dir=str(output_dir)
+    )
+
+    # Assert
+    assert expected_output.exists()
+    img = Image.open(expected_output)
+    assert img.size[0] > 0 and img.size[1] > 0
+
+# ————————————————————————————————————————————
+#  test combine_csv_files()
+# ————————————————————————————————————————————
+
+@pytest.fixture
+def create_dummy_csvs(tmp_path):
+    def _create_csvs(filenames, subdirs, content_rows=20):
+        for subdir in subdirs:
+            dir_path = tmp_path / subdir
+            dir_path.mkdir(parents=True, exist_ok=True)
+            for fname in filenames:
+                df = pd.DataFrame({
+                    "gene": [f"gene_{i}" for i in range(content_rows)],
+                    "logFC": [i for i in range(content_rows)],
+                })
+                df.to_csv(dir_path / fname, index=False)
+        return tmp_path
+    return _create_csvs
+
+def test_combine_csv_files_top_abs_logfc(tmp_path):
+    # Arrange
+    filename = "top_genes.csv"
+    subdirs = ["treatA_vs_ctrl", "treatB_vs_ctrl"]
+    top_n = 5
+
+    # Create dummy CSVs with mixed positive/negative logFC
+    for i, subdir in enumerate(subdirs):
+        dir_path = tmp_path / subdir
+        dir_path.mkdir(parents=True, exist_ok=True)
+
+        # Shuffle logFC values: include both strong + and - values
+        logfc_values = [-8, 2, 0, 9, -3, 4, -10, 1, 5, -7]
+        df = pd.DataFrame({
+            "gene": [f"{subdir}_gene_{j}" for j in range(len(logfc_values))],
+            "logFC": logfc_values
+        })
+        df.to_csv(dir_path / filename, index=False)
+
+    output_dir = tmp_path
+    expected_path = tmp_path / "results" / "data" / f"combined_{filename}"
+    expected_path.parent.mkdir(parents=True, exist_ok=True)
+
+    combine_csv_files(
+        filename=filename,
+        output_dir=str(output_dir),
+        output_filename=str(expected_path),
+        top_n=top_n,
+        new_column="treatment_pair"
+    )
+
+    # Assert
+    assert expected_path.exists()
+    df = pd.read_csv(expected_path)
+
+    # One check already:
+    assert df.shape[0] == top_n * len(subdirs)
+    assert "treatment_pair" in df.columns
+    assert set(df["treatment_pair"]) == set(subdirs)
+
+    # NEW: check for largest absolute logFC values per treatment
+    expected_top = sorted([-8, 2, 0, 9, -3, 4, -10, 1, 5, -7], key=lambda x: abs(x), reverse=True)[:top_n]
+    for group in subdirs:
+        subset = df[df["treatment_pair"] == group]
+        assert subset.shape[0] == top_n
+        actual_logfc = list(subset["logFC"])
+        # Should match top N by absolute value (ignoring order)
+        assert sorted(actual_logfc, key=lambda x: abs(x), reverse=True) == expected_top

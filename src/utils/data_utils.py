@@ -204,7 +204,7 @@ def combine_plots(
         for file in files:
             if search_term in file:
                 image_paths.append(os.path.join(root, file))
-    image_paths = [img for img in image_paths if "combined_volcano_plot.png" not in img]
+    image_paths = [img for img in image_paths if not fnmatch.fnmatch(os.path.basename(img), "combined_*_plot.png")]
     # image_paths = sorted(glob(os.path.join(search_path, "**", search_term), recursive=True))
     if not image_paths:
         print(f"No plots found for '{search_term}'.")
@@ -282,7 +282,7 @@ def combine_csv_files(
         # Extract the folder name (used as the category column)
         folder_name = os.path.basename(os.path.dirname(file))
         # Read CSV and select top `n` rows
-        df = pd.read_csv(file).head(top_n)
+        df = pd.read_csv(file).sort_values(by="logFC", ascending=False, key=abs).head(top_n)
         # Add the extracted folder name as a new column
         df[new_column] = folder_name
         # Append to the list
