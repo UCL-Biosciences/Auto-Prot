@@ -243,7 +243,9 @@ def combine_plots(
 
 ### for combining data from different treatments for display in the report ###
 def combine_csv_files(
-    filename, output_dir, output_filename=None, top_n=10, new_column="treatment_pair"
+    filename, output_dir, output_filename=None, top_n=10, new_column="treatment_pair",
+    sort_by_logfc=False,
+
 ):
     """
     General function to combine CSV files from subdirectories into a single file.
@@ -255,6 +257,8 @@ def combine_csv_files(
                                      If None, it's auto-generated based on `filename`.
     - top_n (int): Number of rows to take from each CSV file.
     - new_column (str): Column name to store the extracted folder name (e.g., "treatment_pair").
+    - sort_by_logfc (bool): Whether to sort each file by absolute logFC (default: False).
+
 
     Returns:
     - pd.DataFrame: The combined DataFrame.
@@ -282,9 +286,15 @@ def combine_csv_files(
         # Extract the folder name (used as the category column)
         folder_name = os.path.basename(os.path.dirname(file))
         # Read CSV and select top `n` rows
-        df = pd.read_csv(file).sort_values(by="logFC", ascending=False, key=abs).head(top_n)
+        df = pd.read_csv(file)
+
+        if sort_by_logfc and "logFC" in df.columns:
+            df = df.sort_values(by="logFC", ascending=False, key=abs)
+
+        df = df.head(top_n)
         # Add the extracted folder name as a new column
         df[new_column] = folder_name
+        
         # Append to the list
         combined_data.append(df)
     # Merge all data

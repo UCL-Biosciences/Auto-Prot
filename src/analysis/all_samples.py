@@ -67,6 +67,11 @@ def generate_pca(
         metadata.set_index("sample_rep")["treatment"]
     )
 
+    ## check mapping has worked
+    if df_PCA["treatment"].isnull().any():
+        missing = df_PCA[df_PCA["treatment"].isnull()].index.tolist()
+        raise ValueError(f"PCA df is missing treatment labels for samples: {missing}")
+
     # Calculate variance explained by each component
     explained_variance = pca.explained_variance_ratio_
     
@@ -88,8 +93,8 @@ def generate_pca(
     # Annotate points
     for i in range(df_PCA.shape[0]):
         plt.text(
-            x=df_PCA[f"PC{pc_x}"][i] + 0.1,
-            y=df_PCA[f"PC{pc_y}"][i] + 0.1,
+            x=df_PCA[f"PC{pc_x}"].iloc[i] + 0.1,
+            y=df_PCA[f"PC{pc_y}"].iloc[i] + 0.1,
             s=df_PCA.index[i],
             fontsize=9,
             ha="center",
@@ -171,8 +176,8 @@ def generate_MDS(
     # Add sample IDs from the 'target' column with an offset
     for i in range(mds_coords_df.shape[0]):
         plt.text(
-            x=mds_coords_df["MDS1"][i] + 1,  # Add a small x-offset
-            y=mds_coords_df["MDS2"][i] + 1,  # Add a small y-offset
+            x=mds_coords_df["MDS1"].iloc[i] + 1,  # Add a small x-offset
+            y=mds_coords_df["MDS2"].iloc[i] + 1,  # Add a small y-offset
             s=mds_coords_df.index[i],
             fontsize=9,
             ha="center",  # Horizontal alignment
@@ -192,7 +197,8 @@ def generate_MDS(
     return mds_coords_df
 
 
-def generate_heatmap(df: pd.DataFrame, output_dir: str) -> pd.DataFrame:
+def generate_heatmap(df: pd.DataFrame, output_dir: str,
+                     metadata: pd.DataFrame = None) -> pd.DataFrame:
     """
     Creates a clustered heatmap of protein abundance data using Euclidean distance.
 
@@ -212,13 +218,31 @@ def generate_heatmap(df: pd.DataFrame, output_dir: str) -> pd.DataFrame:
     df_heat.columns = df.index
     n_prot = df_heat.shape[0]
     plot_title = "heatmap of euclidean distance (n protein = " + str(n_prot) + ")"
+    
+    # Create col_colors using metadata['Colour'] if provided
+    col_colors = None
+    if metadata is not None:
+        required_cols = {"sample_rep", "treatment", "colours"}
+        if not required_cols.issubset(metadata.columns):
+            raise ValueError(f"Metadata must contain columns: {required_cols}")
+
+        colour_map = metadata.set_index("sample_rep")["colours"]
+
+        missing = df_heat.columns.difference(colour_map.index)
+        if not missing.empty:
+            raise ValueError(f"Missing colour info for samples: {list(missing)}")
+
+        col_colors = df_heat.columns.map(colour_map)
+
     # Create clustermap
     heatmap = sns.clustermap(
         df_heat,
-        # annot=True,
         fmt=".2f",
         cmap="viridis",
+        col_colors=col_colors,
+
     )
+
     # Move x-axis labels (column names) to the top
     heatmap.ax_heatmap.xaxis.set_ticks_position("top")  # Move ticks to the top
     heatmap.ax_heatmap.xaxis.set_label_position("top")  # Move axis label to the top
@@ -231,6 +255,7 @@ def generate_heatmap(df: pd.DataFrame, output_dir: str) -> pd.DataFrame:
     )  # Use only column names
     # Explicitly disable extra tick labels from the dendrogram
     heatmap.ax_heatmap.tick_params(axis="x", which="both", bottom=False, top=True)
+    
     # Set labels and title
     plt.title(plot_title)
     # plt.tight_layout()

@@ -72,7 +72,7 @@ def run_analysis(
 
     # Generate and save heatmap
     print("Generating heatmap...")
-    df_heatmap = generate_heatmap(df.T, output_dir)
+    df_heatmap = generate_heatmap(df.T, output_dir, metadata=metadata)
     results["heatmap"] = df_heatmap
 
     ###### Pairwise Analyses #####
@@ -123,6 +123,7 @@ def run_analysis(
         filename="limma_output.csv",
         output_dir=output_dir,
         output_filename=os.path.join(output_dir, "data/combined_topLFC.csv"),
+        sort_by_logfc=True
     )
 
     # Combine pathway enrichment data
