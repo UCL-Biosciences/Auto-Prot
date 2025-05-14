@@ -20,7 +20,7 @@ from src.utils.check_env import get_repo_root
 
 #### set number parameters ####
 n_treatments = 2
-n_genes = 1000
+n_genes = 100
 samples = list("ABCDEF")
 n_replicates = 5
 

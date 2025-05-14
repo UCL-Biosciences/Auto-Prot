@@ -86,10 +86,8 @@ def run_analysis(
         df_pair = df[metadata_pair["sample_rep"].tolist()]
         pair_name = "_".join(map(str, pair))
 
-        if not os.path.exists(os.path.join(output_dir, "plots", pair_name)):
-            os.mkdir(os.path.join(output_dir, "plots", pair_name))
-        if not os.path.exists(os.path.join(output_dir, "data", pair_name)):
-            os.mkdir(os.path.join(output_dir, "data", pair_name))
+        os.makedirs(os.path.join(output_dir, "plots", pair_name), exist_ok=True)
+        os.makedirs(os.path.join(output_dir, "data", pair_name), exist_ok=True)
 
         # Generate and save volcano plot
         print("Generating volcano plot for pair ", pair_name, "...")

@@ -199,7 +199,8 @@ def test_combine_csv_files_top_abs_logfc(tmp_path):
         output_dir=str(output_dir),
         output_filename=str(expected_path),
         top_n=top_n,
-        new_column="treatment_pair"
+        new_column="treatment_pair",
+        sort_by_logfc=True
     )
 
     # Assert

@@ -132,7 +132,7 @@ def make_volcano(
 
 
 def enrichment_analysis(
-    anova_lm_df: pd.DataFrame, pair_name: str, config: dict, output_dir: str
+    lm_results_df: pd.DataFrame, pair_name: str, config: dict, output_dir: str
 ):
     """
     Performs pathway enrichment analysis using g:Profiler for differentially abundant proteins.
@@ -142,7 +142,7 @@ def enrichment_analysis(
     a CSV file with results and a bubble plot of the top pathways.
 
     Args:
-        anova_lm_df (pd.DataFrame): Differential expression results, including 'logFC', 'adj.P.Val', and 'P.Value'.
+        lm_results_df (pd.DataFrame): Differential expression results, including 'logFC', 'adj.P.Val', and 'P.Value'.
         pair_name (str): Label for this treatment comparison (used in filenames and output folders).
         config (dict): Configuration containing:
             - "LFC_threshold" (float): Minimum absolute log2 fold change to define DE genes.
@@ -159,10 +159,10 @@ def enrichment_analysis(
     gp = GProfiler(return_dataframe=True)
     ##### G Profiler options #####
     # for ORA, just need a list of genes
-    pathway_query_genes = anova_lm_df.loc[
+    pathway_query_genes = lm_results_df.loc[
         (
-            (anova_lm_df["adj.P.Val"] < FDR_threshold)
-            & (abs(anova_lm_df["logFC"]) >= LFC_threshold)
+            (lm_results_df["adj.P.Val"] < FDR_threshold)
+            & (abs(lm_results_df["logFC"]) >= LFC_threshold)
         )
     ].index
     # in the case of phosphoproteomic data, gene names have a double __ with phosphorylation state added,
