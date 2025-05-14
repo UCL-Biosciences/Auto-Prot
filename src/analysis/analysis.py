@@ -91,7 +91,7 @@ def run_analysis(
 
         # Generate and save volcano plot
         print("Generating volcano plot for pair ", pair_name, "...")
-        anova_lm_df = make_volcano(
+        lm_results_df = make_volcano(
             df_pair,
             output_dir,
             metadata_pair=metadata_pair,
@@ -99,11 +99,11 @@ def run_analysis(
             config=config,
         )
         results_name = "df_lm_" + pair_name
-        results[results_name] = anova_lm_df
+        results[results_name] = lm_results_df
 
         # Find overrepresented pathways and save output
         print("Running enrichment analysis for pair ", pair_name, "...")
-        enrichment_analysis(anova_lm_df, pair_name, config, output_dir)
+        enrichment_analysis(lm_results_df, pair_name, config, output_dir)
 
     # combine plots from different pairs
     combine_plots(
