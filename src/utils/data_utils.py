@@ -8,7 +8,7 @@ import pandas as pd
 
 from PIL import Image
 
-def normalise_column_names(df, file_path=None):
+def normalise_column_names(df, file_path=None, config = None):
     """
     Standardise column names and optionally combine phosphorylation information.
 
@@ -25,33 +25,30 @@ def normalise_column_names(df, file_path=None):
     """
     df.columns = [col.lower().replace(" ", "_") for col in df.columns]
     df.columns = df.columns.astype(str)
-    ### For phosphoproteomic data, there are abundances for phosphorylated proteins
-    ### Each protein can be present multiple times - once per phosphorylation state
-    ### For the analysis to proceed, we need a unique ID for the protein-phosphorylation state combination
-    ## we append the phosporylation state (in column PTM.ModificationTitle and PTM.SiteAA) to the pg.genes column
-    if (
-        ("ptm.modificationtitle" in df)
-        and ("ptm.siteaa" in df)
-        and ("ptm.sitelocation" in df)
-        and ("pg.genes" in df)
-    ):
-        print(
-            "Gene names and phosphorylation state present. Combining to make unique gene names"
-        )
-        df["pg.genes"] = (
-            df["pg.genes"]
-            + "__"  # having double __ after genes allows easier splitting later on
-            + df["ptm.modificationtitle"]
-            + "_"
-            + df["ptm.siteaa"]
-            + "_"
-            + df["ptm.sitelocation"].astype(str)
-        )
+   
     # If 'proteindata' is in the file path, set a column containing 'genes' as the index
     if "proteindata" in file_path:
         genes_columns = [col for col in df.columns if "pg.genes" in col.lower()]
         if genes_columns:  # If any column contains 'pg.genes'
             df = df.set_index(genes_columns[0])
+
+        ### For phosphoproteomic data, there are abundances for phosphorylated proteins
+        ### Each protein can be present multiple times - once per phosphorylation state
+        ### For the analysis to proceed, we need a unique ID for the protein-phosphorylation state combination
+        ## we append the phosporylation state (in column PTM.ModificationTitle and PTM.SiteAA) to the pg.genes column
+        if config.get("data_type") == "phospho":
+            print(
+                "Gene names and phosphorylation state present. Combining to make unique gene names"
+            )
+            df.index = (
+                df.index.astype(str)
+                + "__"
+                + df["ptm.modificationtitle"]
+                + "_"
+                + df["ptm.siteaa"]
+                + "_"
+                + df["ptm.sitelocation"].astype(str)
+            )
     return df
 
 
@@ -70,7 +67,6 @@ def get_subset(df, subset_term):
     Raises:
         ValueError: If no index values contain the subset term.
     """
-
     subset_df = df[df.index.str.contains(subset_term, regex=False)]
     if subset_df.empty:
         raise ValueError(f"No matches found for subset: {subset_term}")

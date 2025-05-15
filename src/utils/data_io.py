@@ -5,6 +5,8 @@ import os
 
 import pandas as pd
 
+from src.utils.data_utils import get_subset
+
 
 def load_data(file_path):
     """
@@ -17,6 +19,7 @@ def load_data(file_path):
 
     Args:
         file_path (str): Path to the input file. Must end with `.csv` or `.tsv`.
+        config (dict): Configuration parameters for data type - if phospho, filter for only phosporylated PTMs. See docs for details.
 
     Returns:
         pd.DataFrame: Loaded data with whitespace stripped from column names and cells.
@@ -36,6 +39,10 @@ def load_data(file_path):
 
     # Strip whitespace from string entries (cell values)
     df = df.map(lambda x: x.strip() if isinstance(x, str) else x)
+
+    if "proteindata" in file_path:
+        # Set the first column as the index
+        df.set_index(df.columns[0], inplace=True)
 
     return df
 

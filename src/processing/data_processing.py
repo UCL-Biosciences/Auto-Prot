@@ -13,6 +13,7 @@ from src.utils.data_utils import (
     normalise_column_names,
     validate_metadata,
     validate_proteindata,
+    get_subset
 )
 
 # specify location of errors to standard output
@@ -253,7 +254,7 @@ def process_data(file_path, metadata=None, json_out=None, outPath=None, config=N
     """
     df_in = load_data(file_path)
     if df_in is not None:
-        df_renamed = normalise_column_names(df_in, file_path=file_path)
+        df_renamed = normalise_column_names(df_in, file_path=file_path, config=config)
     if "metadata" in file_path:
         ### clean metadata
         df = clean_data(
@@ -263,6 +264,12 @@ def process_data(file_path, metadata=None, json_out=None, outPath=None, config=N
         validate_metadata(df)
 
     if "proteindata" in file_path:
+        
+        ### if data are phosphorylation, filter out PTMs that are not phosphorylation
+        if config.get("data_type") == "phospho":
+            df_renamed = get_subset(df_renamed, "Phospho (STY)")
+            print( "Data type is phospho, retaining only phoshporylation PTMs" )
+
         df = clean_data(
             df_renamed,
             file_path=file_path,

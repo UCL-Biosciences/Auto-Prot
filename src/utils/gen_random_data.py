@@ -23,6 +23,10 @@ def generate_protein_data(
     random_seed=0,
     output_prefix="input/data/"
 ):
+    
+    random.seed(random_seed)
+    np.random.seed(random_seed)
+
     if samples is None:
         samples = list("ABCDEF")
 
@@ -40,7 +44,6 @@ def generate_protein_data(
 
     # Read and sample genes
     genes = pd.read_csv(os.path.join(repo_root, human_genes_file))["Symbol"].dropna().unique().tolist()
-    random.seed(random_seed)
     sampled_genes = random.sample(genes, n_genes)
 
     # Generate data
@@ -51,7 +54,7 @@ def generate_protein_data(
         for mu, sigma in zip(gene_means, gene_sigmas)
     ])
     df = pd.DataFrame(data, index=sampled_genes, columns=col_names)
-
+    df.index.name = "PG.genes"
     # Spiking
     n_spiked = int(0.05 * n_genes)
     spike_set_1 = np.random.choice(sampled_genes, size=n_spiked, replace=False)
@@ -64,6 +67,23 @@ def generate_protein_data(
     # Add missing values
     mask = np.random.rand(*df.shape) < na_fraction
     df = df.mask(mask)
+
+    # Add PTM columns
+    n_rows = df.shape[0]
+    
+    # PTM.ModificationTitle: 90% "Phospho (STY)", 10% "Carbamidomethyl (C)"
+    mod_titles = np.random.choice(
+        ["Phospho (STY)", "Carbamidomethyl (C)"],
+        size=n_rows,
+        p=[0.9, 0.1]
+    )
+
+    # Add to DataFrame
+    df["PTM.ModificationTitle"] = mod_titles
+    df["PTM.SiteAA"] = ["S"] * n_rows
+    df["PTM.SiteLocation"] =  np.random.randint(1, 1001, size=n_rows)
+
+
 
     # Save protein data
     os.makedirs(os.path.join(repo_root, output_prefix), exist_ok=True)

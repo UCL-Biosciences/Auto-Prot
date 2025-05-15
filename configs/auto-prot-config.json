@@ -1,17 +1,20 @@
 {
 
+    "data_type": "phospho",
+
     "df_to_use" : "df_imp",
     
     "species" : "hsapiens",
     "pcomponents" : 2,
-    "outPath" : "path",
-    "protPath" : "path",
-    "metaPath" : "path",
+    
+    "protPath" : "input/data/proteindata.csv",
+    "metaPath" : "input/data/metadata.csv",
+    "outPath" : "output",
+    "json_outPath" : "output/data/data_for_report.json",
     
     "analyse_full_dataset": true,
-    "subsets" : [ "Phospho (STY)" ],
     "analyse_subsets": false,
-
+    "subsets" : [],
 
     "LFC_plot_p_or_FDRp": "Log10_FDR_P_Value",
     "LFC_threshold" : 1,
