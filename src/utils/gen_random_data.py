@@ -1,13 +1,21 @@
+import sys
+from pathlib import Path
+
+# Add parent of `src/` to sys.path to import code.utils.check_env
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+
 import os
 import pandas as pd
 import numpy as np
 import random
 
+from src.utils.check_env import get_repo_root
+
 def generate_protein_data(
     repo_root,
     human_genes_file="input/data/human_genes.txt",
     n_treatments=2,
-    n_genes=100,
+    n_genes=1000,
     samples=None,
     n_replicates=5,
     spike_multiplier=4,
@@ -76,5 +84,5 @@ if __name__ == "__main__":
     from pathlib import Path
 
     # Example: get the repo root as the parent of this script
-    REPO_ROOT = Path(__file__).resolve().parent.parent  # adjust as needed
-    generate_dummy_protein_data(repo_root=REPO_ROOT)
+    REPO_ROOT = get_repo_root()  # adjust as needed
+    generate_protein_data(repo_root=REPO_ROOT)
