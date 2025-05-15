@@ -24,8 +24,8 @@ dependencies:
   - brotli-bin=1.0.9
   - brotli-python=1.0.9
   - bzip2=1.0.8
-  - ca-certificates=2025.2.25
-  - certifi=2025.1.31
+  - ca-certificates=2025.4.26
+  - certifi=2025.4.26
   - cffi=1.17.1
   - cfgv=3.3.1
   - charset-normalizer=3.3.2
@@ -33,6 +33,7 @@ dependencies:
   - colorama=0.4.6
   - comm=0.2.1
   - contourpy=1.3.1
+  - coverage=7.8.0
   - cycler=0.11.0
   - debugpy=1.8.11
   - decorator=5.1.1
@@ -141,6 +142,7 @@ dependencies:
   - pyqt5-sip=12.13.0
   - pysocks=1.7.1
   - pytest=8.3.5
+  - pytest-cov=6.1.1
   - python=3.11.11
   - python-dateutil=2.9.0post0
   - python-fastjsonschema=2.20.0
@@ -160,7 +162,7 @@ dependencies:
   - rfc3339-validator=0.1.4
   - rfc3986-validator=0.1.1
   - rpds-py=0.10.6
-  - ruff=0.11.7
+  - ruff=0.11.8
   - scipy=1.14.1
   - send2trash=1.8.2
   - setuptools=72.1.0
@@ -177,6 +179,7 @@ dependencies:
   - threadpoolctl=3.5.0
   - tinycss2=1.2.1
   - tk=8.6.14
+  - toml=0.10.2
   - tomli=2.0.1
   - tornado=6.4.2
   - traitlets=5.14.3

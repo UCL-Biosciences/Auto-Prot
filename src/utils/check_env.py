@@ -7,7 +7,12 @@ import yaml
 
 # Automatically find the repo root (cross-platform safe)
 def get_repo_root():
-    """Find the root directory of the git repository."""
+    """
+    Find the root directory of the current git repository.
+
+    Returns:
+        str: Absolute path to the repository root, or current working directory if not in a git repo.
+    """
     try:
         result = subprocess.run(
             ["git", "rev-parse", "--show-toplevel"],
@@ -37,7 +42,12 @@ elif Active_OS == "Darwin":  # MAC is detected as Darwin
 
 
 def get_active_env():
-    """Returns the name of the currently active conda environment."""
+    """
+    Get the name of the currently active conda environment.
+
+    Returns:
+        str or None: Name of the active environment, or None if not inside one.
+    """
     try:
         return os.environ["CONDA_DEFAULT_ENV"]
     except KeyError:
@@ -46,7 +56,15 @@ def get_active_env():
 
 
 def load_yaml_env(file_path):
-    """Loads the package=version strings from the YAML file."""
+    """
+    Load dependencies from a Conda YAML environment file.
+
+    Args:
+        file_path (str): Path to the environment YAML file.
+
+    Returns:
+        set[str]: A set of 'package=version' strings for all dependencies, including pip entries.
+    """
     with open(file_path) as file:
         env_data = yaml.safe_load(file)
         deps = env_data.get("dependencies", [])
@@ -64,7 +82,12 @@ def load_yaml_env(file_path):
 
 
 def get_installed_packages():
-    """Returns a set of installed packages with versions in the current conda environment."""
+    """
+    List installed packages in the current conda environment.
+
+    Returns:
+        set[str]: A set of 'package=version' strings for all currently installed packages.
+    """
     result = subprocess.run(
         ["conda", "list", "--export"], capture_output=True, text=True, check=True
     )
@@ -78,7 +101,12 @@ def get_installed_packages():
 
 
 def compare_envs():
-    """Compares the active conda environment with the reference YAML."""
+    """
+    Compare the active conda environment against a reference YAML file.
+
+    Side effects:
+        Prints messages indicating whether the environments match or differ.
+    """
     active_env = get_active_env()
     if not active_env:
         return

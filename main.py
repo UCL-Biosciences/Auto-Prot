@@ -7,14 +7,16 @@
 import json
 import os
 
-import utils.analysis as an
+import src.analysis.analysis as an
+import src.processing.data_processing as dp
 
 ## Import functions
 # Functions are saved in separate files and imported here
 # Separated by module
 # More detail in relevant files and on github.
-import utils.check_env as env
-import utils.data_processing as dp
+import src.utils.check_env as env
+from src.utils.data_io import make_outdir
+from src.utils.data_utils import get_subset
 
 
 ##### Define main function for creating outputs
@@ -23,7 +25,7 @@ def main():
     Main script to run the complete data analysis pipeline.
     """
     # Check environment - needs fixing
-    if not "VSCODE_PID" in os.environ:
+    if "VSCODE_PID" not in os.environ:
         env.compare_envs()
     # File paths
     # getting repo dir automatically is useful as should mean we don't need to specify
@@ -36,7 +38,7 @@ def main():
     json_out = os.path.join(REPO_ROOT, "output/data/data_for_report.json")
     config_path = os.path.join(REPO_ROOT, "configs/auto-prot-config.json")
     # Create the output directory
-    dp.make_outdir(outPath, make_subdirs=True)
+    make_outdir(outPath, make_subdirs=True)
     # Data processing
     print("Loading and processing data...")
 
@@ -45,11 +47,11 @@ def main():
         config = json.load(f)
 
     # metadata
-    metadata = dp.preprocess_data(
+    metadata = dp.process_data(
         file_path=metadataPath, json_out=json_out, outPath=outPath
     )
     # protein abundance data
-    df_protAbundance = dp.preprocess_data(
+    df_protAbundance = dp.process_data(
         file_path=proteinDataPath,
         metadata=metadata,
         json_out=json_out,
@@ -64,7 +66,7 @@ def main():
     # if subsetting not required, go through with full datasets
     if config.get("analyse_full_dataset") is True:
         full_outPath = os.path.join(outPath, "full_dataset")
-        dp.make_outdir(full_outPath)
+        make_outdir(full_outPath)
         an.run_analysis(
             df=df_protAbundance,
             metadata=metadata,
@@ -80,10 +82,10 @@ def main():
         for subset in subset_terms:
             print(f"Processing subset: {subset}")
             # Subset data based on index search term
-            subset_df = dp.get_subset(df_protAbundance, subset)
+            subset_df = get_subset(df_protAbundance, subset)
             # Create a new output directory for the subset
             subset_outPath = os.path.join(outPath, "subsets", subset.replace(" ", "_"))
-            dp.make_outdir(subset_outPath, make_subdirs=True)
+            make_outdir(subset_outPath, make_subdirs=True)
             # Run analysis for the subset
             print(f"Running analysis for {subset}...")
             an.run_analysis(
