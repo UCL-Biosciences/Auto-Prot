@@ -205,7 +205,7 @@ def clean_data(
             dpp.view_prot_distributions(dfs.values(), plot_titles, metadata, outPath)
             ## which df to use?
             df_to_use = config.get("df_to_use")
-            df = dfs[df_to_use]
+            df = dfs[df_to_use].dropna()
             # some proteins do not produce any associated genes. these values are left blank in the index
             # we replace the NaNs with Unknown-Gene-X, where X is a unique number for each unknown gene.\
             # Convert index to a Series to manipulate NaNs

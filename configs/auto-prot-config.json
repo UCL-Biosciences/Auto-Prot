@@ -1,8 +1,8 @@
 {
 
-    "data_type": "phospho",
+    "data_type": "prot",
 
-    "df_to_use" : "df_imp",
+    "df_to_use" : "df_log2",
     
     "species" : "hsapiens",
     "pcomponents" : 2,
@@ -19,7 +19,9 @@
     "LFC_plot_p_or_FDRp": "Log10_FDR_P_Value",
     "LFC_threshold" : 1,
     "FDR_threshold" : 0.05,
-    "volcano_y_cutoff": 1e-20
+    "volcano_y_cutoff": 1e-20,
+
+    "enrichment_pathways": "KEGG"
 
     
 }

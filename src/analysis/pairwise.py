@@ -172,7 +172,7 @@ def enrichment_analysis(
         pathway_query_genes = [str(gene).split("__")[0] for gene in pathway_query_genes]
     # pathway database can be REAC, GO or KEGG. Also less common but available: CORUM, HPA, TF and MIRNA
     # defaults to REAC
-    source = ["GO"]
+    source = config.get("KEGG")
     plot_title = "Pathway Enrichment (" + source[0] + ")"
     # p value threshold defaults to 0.05
     p_threshold = 0.05
