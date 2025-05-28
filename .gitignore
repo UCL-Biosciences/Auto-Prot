@@ -1,4 +1,5 @@
 input/data/metadata.csv
 input/data/proteindata.csv
+input/data/*
 output/*
 configs/auto-prot-config.json
