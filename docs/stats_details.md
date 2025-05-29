@@ -35,7 +35,7 @@ To estimate each value, we use the `HistGradientBoostingRegressor` (HGBR) — a 
 While previous studies have found Random Forests particularly effective for imputation due to their robustness and ability to capture nonlinear feature interactions, we follow the approach used in AlphaPepStats by applying HGBR, which is similar to Random Forest but can offer higher predictive power.
 
 ## Differential Abundance
-We use the Limma R Package (REF) to quantify differences between treatment groups for all proteins.
+We use the Limma R Package (REF) to quantify differences between treatment groups for all proteins (following e.g. Lou et al. 2022)
 
 
 
@@ -43,6 +43,8 @@ We use the Limma R Package (REF) to quantify differences between treatment group
 Kokla, Marietta, et al. "Random forest-based imputation outperforms other methods for imputing LC-MS metabolomics data: a comparative study." BMC bioinformatics 20 (2019): 1-11.
 
 Krismer, Elena, et al. "AlphaPeptStats: an open-source Python package for automated and scalable statistical analysis of mass spectrometry-based proteomics." Bioinformatics 39.8 (2023): btad461.
+
+Lou, Ronghui, et al. "Benchmarking commonly used software suites and analysis workflows for DIA proteomics and phosphoproteomics." Nature communications 14.1 (2023): 94.
 
 Jin, Liang, et al. "A comparative study of evaluating missing value imputation methods in label-free proteomics." Scientific reports 11.1 (2021): 1760.
 
