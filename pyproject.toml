@@ -1,0 +1,10 @@
+[tool.ruff]
+line-length = 88
+exclude = ["output", "logs", "input", "taging"]
+target-version = "py38"
+lint.select = ["E", "F", "I", "B", "UP"]
+lint.ignore = ["E501"]  # because black formats line length
+
+[tool.black]
+line-length = 88
+target-version = ["py38"]

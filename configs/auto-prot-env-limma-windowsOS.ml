@@ -16,7 +16,6 @@ dependencies:
   - attrs=24.3.0
   - babel=2.11.0
   - beautifulsoup4=4.12.3
-  - black=25.1.0
   - blas=1.0
   - bleach=6.2.0
   - bottleneck=1.4.2
@@ -24,24 +23,19 @@ dependencies:
   - brotli-bin=1.0.9
   - brotli-python=1.0.9
   - bzip2=1.0.8
-  - ca-certificates=2025.4.26
-  - certifi=2025.4.26
+  - ca-certificates=2025.2.25
+  - certifi=2025.1.31
   - cffi=1.17.1
-  - cfgv=3.3.1
   - charset-normalizer=3.3.2
-  - click=8.1.8
   - colorama=0.4.6
   - comm=0.2.1
   - contourpy=1.3.1
-  - coverage=7.8.0
   - cycler=0.11.0
   - debugpy=1.8.11
   - decorator=5.1.1
   - defusedxml=0.7.1
-  - distlib=0.3.9
   - exceptiongroup=1.2.0
   - executing=0.8.3
-  - filelock=3.18.0
   - fonttools=4.51.0
   - freetype=2.12.1
   - gprofiler-official=1.0.0
@@ -50,7 +44,6 @@ dependencies:
   - httpx=0.27.0
   - icc_rt=2022.1.0
   - icu=73.1
-  - identify=2.6.10
   - idna=3.7
   - iniconfig=1.1.1
   - intel-openmp=2023.1.0
@@ -102,25 +95,22 @@ dependencies:
   - mkl-service=2.4.0
   - mkl_fft=1.3.11
   - mkl_random=1.2.8
-  - mypy_extensions=1.0.0
   - nbclient=0.8.0
   - nbconvert=7.16.4
   - nbformat=5.10.4
   - nest-asyncio=1.6.0
-  - nodeenv=1.9.1
   - notebook=7.2.2
   - notebook-shim=0.2.3
   - numexpr=2.10.1
   - numpy=1.26.4
   - numpy-base=1.26.4
   - openjpeg=2.5.2
-  - openssl=3.5.0
+  - openssl=3.1.0
   - overrides=7.4.0
   - packaging=24.2
   - pandas=2.2.3
   - pandocfilters=1.5.0
   - parso=0.8.4
-  - pathspec=0.12.1
   - patsy=0.5.6
   - pillow=11.1.0
   - pip=24.2
@@ -128,8 +118,6 @@ dependencies:
   - plotly=5.24.1
   - pluggy=1.5.0
   - ply=3.11
-  - pre-commit=4.2.0
-  - pre_commit=4.2.0
   - prometheus_client=0.21.0
   - prompt-toolkit=3.0.43
   - prompt_toolkit=3.0.43
@@ -142,13 +130,11 @@ dependencies:
   - pyqt5-sip=12.13.0
   - pysocks=1.7.1
   - pytest=8.3.5
-  - pytest-cov=6.1.1
   - python=3.11.11
   - python-dateutil=2.9.0post0
   - python-fastjsonschema=2.20.0
   - python-json-logger=3.2.1
   - python-tzdata=2023.3
-  - python_abi=3.11
   - pytz=2024.1
   - pywin32=305
   - pywinpty=2.0.14
@@ -162,7 +148,6 @@ dependencies:
   - rfc3339-validator=0.1.4
   - rfc3986-validator=0.1.1
   - rpds-py=0.10.6
-  - ruff=0.11.8
   - scipy=1.14.1
   - send2trash=1.8.2
   - setuptools=72.1.0
@@ -179,7 +164,6 @@ dependencies:
   - threadpoolctl=3.5.0
   - tinycss2=1.2.1
   - tk=8.6.14
-  - toml=0.10.2
   - tomli=2.0.1
   - tornado=6.4.2
   - traitlets=5.14.3
@@ -187,12 +171,9 @@ dependencies:
   - typing_extensions=4.12.2
   - tzdata=2024b
   - ucrt=10.0.22621.0
-  - ukkonen=1.0.1
   - unicodedata2=15.1.0
   - urllib3=2.2.3
   - vc=14.40
-  - vc14_runtime=14.42.34433
-  - virtualenv=20.30.0
   - vs2015_runtime=14.42.34433
   - wcwidth=0.2.5
   - webencodings=0.5.1
@@ -213,6 +194,7 @@ dependencies:
       - blis==1.2.0
       - catalogue==2.0.10
       - category-encoders==2.8.1
+      - click==8.1.8
       - cloudpathlib==0.21.0
       - confection==0.1.5
       - cymem==2.0.11
@@ -221,6 +203,7 @@ dependencies:
       - fastdownload==0.0.7
       - fastprogress==1.0.3
       - fasttransform==0.0.1
+      - filelock==3.18.0
       - fsspec==2025.3.0
       - langcodes==3.5.0
       - language-data==1.3.0
