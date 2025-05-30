@@ -28,8 +28,8 @@ def normalise_column_names(df, file_path=None, config = None):
    
     # If 'proteindata' is in the file path, set a column containing 'genes' as the index
     if "proteindata" in file_path:
-        genes_columns = [col for col in df.columns if "pg.genes" in col.lower()]
-        if genes_columns:  # If any column contains 'pg.genes'
+        genes_columns = [col for col in df.columns if "genes" in col.lower()]
+        if genes_columns:  # If any column contains 'genes'
             df = df.set_index(genes_columns[0])
 
         ### For phosphoproteomic data, there are abundances for phosphorylated proteins

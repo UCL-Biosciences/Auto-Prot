@@ -2,6 +2,7 @@
 
 import json
 import logging
+import os
 
 import numpy as np
 import pandas as pd
@@ -207,7 +208,7 @@ def clean_data(
             df_to_use = config.get("df_to_use")
             df = dfs[df_to_use].dropna()
             # some proteins do not produce any associated genes. these values are left blank in the index
-            # we replace the NaNs with Unknown-Gene-X, where X is a unique number for each unknown gene.\
+            # we replace the NaNs with Unknown-Gene-X, where X is a unique number for each unknown gene.
             # Convert index to a Series to manipulate NaNs
             index_series = df.index.to_series().astype(
                 "object"
@@ -278,6 +279,10 @@ def process_data(file_path, metadata=None, json_out=None, outPath=None, config=N
             config=config,
             json_out=json_out,
         )
+        # protein data takes a while to produce and you might want to read or look without processing every time
+        # write to file for easy access
+        df.to_csv(os.path.join(outPath, "data/proteinAbundance.csv"), index=True)
+
         ### run function to validate protein abundance data
         validate_proteindata(data=df, metadata=metadata)
 

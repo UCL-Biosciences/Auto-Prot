@@ -165,6 +165,8 @@ def view_prot_distributions(dfs, plot_titles, metadata, outPath):
     plot_path = os.path.join(
         outPath, "plots", "boxplots_preProcessing_all_samples_plot.png"
     )
+    if os.name == "nt":
+        plot_path = "\\\\?\\" + os.path.abspath(plot_path)
     plt.savefig(plot_path, dpi=300)
     plt.close()
     #### for treatments as kernel densities ####
@@ -190,5 +192,7 @@ def view_prot_distributions(dfs, plot_titles, metadata, outPath):
     plot_path = os.path.join(
         outPath, "plots", "KDE_preProcessing_all_treatments_plot.png"
     )
+    if os.name == "nt":
+        plot_path = "\\\\?\\" + os.path.abspath(plot_path)
     plt.savefig(plot_path, dpi=300)
     plt.close()
