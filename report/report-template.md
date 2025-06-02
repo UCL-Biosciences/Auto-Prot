@@ -63,7 +63,7 @@ Now, we look at the protein abundance and whether there are differences between 
 #### Volcano Plot
 Volcano plots highlight differential protein abundance between two conditions, with log2 fold change on the x-axis and -log10 p-value on the y-axis. Proteinsthat are more upregulated or downregulated are displayed as points further from the center, with blue points representing protein with an FDR-corrected p-value less than 0.05. Verify data quality by ensuring symmetrical distribution and expected patterns (e.g., balanced up- and downregulated proteins). Focus on outliers that may represent biologically meaningful changes. Use this plot to quickly identify key proteins of interest for further analysis or validation.
 
-<img src="../output/full_dataset/plots/combined_volcano_plot.png" width="1000" height="300">
+<img src="../output/full_dataset/plots/combined_volcano_plot.png" >
 
 #### Table of Differentially Expressed Proteins
 Here, we show the top 20 proteins by absolute difference in log2 fold change, including the protein, associated genes, treatment means, LFC, and FDR-corrected p value.

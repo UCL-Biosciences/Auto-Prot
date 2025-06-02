@@ -12,6 +12,7 @@ import markdown  # conda env info in configs/auto-prot-env-markdown-macOS.yml
 import pandas as pd
 
 from src.utils.check_env import get_repo_root
+from src.reporting.image_conversion import inline_base64_images
 
 
 def generate_report_html(
@@ -118,7 +119,7 @@ def generate_report_html(
     # similarly for the enrichment plot
     if os.path.exists(enrichment_plot_path):
         enrichment_plot_md = (
-            f'<img src="{enrichment_plot_path}" width="800" height="400">'
+            f'<img src="{enrichment_plot_path}">'
         )
     else:
         enrichment_plot_md = (
@@ -147,6 +148,10 @@ def generate_report_html(
 
     # Convert the input to HTML
     tempHtml = markdown.markdown(tempMd)
+
+    # Inline images as base64 so HTML is portable
+    tempHtml = inline_base64_images(html = tempHtml, base_dir=os.path.dirname(report_MD))
+
     # If necessary, could print or edit the results at this point.
     # Open the HTML file and write the output.
     with open(report_html, "w") as f:

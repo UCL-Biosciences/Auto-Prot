@@ -2,7 +2,7 @@
 
     "data_type": "prot",
 
-    "df_to_use" : "df_log2",
+    "df_to_use" : "df_imp",
     
     "species" : "hsapiens",
     "pcomponents" : 2,

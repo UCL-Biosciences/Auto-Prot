@@ -201,12 +201,18 @@ def combine_plots(
             if search_term in file:
                 image_paths.append(os.path.join(root, file))
     image_paths = [img for img in image_paths if not fnmatch.fnmatch(os.path.basename(img), "combined_*_plot.png")]
-    # image_paths = sorted(glob(os.path.join(search_path, "**", search_term), recursive=True))
+    # Determine resize size
+    if len(image_paths) == 1:
+        resized_size = (int(img_size[0] * 0.6), int(img_size[1] * 0.6))  # shrink solo image
+    else:
+        resized_size = img_size
     if not image_paths:
         print(f"No plots found for '{search_term}'.")
         return None
     # Load and resize images
-    images = [Image.open(img).resize(img_size, Image.LANCZOS) for img in image_paths]
+    images = [Image.open(img).resize(resized_size, Image.LANCZOS) for img in image_paths]
+    
+    # images = [Image.open(img).resize(img_size, Image.LANCZOS) for img in image_paths]
     # Determine grid layout
     cols = min(max_cols, len(images))
     rows = len(images) // cols
@@ -304,5 +310,6 @@ def combine_csv_files(
     # Ensure output directory exists
     os.makedirs(os.path.dirname(output_filename), exist_ok=True)
     # Save combined CSV
+    
     combined_df.to_csv(output_filename, index=False)
     print(f"Combined file saved at: {output_filename}")

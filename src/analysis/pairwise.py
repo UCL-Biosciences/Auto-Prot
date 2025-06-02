@@ -192,6 +192,10 @@ def enrichment_analysis(
             significance_threshold_method=significance_threshold_method,
             all_results=all_results,
         )  # REAC for Reactome
+        ### gprofiler can return empty results that write to file. In that case, return nothing
+        if pathway_result.empty:
+            print(f"⚠️ No enriched pathways found for {pair_name}. Skipping save and plot.")
+            return None
         ### save results to file
         enrichment_path = os.path.join(
             output_dir, "data", pair_name, (pair_name + "_pathway_enrichment.csv")
