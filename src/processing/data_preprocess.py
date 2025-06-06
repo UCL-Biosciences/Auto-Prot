@@ -3,6 +3,7 @@
 
 import os
 import time
+import subprocess
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -11,6 +12,7 @@ import seaborn as sns
 import sklearn.ensemble
 from sklearn.experimental import enable_iterative_imputer  # noqa: F401
 from sklearn.impute import IterativeImputer  # noqa: F401
+
 
 
 ## impute function
@@ -28,7 +30,6 @@ def impute_prot_data(df, df_median_t):
     Returns:
         pd.DataFrame: Imputed protein abundance DataFrame with original shape and labels.
     """
-
     # Setup imputer using random forest approach (see docs for refs)
     estimator = sklearn.ensemble.HistGradientBoostingRegressor(
         max_iter=30, max_depth=4, min_samples_leaf=5, random_state=0
@@ -53,18 +54,14 @@ def impute_prot_data(df, df_median_t):
     # After creating df_imp, check whether any sample has undergone large change in mean value
     # Means per sample BEFORE (in transposed matrix → axis=1 = sample axis)
     mean_before = df_median_t.mean(axis=1)  # rows = samples
-
     # Means per sample AFTER (transpose df_imp to match)
     mean_after = df_imp.T.mean(
         axis=1
     )  # rows = samples. note df_imp needs transposing to match df_median_t
-
     # SDs per sample BEFORE
     sd_before = df_median_t.std(axis=1)
-
     # Compute per-sample shift in SDs
     shift_in_sds = (mean_before - mean_after).abs() / sd_before
-
     # Warn if any column changed too much
     for col, shift in shift_in_sds.items():
         if shift > 0.2:
@@ -73,8 +70,23 @@ def impute_prot_data(df, df_median_t):
             )
     return df_imp
 
-
-def process_prot_data(df):
+def normalise_vsn(file_path_in, file_path_normalised_out, meanSdPlot_path):
+    subprocess.run(
+    [
+        "conda",
+        "run",
+        "-n",
+        "r-limma-env",
+        "Rscript",
+        "src/r_scripts/normalise-vsn.R",
+        file_path_in,
+        file_path_normalised_out,
+        meanSdPlot_path,
+    ],
+    check=True,
+)
+    
+def process_prot_data(df, config, outPath):
     """
     Preprocess protein abundance data by filtering, transforming, normalising, and imputing.
 
@@ -96,14 +108,28 @@ def process_prot_data(df):
     """
     df = df.replace(0, np.nan)
     df = df[df.isnull().mean(axis=1) <= 0.2]
-    #### impute and normalise #####
     ### log2 all vals
     df_log2 = np.log2(df)
-    # Note It has been shown that normalizing the data first and then imputing the data performs better, than the other way around (Karpievitch et al. 2012).
-    # This preprocessing order is also acquired in AlphaPepStats (unless preprocessing is done in several steps).
+    #### normalise and impute #####
+    # Note It has been shown that normalizing the data first and then imputing the data performs better than the other way around (Karpievitch et al. 2012).
+    # see e.g. AlphaPepStats
     #### normalise ####
-    # Subtract the median of each sample (column) from each value
-    df_median_norm = df_log2.sub(df_log2.median(axis=0), axis=1)
+    ## currently two options supported: vsn (recommended) and sample-median
+    ## vsn requires raw positive intensities, sample median works on log2-transformed data
+    normalise_method = config.get("normalise_method")
+    if normalise_method == "vsn":
+        prot_path = os.path.join(outPath, "data/proteinAbundance_no_zero_values.csv").replace("\\", "/")
+        normalised_path = os.path.join(outPath, "data/proteinAbundance_vsn_normalised.csv").replace("\\", "/")
+        meanSdPlot_path = os.path.join(outPath, "plots/vsn_norm_meanSDplot.png").replace("\\", "/")
+        df.to_csv(prot_path, index=True)
+        normalise_vsn(file_path_in = prot_path,
+                      file_path_normalised_out = normalised_path,
+                      meanSdPlot_path = meanSdPlot_path)
+        df_median_norm = pd.read_csv(normalised_path, index_col=0)
+    ### for normalise by sample median, normalise log2 transformed data
+    if normalise_method == "sample-median":
+        # Subtract the median of each sample (column) from each value
+        df_median_norm = df_log2.sub(df_log2.median(axis=0), axis=1)
     # Transpose: sklearn expects features in columns, samples in rows
     df_median_t = df_median_norm.T  # shape: samples × proteins
     df_median_t.columns = df_median_t.columns.astype(str)

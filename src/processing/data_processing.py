@@ -194,7 +194,7 @@ def clean_data(
             ### pre process protein abundance data
             ## replace 0 with NA, remove prots with lots of missing data
             ## log2 transform, normalise using each sample's median, and impute using random forest
-            dfs = dpp.process_prot_data(df)
+            dfs = dpp.process_prot_data(df, config, outPath=outPath)
             ## to be shown when plotting distributions
             plot_titles = [
                 "Raw Intensities",
@@ -225,9 +225,7 @@ def clean_data(
             df = df[~df.index.duplicated(keep="first")]
             ### save some summary info to file for report
             prot_summary(df, nrow_original, json_out)
-
     df = df.drop_duplicates()
-
     return df
 
 
@@ -272,7 +270,7 @@ def process_data(file_path, metadata=None, json_out=None, outPath=None, config=N
             print( "Data type is phospho, retaining only phoshporylation PTMs" )
 
         df = clean_data(
-            df_renamed,
+            df = df_renamed,
             file_path=file_path,
             metadata=metadata,
             outPath=outPath,

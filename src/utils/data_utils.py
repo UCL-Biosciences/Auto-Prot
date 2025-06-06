@@ -220,8 +220,8 @@ def combine_plots(
         len(images) + cols - 1
     ) // cols  # Round up to fit all images by adding cols - 1
     # Create a blank canvas
-    combined_width = cols * img_size[0]
-    combined_height = rows * img_size[1]
+    combined_width = cols * resized_size[0]
+    combined_height = rows * resized_size[1]
     combined_image = Image.new(
         "RGB", (combined_width, combined_height), (255, 255, 255)
     )  # 255,255,255 specifies background colour = white

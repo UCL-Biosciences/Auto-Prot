@@ -2,6 +2,7 @@
 
     "data_type": "prot",
 
+    "normalise_method" : "vsn",
     "df_to_use" : "df_imp",
     
     "species" : "hsapiens",
