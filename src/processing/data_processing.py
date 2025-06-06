@@ -96,6 +96,8 @@ def clean_prot(df, metadata):
     valid_columns = metadata["protein_abundance_name"].tolist()
     # filter df to keep prot abundance columns
     df = df.loc[:, df.columns.isin(valid_columns)]
+    # At this point, remove rows fully duplicated including the index
+    df = df[~df.reset_index().duplicated(keep='first').values]
     # protein columns should have only numeric data
     # convert non-numeric values to NaN and print warning message
     if not df.equals(df.select_dtypes(include=[np.number])):

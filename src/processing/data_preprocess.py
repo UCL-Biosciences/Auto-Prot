@@ -118,9 +118,9 @@ def process_prot_data(df, config, outPath):
     ## vsn requires raw positive intensities, sample median works on log2-transformed data
     normalise_method = config.get("normalise_method")
     if normalise_method == "vsn":
-        prot_path = os.path.join(outPath, "data/proteinAbundance_no_zero_values.csv").replace("\\", "/")
-        normalised_path = os.path.join(outPath, "data/proteinAbundance_vsn_normalised.csv").replace("\\", "/")
-        meanSdPlot_path = os.path.join(outPath, "plots/vsn_norm_meanSDplot.png").replace("\\", "/")
+        prot_path = os.path.join(outPath, "data/prots_no_zero_values.csv").replace("\\", "/")
+        normalised_path = os.path.join(outPath, "data/prots_vsn_normalised.csv").replace("\\", "/")
+        meanSdPlot_path = os.path.join(outPath, "plots/vsn_meanSDplot.png").replace("\\", "/")
         df.to_csv(prot_path, index=True)
         normalise_vsn(file_path_in = prot_path,
                       file_path_normalised_out = normalised_path,
