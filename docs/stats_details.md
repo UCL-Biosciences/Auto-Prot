@@ -1,21 +1,14 @@
 # Stats and Calculations
-A bit more detail on important calculations.
-
-## Pre Processing
-### Stats
-
-Include details of packages used and others available
-
 This tool is designed to produce a reasonable first exploration of your data. However, no single approach works optimally for all datasets. You should check the data look sensible before drawing strong conclusions. Are the distributions as you would expect after logging, normalising and imputing? Do any technical replicates cluster tightly? Is there variation within or among treatments? Do the different clustering methods agree? Answers to these questions will tell you how stable the results are. There are four datasets you can use in the analysis: raw values, log2 values, sample-median normalised, or normalised and imputed. The default is normalised and imputed. The datast can be changed by using the "df_to_use" field in the `configs/auto-prot-config.json` file: "df", "df_log2", "df_median_norm", "df_imp" 
 
 You are of course welcome (and encouraged) to adjust the code to work best for your dataset. [AlphaPepStats](https://github.com/MannLabs/alphapeptstats) has a more comprehensive set of options for pre-processing data, which can be added to this tool by editing the `data_processing.py` script.
 
 As always, we appreciate feedback and suggestions. Please create issues or get in touch - details on main README file.
 
+## Pre Processing
+
 #### Normalisation
 We saw considerable variability in mean and total abundance among samples and treatments. This can look like lots of proteins are overexpressed in a given treatment group, but reflects overall sample abundance (i.e. a sampling artefact) rather than genuine differences per protein. To address this, we normalise by dividing all values by the sample median. In most cases, we are looking for relative differences among treatments, so this strategy is appropriate. However, if most proteins really do go up/down in one condition, the effect will be reduced or lost. Similarly, you won't get a clear idea of the total abundance per sample/treatment.
-
-
 
 #### Imputation
 Previous studies have found Random Forest imputation methods perform best (see below for refs). The pipeline can use python functions `HistGradientBoostingRegressor` and `IterativeImputer` but with more than 1,000 proteins, it becomes very slow with default parameters. There are some we have tweaked to reduce imputation time:
