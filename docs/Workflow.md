@@ -7,3 +7,5 @@ sample_id, replicate, timepoint
 
 ### protein data
 Some protein data need filtering for the target species. This isn't handled by the pipeline and should be done before running the pipeline.
+
+Proteins need unique gene names. If multiple proteins have the same associated gene name (in a column with "gene" in the title), they will be renamed to Gene-1 and Gene-2 automatically.
