@@ -26,6 +26,7 @@ We want this tool to be accessible for people with limited coding experience. Th
 To make the code work, you must enter the correct parameters and combination of parameters. For example, if you change the input file but not the output file, it will overwrite any previous output in the output file.
 
 - data_type. "prot" = proteomics, this is the default use. "phospho" = phosphoproteomic data. This invokes some additional processing steps e.g. filtering to keep only phosphorylation of STY amino acids, other post-translational modifications are removed.
+- phospho_row_id. If phosphorylation dataset, protein and gene names will be duplicated in multiple rows, with rows having different PTM info. This parameter determines which other columns will be used to create a unique ID for each row.
 - normalise_method. "vsn" = variance stabilisation normalisation from the vsn R package, as recommended by Välikangas et al (2018). "sample-median" will normalise by subtracting each sample's median value from all of that sample's protein intensities.
 - df_to_use. Which dataset to use in the pipeline. Options are raw data ("df_to_use" : "df" NOT REOMMENDED), log2 transformed data ("df_to_use" : "df_log2"), normalised data ("df_to_use" : "df_norm"), or normalised and imputed data ("df_to_use" : "df_imp").
 - species. which species to use when looking up the annotation information for pathway enrichment analysis.
@@ -34,8 +35,9 @@ To make the code work, you must enter the correct parameters and combination of 
 - outPath. path to general output directory
 - json_outPath. Path to a file (json format) to store some information that is referenced in the html report
 - analyse_full_dataset. whether to analyse the full dataset, which means without filtering any proteins.
-- analyse_subsets. whether to subset the proteins for a specific group. Functionality limited at the moment. Not recommended.
-- subsets. for 
+- analyse_subsets. whether to run the analysis on subsets of samples.
+- subset_variable. which variable to subset the data on when running on subsets.
+- subsets. if empty, will run on all unique values of the subset_variable. If you want to run on specific subsets, enter them here.
 
 
 ## Refs
