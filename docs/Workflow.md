@@ -1,19 +1,38 @@
 # Workflow Overview
 Here we discuss the workflow in more detail, describing the scripts, their roles and some important details.
 
+## Environments
+Users do not need to install separately the many packages used by the pipeline. The packages are stored in a set of files in the `/configs` directory in config files e.g. `configs/auto-prot-env-windowsOS.yml`. Recreate with `conda env create --name --file=configs/auto-prot-env-windowsOS.yml` and activate with `conda activate auto-proteomics`. A corresponding file for mac OS is also in configs. You will need to create environments for the general pipeline (configs/auto-prot-env-windowsOS.yml), R functions (configs/auto-prot-env-limma-windowsOS.yml) and markdown functions (configs/auto-prot-env-markdown-windowsOS.yml).
+
+For more information on conda environments, see links in the [conda homepage](https://docs.conda.io/en/latest).
+ 
+This project includes an automatic Conda environment check before running the report generator. It ensures the active environment matches the environments/auto-prot-env.yml file. The check function is saved in `src/utils/check_env.py`.
+
+If the environments differ, you will receive a warning before continuing. Note this doesn't happen in notebooks in VSC.
+
+#### Conda Issues
+I ran into a few common issues with the environment worth noting. They mostly come down to making sure that your computer knows where to look for the packages installed by conda. E.g.:
+* make sure the conda executable is in $PATH.
+* make sure the location where the environments are saved is in $PATH. It can be different to the location of conda installation
+* make sure the python version running in any script is the correct one i.e. it matches the version in the conda env.
+
+
+
 ## Input
 Please please please never mess with raw data. Everything in this pipeline runs automatically. You can always re-run it to recover outputs. If you have a single copy of your raw data and overwrite it, it might not be possible to retrieve the raw data! It would be good to have a copy of the original data safely stored (and backed up) in a location that will never be touched by this pipeline (or any other). E.g. for UCL people, store the raw data on the [Research Data Storage Service](https://www.ucl.ac.uk/isd/research-data-storage-service) and make a local copy as input for the pipeline.
 
 ### Metadata
 Requires four columns:
-- sample_id
-- replicate. If there are no replicates, replicate should all be '1'
-- treatment. treatment group for the sample. E.g. positive, negative, healthy etc.
+- sample_id. unique ID for each sample
+- replicate. replicates for sample IDs. If there are no replicates, these values will all be 1.
+- treatment. treatment group for each sample. E.g. positive, negative, healthy etc.
 - protein_abundance_name. Very important column linking metadata to protein abundance. This must contain the exact name of the column containing protein data for each sample, replicate etc
 
 The pipeline will run with just these four columns in metadata. However, sample_id + replicate combinations must be unique. If there is a time point variable to be included, it should be under in a column called `timepoint`. This will then be added to sample_id and replicate to generate a unique identifier.
 
 ### Protein data
+Needs only the raw protein intensity data for each sample, with column names matching the values in the `protein_abundance_name` in the metadata. If the genes associated with the proteins are available, include the gene names in a column with "genes" in the name, and this will be used throughout to label the proteins.
+
 The name of the protein data by default is proteindata.csv in /data/input. You can rename the file, as long as you update the protPath field in the config (see below). The protein data must have the word "protein" (lower case) in the file name as this determines the data cleaning steps, which are different for protein data and metadata.
 
 Some protein data need filtering for the target species, quality etc. This isn't handled by the pipeline and should be done before running the pipeline.
@@ -53,6 +72,22 @@ To make the code work, you must enter the correct parameters and combination of 
 - analyse_subsets. whether to run the analysis on subsets of samples.
 - subset_variable. which variable to subset the data on when running on subsets.
 - subsets. if empty, will run on all unique values of the subset_variable. If you want to run on specific subsets, enter them here.
+
+## Data Processing
+
+
+## Analysis
+
+
+
+## Creating the summary report
+The report is generated in two main of steps:
+1. `python main.py` creates the output
+2. `src/reporting/generate_report.py` creates an html output file using the following:
+     * a template for the report `./reporting/report-template.md`
+     * outputs (tables, plots) from `main.py`
+     * values in `output/data/data_for_report.json` that go directly into the markdown text
+     * `src/reporting/generate_report.py` which converts the markdown template into an html file.
 
 
 ## Refs
