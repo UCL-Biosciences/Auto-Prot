@@ -27,8 +27,11 @@ To estimate each value, we use the `HistGradientBoostingRegressor` (HGBR) — a 
 
 While previous studies have found Random Forests particularly effective for imputation due to their robustness and ability to capture nonlinear feature interactions, we follow the approach used in AlphaPepStats by applying HGBR, which is similar to Random Forest but can offer higher predictive power.
 
-## Differential Abundance
+## Differential Expression
 We use the Limma R Package (REF) to quantify differences between treatment groups for all proteins (following e.g. Lou et al. 2022)
+
+
+Be careful interpreting the direction of the differential expression calculations. By default, the pairs of treatment groups compared are all unique combinations of the treatment column in metadata. 
 
 
 
