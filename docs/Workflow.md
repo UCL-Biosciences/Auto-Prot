@@ -1,23 +1,6 @@
 # Workflow Overview
 Here we discuss the workflow in more detail, describing the scripts, their roles and some important details.
 
-## Environments
-Users do not need to install separately the many packages used by the pipeline. The packages are stored in a set of files in the `/configs` directory in config files e.g. `configs/auto-prot-env-windowsOS.yml`. Recreate with `conda env create --name --file=configs/auto-prot-env-windowsOS.yml` and activate with `conda activate auto-proteomics`. A corresponding file for mac OS is also in configs. You will need to create environments for the general pipeline (configs/auto-prot-env-windowsOS.yml), R functions (configs/auto-prot-env-limma-windowsOS.yml) and markdown functions (configs/auto-prot-env-markdown-windowsOS.yml).
-
-For more information on conda environments, see links in the [conda homepage](https://docs.conda.io/en/latest).
- 
-This project includes an automatic Conda environment check before running the report generator. It ensures the active environment matches the environments/auto-prot-env.yml file. The check function is saved in `src/utils/check_env.py`.
-
-If the environments differ, you will receive a warning before continuing. Note this doesn't happen in notebooks in VSC.
-
-#### Conda Issues
-I ran into a few common issues with the environment worth noting. They mostly come down to making sure that your computer knows where to look for the packages installed by conda. E.g.:
-* make sure the conda executable is in $PATH.
-* make sure the location where the environments are saved is in $PATH. It can be different to the location of conda installation
-* make sure the python version running in any script is the correct one i.e. it matches the version in the conda env.
-
-
-
 ## Input
 Please please please never mess with raw data. Everything in this pipeline runs automatically. You can always re-run it to recover outputs. If you have a single copy of your raw data and overwrite it, it might not be possible to retrieve the raw data! It would be good to have a copy of the original data safely stored (and backed up) in a location that will never be touched by this pipeline (or any other). E.g. for UCL people, store the raw data on the [Research Data Storage Service](https://www.ucl.ac.uk/isd/research-data-storage-service) and make a local copy as input for the pipeline.
 
