@@ -25,10 +25,18 @@ Proteins need unique gene names. If multiple proteins have the same associated g
 #### Phosphoproteomic data
 The pipeline can be used with phosphoproteomic data. There are a few things to be aware of before running the pipeline.
 
-1. In phospho data, each protein can be included multiple times (in multiple rows), with each row including data for a different PTM. In this case, the gene name won't be unique and the pipeline will crash. The `data_type` field in the config should be set to "phospho" and `phoshpho_row_id` should include the names of columns used to create unique row IDs. 
+1. In phospho data, each protein can be included multiple times (in multiple rows), with each row including data for a different PTM. In this case, the gene name won't be unique and the pipeline will crash. The `data_type` field in the config should be set to "phospho" and `phoshpho_row_id` should include the names of columns used to create unique row IDs. The phospho_row_id follows the following format. "fields" tells us which columns to use to generate unique row IDs, "missing_value" is what to do if some rows have missing data in the "fields" columns.
+
+```
+"phospho_row_id" : {
+        "fields": ["Amino acid", "Position", "Multiplicity"],
+        "missing_value": "NA"   
+    },
+```
+
 
 ### Config file
-We want this tool to be accessible for people with limited coding experience. Therefore, key parameters can be set without the need to change any code. These parameters are controlled from a config file. By default: `configs/auto-prot-config.json`. The main functions find this file and extract the parameters as required.
+We want this tool to be accessible for people with limited coding experience. Therefore, key parameters can be set without the need to change any code. These parameters are controlled from a config file in json format. By default: `configs/auto-prot-config.json`. The main functions find this file and extract the parameters as required.
 
 To make the code work, you must enter the correct parameters and combination of parameters. For example, if you change the input file but not the output file, it will overwrite any previous output in the output file.
 
