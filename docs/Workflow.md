@@ -16,9 +16,9 @@ The pipeline will run with just these four columns in metadata. However, sample_
 ### Protein data
 The name of the protein data by default is proteindata.csv in /data/input. You can rename the file, as long as you update the protPath field in the config (see below). The protein data must have the word "protein" (lower case) in the file name as this determines the data cleaning steps, which are different for protein data and metadata.
 
-Some protein data need filtering for the target species. This isn't handled by the pipeline and should be done before running the pipeline.
+Some protein data need filtering for the target species, quality etc. This isn't handled by the pipeline and should be done before running the pipeline.
 
-It is useful to generate an index of protein or gene names so we can describe patterns for individual proteins. In order to be flexible, the pipeline can proceed without a specified column describing each protein/gene. By default it will use any column with "gene" in the name because this is what works with the data we have tried so far. If you don't have that, you could rename a column in the protein data to include "gene".
+It is useful to generate an index of protein or gene names so we can describe patterns for individual proteins. In order to be flexible, the pipeline can proceed without a specified column describing each protein/gene. By default it will use any column with "gene" in the name because this is what works with the data we have tried so far. If you don't have that, you could rename a column in the protein data to include "gene". Missing values in this column are replaced with "unknown-gene-X", with X being a unique number each of the rows with missing gene name.
 
 Proteins need unique gene names. If multiple proteins have the same associated gene name (in a column with "gene" in the title), they will be renamed to Gene-1 and Gene-2 automatically.
 
