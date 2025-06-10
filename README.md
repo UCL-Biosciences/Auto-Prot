@@ -87,7 +87,20 @@ There is a configuration (config) file that allows the user to control lots of p
 The template for the report can be edited: `report/report-template.md`
 
 ## 🤝 Contributing
-Set up contributions docs...
+
+Contributions are welcome!
+
+If you’d like to contribute a bug fix, feature, or improvement:
+1. Fork this repository and create a new branch from `staging`
+2. Make your changes
+3. Ensure code passes `pre-commit` checks (run `pre-commit run --all-files`)
+4. Open a pull request to the `staging` branch with a short description of your changes
+
+Please note:
+- All code should be commented and use informative function/variable names
+- Use British English for spelling (e.g. "standardised" not "standardized")
+
+Need help? Open an issue or email [james.d.gilbert@ucl.ac.uk](mailto:james.d.gilbert@ucl.ac.uk)
 
 ## 📧 Feedback
 Suggestions and feedback are very welcome. Please send to james.d.gilbert@ucl.ac.uk
