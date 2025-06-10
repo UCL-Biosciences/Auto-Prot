@@ -13,14 +13,21 @@ Requires four columns:
 
 The pipeline will run with just these four columns in metadata. However, sample_id + replicate combinations must be unique. If there is a time point variable to be included, it should be under in a column called `timepoint`. This will then be added to sample_id and replicate to generate a unique identifier.
 
-### protein data
+### Protein data
+The name of the protein data by default is proteindata.csv in /data/input. You can rename the file, as long as you update the protPath field in the config (see below). The protein data must have the word "protein" (lower case) in the file name as this determines the data cleaning steps, which are different for protein data and metadata.
+
 Some protein data need filtering for the target species. This isn't handled by the pipeline and should be done before running the pipeline.
 
 It is useful to generate an index of protein or gene names so we can describe patterns for individual proteins. In order to be flexible, the pipeline can proceed without a specified column describing each protein/gene. By default it will use any column with "gene" in the name because this is what works with the data we have tried so far. If you don't have that, you could rename a column in the protein data to include "gene".
 
 Proteins need unique gene names. If multiple proteins have the same associated gene name (in a column with "gene" in the title), they will be renamed to Gene-1 and Gene-2 automatically.
 
-### config file
+#### Phosphoproteomic data
+The pipeline can be used with phosphoproteomic data. There are a few things to be aware of before running the pipeline.
+
+1. In phospho data, each protein can be included multiple times (in multiple rows), with each row including data for a different PTM. In this case, the gene name won't be unique and the pipeline will crash. The `data_type` field in the config should be set to "phospho" and `phoshpho_row_id` should include the names of columns used to create unique row IDs. 
+
+### Config file
 We want this tool to be accessible for people with limited coding experience. Therefore, key parameters can be set without the need to change any code. These parameters are controlled from a config file. By default: `configs/auto-prot-config.json`. The main functions find this file and extract the parameters as required.
 
 To make the code work, you must enter the correct parameters and combination of parameters. For example, if you change the input file but not the output file, it will overwrite any previous output in the output file.
