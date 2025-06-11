@@ -45,17 +45,17 @@ We start with simple clustering. Which samples are most similar?
 #### PCA Plot
 PCA plots represent the distances among samples. This is a good chance to start exploring your data, looking both for interesting results and anything that suggests there is something unusual in the data generated. Does the plot below show what you expected? If there are technical or biological replicates, we generally expect them to be tightly clustered. Is that the case? What about the clustering by treatment, is that what you expected?
 
-<img src="../output/full_dataset/plots/pca_plot.png" width="600" height="450">
+<img src="../output/full_dataset/plots/pca_plot.pdf" width="600" height="450">
 
 #### MDS Clustering
 A multidimensional scaling (MDS) plot is a visualisation tool that shows how similar samples are. Similar to PCA but can be more flexible. While PCA relies on the assumption of linearity, MDS does not assume linearity because it works on ranks. MDS is more flexible in the types of data it can use. Does the MDS agree with the PCA plot above?
 
-<img src="../output/full_dataset/plots/mds_plot.png" width="600" height="450">
+<img src="../output/full_dataset/plots/mds_plot.pdf" width="600" height="450">
 
 ### Relationships among samples and proteins
 The below dendrogram and heatmap shows hierarchical relationships of proteins (rows) and samples (columns) based on their dissimilarity. Colour intensity represents standardised protein abundance. Clusters highlight groups of proteins/samples with similar abundances. Verify data quality by ensuring expected clustering (e.g., replicates group together) and checking for outliers or missing data. Explore clusters to identify functionally related proteins or patterns linked to experimental conditions.
 
-<img src="../output/full_dataset/plots/heatmap_plot.png" width="600" height="600">
+<img src="../output/full_dataset/plots/heatmap_plot.pdf" width="600" height="600">
 
 ### Differential Protein Abundance
 Now, we look at the protein abundance and whether there are differences between treatment groups.

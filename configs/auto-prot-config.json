@@ -2,6 +2,7 @@
 
     "data_type": "prot",
     "phospho_row_id" : "",
+    "missing_threshold": 0.75,
 
     "normalise_method" : "vsn",
     "df_to_use" : "df_imp",

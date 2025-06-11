@@ -72,7 +72,7 @@ def run_analysis(
 
     # Generate and save heatmap
     print("Generating heatmap...")
-    df_heatmap = generate_heatmap(df.T, output_dir, metadata=metadata)
+    df_heatmap = generate_heatmap(df, output_dir, metadata=metadata)
     results["heatmap"] = df_heatmap
 
     ###### Pairwise Analyses #####

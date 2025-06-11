@@ -15,7 +15,7 @@ def generate_protein_data(
     repo_root,
     human_genes_file="input/data/human_genes.txt",
     n_treatments=2,
-    n_genes=1000,
+    n_genes=100,
     samples=None,
     n_replicates=5,
     n_timepoints = 2,
