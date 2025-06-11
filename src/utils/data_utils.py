@@ -8,6 +8,40 @@ import pandas as pd
 
 from PIL import Image
 
+def apply_row_id_config(df, config):
+    if config.get("data_type") != "phospho":
+        return df  # Skip modification
+
+    row_id_cfg = config.get("phospho_row_id", {})
+    fields = [f.lower().replace(" ", ".") for f in row_id_cfg.get("fields", [])]
+    missing = row_id_cfg.get("missing_value", "NA")
+
+    if not fields:
+        print("No fields specified for row ID construction; skipping.")
+        return df
+
+    print("Combining index with fields to make unique row IDs:", fields)
+
+    # Safely get values from each field, fill missing if needed
+    unique_phos_name = []
+    for field in fields:
+        if field in df.columns:
+            part = df[field].fillna(missing).astype(str)
+        else:
+            print(f"Warning: field '{field}' not in DataFrame; not adding to unique row IDs") # if the field is missing
+        unique_phos_name.append(part)
+
+    # Combine extra parts with underscores
+    extra_str = unique_phos_name[0]
+    for part in unique_phos_name[1:]:
+        extra_str += "_" + part
+
+    # Combine with existing index
+    df.index = df.index.astype(str) + "__" + extra_str
+
+    return df
+
+
 def normalise_column_names(df, file_path=None, config = None):
     """
     Standardise column names and optionally combine phosphorylation information.
@@ -25,35 +59,37 @@ def normalise_column_names(df, file_path=None, config = None):
     """
     df.columns = [col.lower().replace(" ", "_") for col in df.columns]
     df.columns = df.columns.astype(str)
-   
-    # If 'proteindata' is in the file path, set a column containing 'genes' as the index
-    if "proteindata" in file_path:
-        genes_columns = [col for col in df.columns if "genes" in col.lower()]
+    # If 'protein' is in the file path, set a column containing 'gene' as the index
+    if "protein" in file_path:
+        genes_columns = [col for col in df.columns if "gene" in col.lower()]
         if genes_columns:  # If any column contains 'genes'
-            df = df.set_index(genes_columns[0])
-
+            df = df.set_index(df[genes_columns[0]].str.split(";").str[0])
+        # some proteins do not produce any associated genes. these values are left blank in the index
+        # we replace the NaNs with Unknown-Gene-X, where X is a unique number for each unknown gene.
+        # Convert index to a Series to manipulate NaNs
+        index_series = df.index.to_series().astype(
+            "object"
+        )  ## 'object' allows strings and NAs
+        # Find NaN values in index
+        nan_mask = index_series.isna()
+        # Replace NaNs with "Unknown-gene-N"
+        index_series[nan_mask] = [
+            f"Unknown-gene-{i+1}" for i in range(nan_mask.sum())
+        ]
+        # Set updated index
+        df.index = index_series
         ### For phosphoproteomic data, there are abundances for phosphorylated proteins
         ### Each protein can be present multiple times - once per phosphorylation state
         ### For the analysis to proceed, we need a unique ID for the protein-phosphorylation state combination
         ## we append the phosporylation state (in column PTM.ModificationTitle and PTM.SiteAA) to the pg.genes column
         if config.get("data_type") == "phospho":
-            print(
-                "Gene names and phosphorylation state present. Combining to make unique gene names"
-            )
-            df.index = (
-                df.index.astype(str)
-                + "__"
-                + df["ptm.modificationtitle"]
-                + "_"
-                + df["ptm.siteaa"]
-                + "_"
-                + df["ptm.sitelocation"].astype(str)
-            )
+            print("Gene names and phosphorylation state present. Combining to make unique gene names" )
+            df = apply_row_id_config(df, config)
     return df
 
 
 ## helper function for subsetting based on phosphoproteomics. data to subset for must be indicated in protein abundance index, and must match subset term in config.
-def get_subset(df, subset_term):
+def get_subset(df, subset_term, metadata, subset_variable):
     """
     Subset a DataFrame by searching for a term in the index.
 
@@ -67,7 +103,15 @@ def get_subset(df, subset_term):
     Raises:
         ValueError: If no index values contain the subset term.
     """
-    subset_df = df[df.index.str.contains(subset_term, regex=False)]
+    ### find the rows that match the subset term, then take the sample_rep column (protein intensities are named after sample_rep)
+    matching_sample_ids = metadata.loc[metadata[subset_variable].astype(str) == str(subset_term), "sample_rep"].tolist()
+    ## subset target columns
+    print(f"subset_variable: {subset_variable}")
+    print(f"subset_term: {subset_term}")
+    print("metadata[subset_variable].unique():", metadata[subset_variable].unique())
+    print("metadata.shape:", metadata.shape)
+    print("metadata.head():\n", metadata.head())
+    subset_df = df[matching_sample_ids]
     if subset_df.empty:
         raise ValueError(f"No matches found for subset: {subset_term}")
     return subset_df

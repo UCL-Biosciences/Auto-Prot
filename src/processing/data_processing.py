@@ -186,7 +186,7 @@ def clean_data(
     """
     if "metadata" in file_path:
         df = clean_meta(df=df, json_out=json_out)
-    if "proteindata" in file_path:
+    if "protein" in file_path:
         if metadata is None:
             raise ValueError("Error: Metadata is required but not provided.")
         # Check if the required column is in metadata
@@ -196,29 +196,6 @@ def clean_data(
             )
         else:
             df, nrow_original = clean_prot(df, metadata)
-            # some proteins do not produce any associated genes. these values are left blank in the index
-            # we replace the NaNs with Unknown-Gene-X, where X is a unique number for each unknown gene.
-            # Convert index to a Series to manipulate NaNs
-            index_series = df.index.to_series().astype(
-                "object"
-            )  ## 'object' allows strings and NAs
-            # Find NaN values in index
-            nan_mask = index_series.isna()
-            # Replace NaNs with "Unknown-gene-N"
-            index_series[nan_mask] = [
-                f"Unknown-gene-{i+1}" for i in range(nan_mask.sum())
-            ]
-            # Set updated index
-            df.index = index_series
-            ### similarly, if multiple rows have same gene name, rename to gene-1, gene-2 etc.
-            # Create a Series of index values
-            index_series = pd.Series(df.index)
-            # Count duplicates and assign suffixes
-            counts = index_series.groupby(index_series).cumcount()
-            # Where count > 0, add suffix
-            new_index = index_series.where(counts == 0, index_series + '-' + (counts + 1).astype(str))
-            # Assign back to the DataFrame
-            df.index = new_index
             ### pre process protein abundance data
             ## replace 0 with NA, remove prots with lots of missing data
             ## log2 transform, normalise using each sample's median, and impute using random forest
@@ -235,7 +212,27 @@ def clean_data(
             ## which df to use?
             df_to_use = config.get("df_to_use")
             df = dfs[df_to_use].dropna()
-            
+            # # some proteins do not produce any associated genes. these values are left blank in the index
+            # # we replace the NaNs with Unknown-Gene-X, where X is a unique number for each unknown gene.
+            # # Convert index to a Series to manipulate NaNs
+            # index_series = df.index.to_series().astype(
+            #     "object"
+            # )  ## 'object' allows strings and NAs
+            # # Find NaN values in index
+            # nan_mask = index_series.isna()
+            # # Replace NaNs with "Unknown-gene-N"
+            # index_series[nan_mask] = [
+            #     f"Unknown-gene-{i+1}" for i in range(nan_mask.sum())
+            # ]
+            # # Set updated index
+            # df.index = index_series
+            # ### For phosphoproteomic data, there are abundances for phosphorylated proteins
+            # ### Each protein can be present multiple times - once per phosphorylation state
+            # ### For the analysis to proceed, we need a unique ID for the protein-phosphorylation state combination
+            # ## we append the phosporylation state (in column PTM.ModificationTitle and PTM.SiteAA) to the pg.genes column
+            # if config.get("data_type") == "phospho":
+            #     print("Gene names and phosphorylation state present. Combining to make unique gene names" )
+            #     df = apply_row_id_config(df, config)
             # drop rows with duplicated index values <<<< This is a weird quirk of the phosphoproteomics data. Need to find a way of uniquely identifying rows. Added to github issue
             # df = df[~df.index.duplicated(keep="first")]
             ### save some summary info to file for report
@@ -268,7 +265,7 @@ def process_data(file_path, metadata=None, json_out=None, outPath=None, config=N
     """
     df_in = load_data(file_path)
     if df_in is not None:
-        df_renamed = normalise_column_names(df_in, file_path=file_path, config=config)
+        df_renamed = normalise_column_names(df = df_in, file_path=file_path, config=config)
     if "metadata" in file_path:
         ### clean metadata
         df = clean_data(
@@ -277,13 +274,7 @@ def process_data(file_path, metadata=None, json_out=None, outPath=None, config=N
         ### run function to validate metadata
         validate_metadata(df)
 
-    if "proteindata" in file_path:
-        
-        ### if data are phosphorylation, filter out PTMs that are not phosphorylation
-        if config.get("data_type") == "phospho":
-            df_renamed = get_subset(df_renamed, "Phospho (STY)")
-            print( "Data type is phospho, retaining only phoshporylation PTMs" )
-
+    if "protein" in file_path:
         df = clean_data(
             df = df_renamed,
             file_path=file_path,
@@ -292,11 +283,11 @@ def process_data(file_path, metadata=None, json_out=None, outPath=None, config=N
             config=config,
             json_out=json_out,
         )
+        ### run function to validate protein abundance data
+        validate_proteindata(data=df, metadata=metadata)
+
         # protein data takes a while to produce and you might want to read or look without processing every time
         # write to file for easy access
         df.to_csv(os.path.join(outPath, "data/proteinAbundance.csv"), index=True)
-
-        ### run function to validate protein abundance data
-        validate_proteindata(data=df, metadata=metadata)
 
     return df

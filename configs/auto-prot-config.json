@@ -1,6 +1,7 @@
 {
 
     "data_type": "prot",
+    "phospho_row_id" : "",
 
     "normalise_method" : "vsn",
     "df_to_use" : "df_imp",
@@ -13,8 +14,9 @@
     "json_outPath" : "output_human/data/data_for_report.json",
     
     "analyse_full_dataset": true,
-    "analyse_subsets": false,
-    "subsets" : [],
+    "analyse_subsets": true,
+    "subset_variable": "timepoint",
+    "subsets" : "",
 
     "LFC_plot_p_or_FDRp": "Log10_FDR_P_Value",
     "LFC_threshold" : 1,

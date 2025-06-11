@@ -71,20 +71,44 @@ def impute_prot_data(df, df_norm_t):
     return df_imp
 
 def normalise_vsn(file_path_in, file_path_normalised_out, meanSdPlot_path):
+    """
+    Normalises proteomics data using Variance Stabilising Normalisation (VSN) 
+    via an R script, and generates a mean–SD diagnostic plot.
+
+    Parameters
+    ----------
+    file_path_in : str
+        Path to the input CSV/TSV file containing raw protein abundance data.
+        
+    file_path_normalised_out : str
+        Path where the normalised output file should be saved.
+        
+    meanSdPlot_path : str
+        Path where the mean–SD diagnostic plot (e.g. PNG or PDF) will be saved.
+
+    Raises
+    ------
+    subprocess.CalledProcessError
+        If the R script fails or returns a non-zero exit code.
+    
+    Notes
+    -----
+    - This function runs an R script (`normalise-vsn.R`) that must accept 
+      three arguments (input file, output file, and plot path).
+    - The script is executed within a Conda environment called `r-limma-env`.
+    - `check=True` ensures Python raises an error if the R script fails.
+    """
     subprocess.run(
-    [
-        "conda",
-        "run",
-        "-n",
-        "r-limma-env",
-        "Rscript",
-        "src/r_scripts/normalise-vsn.R",
-        file_path_in,
-        file_path_normalised_out,
-        meanSdPlot_path,
-    ],
-    check=True,
-)
+        [
+            "conda", "run", "-n", "r-limma-env", "Rscript",
+            "src/r_scripts/normalise-vsn.R",
+            file_path_in,
+            file_path_normalised_out,
+            meanSdPlot_path,
+        ],
+        check=True,
+    )
+
     
 def process_prot_data(df, config, outPath):
     """
