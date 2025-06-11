@@ -73,23 +73,33 @@ def main():
             output_dir=full_outPath,
             config=config,
         )
-        print("Analysis complete.")
+        print("Full analysis complete.")
     if config.get("analyse_subsets") is True:
         # Read subsets from config
-        subset_terms = config.get("subsets", [])
+        if not config.get("subsets") :
+            subset_terms = metadata[config.get("subset_variable")].unique()
+        if config.get("subsets") :
+            subset_terms = list(config["subsets"])
         # Loop through subsets
         for subset in subset_terms:
             print(f"Processing subset: {subset}")
+            subset_variable = config.get("subset_variable")
+            ### find the rows in metadata that match the subset term
+            subset_metadata = metadata.loc[metadata[subset_variable].astype(str) == str(subset),]
             # Subset data based on index search term
-            subset_df = get_subset(df_protAbundance, subset)
+            subset_df = get_subset(df = df_protAbundance, subset_term = subset,
+                                   metadata = subset_metadata, subset_variable = subset_variable)
             # Create a new output directory for the subset
-            subset_outPath = os.path.join(outPath, "subsets", subset.replace(" ", "_"))
+            # if subset has a space in it, replace with _
+            if " " in str(subset):
+                subset = str(subset).replace(" ", "_")    
+            subset_outPath = os.path.join(outPath, "subsets", subset_variable + "_" + str(subset))
             make_outdir(subset_outPath, make_subdirs=True)
             # Run analysis for the subset
             print(f"Running analysis for {subset}...")
             an.run_analysis(
                 df=subset_df,
-                metadata=metadata,
+                metadata=subset_metadata,
                 json_out=json_out,
                 output_dir=subset_outPath,
                 config=config,

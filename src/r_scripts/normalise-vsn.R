@@ -15,7 +15,7 @@ library(vsn)
 library(tibble)
 
 # Read input
-data <- read.csv(input_file)
+data <- read.csv(input_file, check.names = FALSE)
 rownames(data) <- data[[1]]
 data <- data[, -1]
 

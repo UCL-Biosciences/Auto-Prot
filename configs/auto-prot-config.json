@@ -1,6 +1,10 @@
 {
 
-    "data_type": "prot",
+    "data_type": "phospho",
+    "phospho_row_id" : {
+        "fields": ["Protein", "Amino acid", "Position", "Multiplicity"],
+        "missing_value": "NA"   
+    },
 
     "normalise_method" : "vsn",
     "df_to_use" : "df_imp",
@@ -8,14 +12,15 @@
     "species" : "hsapiens",
     "pcomponents" : 2,
     
-    "protPath" : "input/data/proteindata.csv",
+    "protPath" : "input/data/protein_phospho_data_long.csv",
     "metaPath" : "input/data/metadata.csv",
     "outPath" : "output",
     "json_outPath" : "output/data/data_for_report.json",
     
     "analyse_full_dataset": true,
-    "analyse_subsets": false,
-    "subsets" : [],
+    "analyse_subsets": true,
+    "subset_variable": "timepoint",
+    "subsets" : "",
 
     "LFC_plot_p_or_FDRp": "Log10_FDR_P_Value",
     "LFC_threshold" : 1,
