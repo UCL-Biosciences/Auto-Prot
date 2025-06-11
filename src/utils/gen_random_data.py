@@ -18,6 +18,7 @@ def generate_protein_data(
     n_genes=1000,
     samples=None,
     n_replicates=5,
+    n_timepoints = 2,
     spike_multiplier=4,
     na_fraction=0.05,
     random_seed=0,
@@ -83,8 +84,6 @@ def generate_protein_data(
     df["PTM.SiteAA"] = ["S"] * n_rows
     df["PTM.SiteLocation"] =  np.random.randint(1, 1001, size=n_rows)
 
-
-
     # Save protein data
     os.makedirs(os.path.join(repo_root, output_prefix), exist_ok=True)
     df.to_csv(os.path.join(repo_root, output_prefix, "proteindata.csv"))
@@ -93,6 +92,7 @@ def generate_protein_data(
     metadata_df = pd.DataFrame({
         "sample_id": [s for s in samples for _ in range(n_replicates)],
         "replicate": list(range(1, n_replicates + 1)) * len(samples),
+        "timepoint" : (list(range(1, n_timepoints + 1)) * ((n_total_samp_rep // n_timepoints) + 1))[:n_total_samp_rep],
         "treatment": treatments,
         "protein_abundance_name": col_names,
     })
