@@ -6,12 +6,11 @@
     "df_to_use" : "df_imp",
     
     "species" : "hsapiens",
-    "pcomponents" : 2,
     
-    "protPath" : "input/data/proteindata.csv",
+    "protPath" : "input/data/proteindata_human.tsv",
     "metaPath" : "input/data/metadata.csv",
-    "outPath" : "output",
-    "json_outPath" : "output/data/data_for_report.json",
+    "outPath" : "output_human",
+    "json_outPath" : "output_human/data/data_for_report.json",
     
     "analyse_full_dataset": true,
     "analyse_subsets": false,

@@ -10,6 +10,8 @@ from sklearn.manifold import MDS
 import matplotlib.pyplot as plt
 from scipy.spatial.distance import pdist, squareform
 import seaborn as sns
+from adjustText import adjust_text
+
 
 def generate_pca(
     df: pd.DataFrame,
@@ -83,23 +85,30 @@ def generate_pca(
     ]
 
     # Plot PCA
-    plt.figure(figsize=(4, 3))
+    plt.figure(figsize=(8, 6))
     plot_pca = sns.scatterplot(
         data=df_PCA,
         x=f"PC{pc_x}",
         y=f"PC{pc_y}",
         hue="treatment",
     )
-    # Annotate points
+
+    # Create list of text objects
+    texts = []
     for i in range(df_PCA.shape[0]):
-        plt.text(
-            x=df_PCA[f"PC{pc_x}"].iloc[i] + 0.1,
-            y=df_PCA[f"PC{pc_y}"].iloc[i] + 0.1,
-            s=df_PCA.index[i],
-            fontsize=9,
-            ha="center",
-            va="bottom",
+        texts.append(
+            plt.text(
+                x=df_PCA[f"PC{pc_x}"].iloc[i],
+                y=df_PCA[f"PC{pc_y}"].iloc[i],
+                s=df_PCA.index[i],
+                fontsize=9,
+                ha="center",
+                va="bottom"
+            )
         )
+
+    # Adjust text to avoid overlaps
+    adjust_text(texts, arrowprops=dict(arrowstyle='-', color='grey', lw=0.5))
 
     plt.xlabel(pc_labels[0])
     plt.ylabel(pc_labels[1])
@@ -174,15 +183,22 @@ def generate_MDS(
     ## seaborn returns an axis-object rather than a figure, so you can still alter features of it. E.g. axes names:
     plot_nmds.set(xlabel="MDS 1", ylabel="MDS 2")
     # Add sample IDs from the 'target' column with an offset
+    # Create list of text objects to adjust
+    texts = []
     for i in range(mds_coords_df.shape[0]):
-        plt.text(
-            x=mds_coords_df["MDS1"].iloc[i] + 1,  # Add a small x-offset
-            y=mds_coords_df["MDS2"].iloc[i] + 1,  # Add a small y-offset
-            s=mds_coords_df.index[i],
-            fontsize=9,
-            ha="center",  # Horizontal alignment
-            va="bottom",  # Vertical alignment
+        texts.append(
+            plt.text(
+                x=mds_coords_df["MDS1"].iloc[i],
+                y=mds_coords_df["MDS2"].iloc[i],
+                s=mds_coords_df.index[i],
+                fontsize=9,
+                ha="center",
+                va="bottom"
+            )
         )
+
+    # Adjust the labels to avoid overlap, with optional arrows
+    adjust_text(texts, arrowprops=dict(arrowstyle='-', color='grey', lw=0.5))
     # Set labels and title
     plt.title(plot_title)
     plt.tight_layout()
@@ -214,54 +230,77 @@ def generate_heatmap(df: pd.DataFrame, output_dir: str,
     """
     #### need the other orientation for heatmap
     # transpose and add sample ids as colnames
-    df_heat = df.T
-    df_heat.columns = df.index
-    n_prot = df_heat.shape[0]
+    n_prot = df.shape[0]
     plot_title = "heatmap of euclidean distance (n protein = " + str(n_prot) + ")"
     
-    # Create col_colors using metadata['Colour'] if provided
+    # Start without col_colors
     col_colors = None
+    colour_map = None
+
     if metadata is not None:
         required_cols = {"sample_rep", "treatment", "colours"}
         if not required_cols.issubset(metadata.columns):
             raise ValueError(f"Metadata must contain columns: {required_cols}")
-
         colour_map = metadata.set_index("sample_rep")["colours"]
-
-        missing = df_heat.columns.difference(colour_map.index)
-        if not missing.empty:
-            raise ValueError(f"Missing colour info for samples: {list(missing)}")
-
-        col_colors = df_heat.columns.map(colour_map)
 
     # Create clustermap
     heatmap = sns.clustermap(
-        df_heat,
+        df,
         fmt=".2f",
         cmap="viridis",
-        col_colors=col_colors,
-
     )
+    # Get the sample IDs (column names) in the order determined by clustering
+    clustered_columns = df.columns[heatmap.dendrogram_col.reordered_ind]
+    # the colours in the metadata reflect the order of samples in the metadata
+    # to add to the heatmap, need to re order them so they match the samples as ordered in the heatmap
+    if colour_map is not None:  
+        # Map the reordered sample IDs to their corresponding colours
+        col_colors = clustered_columns.map(colour_map)   
+        # Manually add a horizontal bar (colour strip) under the column dendrogram
+        heatmap.ax_col_dendrogram.bar(
+            x=np.arange(len(col_colors)),   # Bar positions match the clustered column order
+            height=1,                     # Height of the bar (low so it sits under the dendrogram)
+            color=col_colors,               # Colours corresponding to each sample
+            linewidth=0,                    # No border around bars
+            align="center"                  # Center the bar with respect to tick positions
+        )
+    col_colors = df.columns.map(colour_map)
+    # Move x-axis labels to top
+    heatmap.ax_heatmap.xaxis.set_ticks_position("bottom")
+    heatmap.ax_heatmap.xaxis.set_label_position("bottom")
+    # Set tick positions and labels to match the clustered order
+    heatmap.ax_heatmap.set_xticks(np.arange(len(clustered_columns)))
+    heatmap.ax_heatmap.set_xticklabels(clustered_columns, rotation=45, ha = "right")
+    heatmap.ax_heatmap.tick_params(axis="x", which="both", bottom=True, top=False)
 
-    # Move x-axis labels (column names) to the top
-    heatmap.ax_heatmap.xaxis.set_ticks_position("top")  # Move ticks to the top
-    heatmap.ax_heatmap.xaxis.set_label_position("top")  # Move axis label to the top
-    # Remove dendrogram tick labels
-    heatmap.ax_heatmap.set_xticks(
-        np.arange(len(df_heat.columns))
-    )  # Set tick positions for columns
-    heatmap.ax_heatmap.set_xticklabels(
-        df_heat.columns, rotation=45, ha="left"
-    )  # Use only column names
-    # Explicitly disable extra tick labels from the dendrogram
-    heatmap.ax_heatmap.tick_params(axis="x", which="both", bottom=False, top=True)
-    
-    # Set labels and title
     plt.title(plot_title)
-    # plt.tight_layout()
-    # Save plot and PCA data
     plot_path = os.path.join(output_dir, "plots", "heatmap_plot.png")
     plt.savefig(plot_path, dpi=300)
     plt.close()
     print(f"heatmap saved to {plot_path}")
-    return df_heat
+    return df
+
+
+
+    # # Move x-axis labels (column names) to the top
+    # heatmap.ax_heatmap.xaxis.set_ticks_position("top")  # Move ticks to the top
+    # heatmap.ax_heatmap.xaxis.set_label_position("top")  # Move axis label to the top
+    # # Remove dendrogram tick labels
+    # heatmap.ax_heatmap.set_xticks(
+    #     np.arange(len(df_heat.columns))
+    # )  # Set tick positions for columns
+    # heatmap.ax_heatmap.set_xticklabels(
+    #     df_heat.columns, rotation=45, ha="left"
+    # )  # Use only column names
+    # # Explicitly disable extra tick labels from the dendrogram
+    # heatmap.ax_heatmap.tick_params(axis="x", which="both", bottom=False, top=True)
+    
+    # # Set labels and title
+    # plt.title(plot_title)
+    # # plt.tight_layout()
+    # # Save plot and PCA data
+    # plot_path = os.path.join(output_dir, "plots", "heatmap_plot.png")
+    # plt.savefig(plot_path, dpi=300)
+    # plt.close()
+    # print(f"heatmap saved to {plot_path}")
+    # return df_heat

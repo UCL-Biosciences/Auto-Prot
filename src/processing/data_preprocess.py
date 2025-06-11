@@ -16,7 +16,7 @@ from sklearn.impute import IterativeImputer  # noqa: F401
 
 
 ## impute function
-def impute_prot_data(df, df_median_t):
+def impute_prot_data(df, df_norm_t):
     """
     Impute missing values in a protein abundance matrix using a tree-based model.
 
@@ -25,7 +25,7 @@ def impute_prot_data(df, df_median_t):
 
     Args:
         df (pd.DataFrame): Original (pre-imputation) DataFrame, used for index/column names.
-        df_median_t (pd.DataFrame): Transposed, normalised DataFrame for imputation.
+        df_norm_t (pd.DataFrame): Transposed, normalised DataFrame for imputation.
 
     Returns:
         pd.DataFrame: Imputed protein abundance DataFrame with original shape and labels.
@@ -44,7 +44,7 @@ def impute_prot_data(df, df_median_t):
     )
     # Time the imputation
     start = time.time()
-    imputation_array = imputer.fit_transform(df_median_t)
+    imputation_array = imputer.fit_transform(df_norm_t)
     end = time.time()
     print(f"Imputation took {end - start:.2f} seconds")
     # convert back to df
@@ -53,13 +53,13 @@ def impute_prot_data(df, df_median_t):
     )
     # After creating df_imp, check whether any sample has undergone large change in mean value
     # Means per sample BEFORE (in transposed matrix → axis=1 = sample axis)
-    mean_before = df_median_t.mean(axis=1)  # rows = samples
+    mean_before = df_norm_t.mean(axis=1)  # rows = samples
     # Means per sample AFTER (transpose df_imp to match)
     mean_after = df_imp.T.mean(
         axis=1
-    )  # rows = samples. note df_imp needs transposing to match df_median_t
+    )  # rows = samples. note df_imp needs transposing to match df_norm_t
     # SDs per sample BEFORE
-    sd_before = df_median_t.std(axis=1)
+    sd_before = df_norm_t.std(axis=1)
     # Compute per-sample shift in SDs
     shift_in_sds = (mean_before - mean_after).abs() / sd_before
     # Warn if any column changed too much
@@ -103,7 +103,7 @@ def process_prot_data(df, config, outPath):
         dict: Dictionary of intermediate DataFrames:
             - 'df': Filtered
             - 'df_log2': Log2-transformed
-            - 'df_median_norm': Normalised
+            - 'df_norm_norm': Normalised
             - 'df_imp': Final imputed data
     """
     df = df.replace(0, np.nan)
@@ -125,20 +125,20 @@ def process_prot_data(df, config, outPath):
         normalise_vsn(file_path_in = prot_path,
                       file_path_normalised_out = normalised_path,
                       meanSdPlot_path = meanSdPlot_path)
-        df_median_norm = pd.read_csv(normalised_path, index_col=0)
+        df_norm = pd.read_csv(normalised_path, index_col=0)
     ### for normalise by sample median, normalise log2 transformed data
     if normalise_method == "sample-median":
         # Subtract the median of each sample (column) from each value
-        df_median_norm = df_log2.sub(df_log2.median(axis=0), axis=1)
+        df_norm = df_log2.sub(df_log2.median(axis=0), axis=1)
     # Transpose: sklearn expects features in columns, samples in rows
-    df_median_t = df_median_norm.T  # shape: samples × proteins
-    df_median_t.columns = df_median_t.columns.astype(str)
+    df_norm_t = df_norm.T  # shape: samples × proteins
+    df_norm_t.columns = df_norm_t.columns.astype(str)
     #### impute ####
-    df_imp = impute_prot_data(df, df_median_t)
+    df_imp = impute_prot_data(df, df_norm_t)
     return {
         "df": df,
         "df_log2": df_log2,
-        "df_median_norm": df_median_norm,
+        "df_norm": df_norm,
         "df_imp": df_imp,
     }
 

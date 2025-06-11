@@ -101,7 +101,7 @@ def validate_metadata(metadata):
     if metadata.isna().any().any():
         raise ValueError("Error: The metadata contains missing (NaN) values!")
     # Check if the combination of 'sample_id' and 'replicate' is unique
-    if metadata[["sample_id", "replicate"]].duplicated().any():
+    if metadata[["sample_rep"]].duplicated().any():
         raise ValueError("Error: Each (sample_id, replicate) pair must be unique.")
     # Check if 'replicate' is numeric
     if not pd.api.types.is_numeric_dtype(metadata["replicate"]):

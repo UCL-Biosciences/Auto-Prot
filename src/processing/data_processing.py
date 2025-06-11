@@ -45,8 +45,11 @@ def clean_meta(df, json_out):
         df["protein_abundance_name"].str.lower().str.replace(" ", "_")
     )
     df["sample_rep"] = (
-        df["sample_id"] + "_" + df["replicate"].astype(str)
+        df["sample_id"] + "_r" + df["replicate"].astype(str)
     )  # for a unique ID for each sample_replicate
+    # if time point present - include that to ensure sample_rep stays unique
+    if "timepoint" in df.columns:
+        df["sample_rep"] += "_t" + df["timepoint"].astype(str)
     ### for plotting, assign a colour to each unique treatment group
     colours = sns.color_palette(
         "colorblind", len(df["treatment"].unique())
@@ -193,22 +196,6 @@ def clean_data(
             )
         else:
             df, nrow_original = clean_prot(df, metadata)
-            ### pre process protein abundance data
-            ## replace 0 with NA, remove prots with lots of missing data
-            ## log2 transform, normalise using each sample's median, and impute using random forest
-            dfs = dpp.process_prot_data(df, config, outPath=outPath)
-            ## to be shown when plotting distributions
-            plot_titles = [
-                "Raw Intensities",
-                "Log₂ Transformed",
-                "Sample-Median Normalised",
-                "Normalised then Imputed",
-            ]
-            ## note dfs is name of df and data itself. .values() access the data
-            dpp.view_prot_distributions(dfs.values(), plot_titles, metadata, outPath)
-            ## which df to use?
-            df_to_use = config.get("df_to_use")
-            df = dfs[df_to_use].dropna()
             # some proteins do not produce any associated genes. these values are left blank in the index
             # we replace the NaNs with Unknown-Gene-X, where X is a unique number for each unknown gene.
             # Convert index to a Series to manipulate NaNs
@@ -223,8 +210,34 @@ def clean_data(
             ]
             # Set updated index
             df.index = index_series
+            ### similarly, if multiple rows have same gene name, rename to gene-1, gene-2 etc.
+            # Create a Series of index values
+            index_series = pd.Series(df.index)
+            # Count duplicates and assign suffixes
+            counts = index_series.groupby(index_series).cumcount()
+            # Where count > 0, add suffix
+            new_index = index_series.where(counts == 0, index_series + '-' + (counts + 1).astype(str))
+            # Assign back to the DataFrame
+            df.index = new_index
+            ### pre process protein abundance data
+            ## replace 0 with NA, remove prots with lots of missing data
+            ## log2 transform, normalise using each sample's median, and impute using random forest
+            dfs = dpp.process_prot_data(df, config, outPath=outPath)
+            ## to be shown when plotting distributions
+            plot_titles = [
+                "Raw Intensities",
+                "Log₂ Transformed",
+                "Normalised",
+                "Normalised then Imputed",
+            ]
+            ## note dfs is name of df and data itself. .values() access the data
+            dpp.view_prot_distributions(dfs.values(), plot_titles, metadata, outPath)
+            ## which df to use?
+            df_to_use = config.get("df_to_use")
+            df = dfs[df_to_use].dropna()
+            
             # drop rows with duplicated index values <<<< This is a weird quirk of the phosphoproteomics data. Need to find a way of uniquely identifying rows. Added to github issue
-            df = df[~df.index.duplicated(keep="first")]
+            # df = df[~df.index.duplicated(keep="first")]
             ### save some summary info to file for report
             prot_summary(df, nrow_original, json_out)
     df = df.drop_duplicates()
@@ -259,7 +272,7 @@ def process_data(file_path, metadata=None, json_out=None, outPath=None, config=N
     if "metadata" in file_path:
         ### clean metadata
         df = clean_data(
-            df_renamed, file_path=file_path, config=config, json_out=json_out
+            df = df_renamed, file_path=file_path, config=config, json_out=json_out
         )
         ### run function to validate metadata
         validate_metadata(df)
