@@ -43,7 +43,17 @@ We want this tool to be accessible for people with limited coding experience. Th
 To make the code work, you must enter the correct parameters and combination of parameters. For example, if you change the input file but not the output file, it will overwrite any previous output in the output file.
 
 - data_type. "prot" = proteomics, this is the default use. "phospho" = phosphoproteomic data. This invokes some additional processing steps e.g. filtering to keep only phosphorylation of STY amino acids, other post-translational modifications are removed.
-- phospho_row_id. If phosphorylation dataset, protein and gene names will be duplicated in multiple rows, with rows having different PTM info. This parameter determines which other columns will be used to create a unique ID for each row.
+- phospho_row_id. If phosphorylation dataset, protein and gene names will be duplicated in multiple rows, with rows having different PTM info. This parameter determines which other columns will be used to create a unique ID for each row. Must be of the format (fields specify the columns used to make the unique row ID):
+```
+{
+  "phospho_row_id": {
+    "fields": ["modification_title", "site_AA", "site_location"],
+    "separator": "|",
+    "missing_value": "NA"
+  }
+}
+```
+
 - missing_threshold. threshold for missingness (0-1). Protein must have been observed in more than this threshold per group. If 0.8, protein must be in 80% of samples per group or will be removed.
 - normalise_method. "vsn" = variance stabilisation normalisation from the vsn R package, as recommended by Välikangas et al (2018). "sample-median" will normalise by subtracting each sample's median value from all of that sample's protein intensities.
 - df_to_use. Which dataset to use in the pipeline. Options are raw data ("df_to_use" : "df" NOT REOMMENDED), log2 transformed data ("df_to_use" : "df_log2"), normalised data ("df_to_use" : "df_norm"), or normalised and imputed data ("df_to_use" : "df_imp").
