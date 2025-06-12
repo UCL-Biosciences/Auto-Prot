@@ -173,7 +173,7 @@ if __name__ == "__main__":
         REPO_ROOT, "./output/full_dataset/data/combined_top_pathway_enrichment.csv"
     )
     enrichment_plot_path = os.path.join(
-        REPO_ROOT, "./output/full_dataset/plots/combined_pathway_enrichment_plot.png"
+        REPO_ROOT, "./output/full_dataset/plots/combined_pathway_enrichment_plot.pdf"
     )
     json_out = os.path.join(REPO_ROOT, "output/data/data_for_report.json")
 

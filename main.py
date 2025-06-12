@@ -41,6 +41,8 @@ def main():
     metadataPath = os.path.join(REPO_ROOT, config["metaPath"])
     outPath = os.path.join(REPO_ROOT, config["outPath"])
     json_out = os.path.join(REPO_ROOT, config["json_outPath"] )
+    full_formula = config["DE_full_formula"]
+    subset_formula = config["DE_subset_formula"]
     # Create the output directory
     make_outdir(outPath, make_subdirs=True)
     # Data processing
@@ -72,6 +74,7 @@ def main():
             json_out=json_out,
             output_dir=full_outPath,
             config=config,
+            formula = full_formula,
         )
         print("Full analysis complete.")
     if config.get("analyse_subsets") is True:
@@ -103,6 +106,7 @@ def main():
                 json_out=json_out,
                 output_dir=subset_outPath,
                 config=config,
+                formula = subset_formula
             )
         print("All subsets processed successfully.")
 

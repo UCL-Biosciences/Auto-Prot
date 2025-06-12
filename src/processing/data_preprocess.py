@@ -133,7 +133,7 @@ def filter_proteins_by_group_missingness(df, metadata,
         valid = sub_df.notna().mean(axis=1) > threshold
         valid_sets.append(set(df.index[valid]))
     keep_proteins = set.intersection(*valid_sets)
-    print("found ", len(keep_proteins), " proteins in ", threshold, "% of each treatment group")
+    print("found ", len(keep_proteins), " proteins in ", (100 * threshold), "% of each treatment group")
     return df.loc[list(keep_proteins)]
 
 
@@ -176,7 +176,7 @@ def process_prot_data(df, config, outPath, metadata):
     if normalise_method == "vsn":
         prot_path = os.path.join(outPath, "data/prots_no_zero_values.csv").replace("\\", "/")
         normalised_path = os.path.join(outPath, "data/prots_vsn_normalised.csv").replace("\\", "/")
-        meanSdPlot_path = os.path.join(outPath, "plots/vsn_meanSDplot.png").replace("\\", "/")
+        meanSdPlot_path = os.path.join(outPath, "plots/vsn_meanSDplot.pdf").replace("\\", "/")
         df_filtered.to_csv(prot_path, index=True)
         normalise_vsn(file_path_in = prot_path,
                       file_path_normalised_out = normalised_path,
@@ -255,7 +255,7 @@ def view_prot_distributions(dfs_values, plot_titles, metadata, outPath):
     fig.legend(handles, labels, title="Treatment", loc="upper right")
     plt.tight_layout()
     plot_path = os.path.join(
-        outPath, "plots", "boxplots_preProcessing_all_samples_plot.png"
+        outPath, "plots", "boxplots_preProcessing_all_samples_plot.pdf"
     )
     if os.name == "nt":
         plot_path = "\\\\?\\" + os.path.abspath(plot_path)
@@ -282,7 +282,7 @@ def view_prot_distributions(dfs_values, plot_titles, metadata, outPath):
         ax.legend(title="Treatment")
     plt.tight_layout()
     plot_path = os.path.join(
-        outPath, "plots", "KDE_preProcessing_all_treatments_plot.png"
+        outPath, "plots", "KDE_preProcessing_all_treatments_plot.pdf"
     )
     if os.name == "nt":
         plot_path = "\\\\?\\" + os.path.abspath(plot_path)

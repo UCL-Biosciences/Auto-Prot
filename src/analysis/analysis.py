@@ -30,6 +30,7 @@ def run_analysis(
     output_dir: str,
     config: dict,
     json_out: str,
+    formula: str
 ) -> dict:
     """
     Runs the full analysis pipeline for a protein abundance dataset, including clustering (PCA, MDS, heatmap) 
@@ -50,6 +51,7 @@ def run_analysis(
             - "FDR_threshold" (float): Suggested p-value threshold for volcano plot annotation.
             - "LFC_plot_p_or_FDRp" (str): Column to use for y-axis in volcano plot.
         json_out (str): Path to JSON file where version metadata will be recorded.
+        formula (str): the formula passted to the DE calculation. May need to be different for full dataset and subsets.
 
     Returns:
         dict: Dictionary containing result DataFrames from PCA, MDS, heatmap, and each pairwise analysis.
@@ -97,6 +99,7 @@ def run_analysis(
             metadata_pair=metadata_pair,
             pair_name=pair_name,
             config=config,
+            formula = formula
         )
         results_name = "df_lm_" + pair_name
         results[results_name] = lm_results_df
@@ -107,12 +110,12 @@ def run_analysis(
 
     # combine plots from different pairs
     combine_plots(
-        search_path=output_dir, search_term="volcano_plot.png", output_dir=output_dir
+        search_path=output_dir, search_term="volcano_plot.pdf", output_dir=output_dir
     )
 
     combine_plots(
         search_path=output_dir,
-        search_term="pathway_enrichment_plot.png",
+        search_term="pathway_enrichment_plot.pdf",
         output_dir=output_dir,
     )
 

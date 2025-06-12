@@ -20,6 +20,9 @@
     "subset_variable": "timepoint",
     "subsets" : "",
 
+    "DE_full_formula": "~ treatment + as.factor(timepoint)",
+    "DE_subset_formula": "~ treatment",
+
     "LFC_plot_p_or_FDRp": "Log10_FDR_P_Value",
     "LFC_threshold" : 1,
     "FDR_threshold" : 0.05,

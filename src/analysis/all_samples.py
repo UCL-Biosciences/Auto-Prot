@@ -29,7 +29,6 @@ def add_group_ellipses_and_centroids(ax, df, x_col, y_col, group_col, palette=No
         palette (dict, optional): Dict mapping group labels to colours.
         scale (float): Multiplier on std dev for ellipse size (default 4 = ~95% CI).
     """
-    print("Using palette:", palette)
     for name, group in df.groupby(group_col):
         ellipse_color = palette[name] if palette and name in palette else None
         # Centroid

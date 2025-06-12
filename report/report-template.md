@@ -31,11 +31,11 @@ There are four stages of pre-processing shown here. The raw values, the log2 val
 
 #### Distributions of treatments
 
-<img src="../output/plots/KDE_preProcessing_all_treatments_plot.png" width="600" height="600">
+<img src="../output/plots/KDE_preProcessing_all_treatments_plot.pdf" width="600" height="600">
 
 #### Distributions of samples
 
-<img src="../output/plots/boxplots_preProcessing_all_samples_plot.png" width="800" height="800">
+<img src="../output/plots/boxplots_preProcessing_all_samples_plot.pdf" width="800" height="800">
 
 ## Analysis
 

@@ -7,6 +7,8 @@ import os
 import pandas as pd
 
 from PIL import Image
+from pdf2image import convert_from_path
+
 
 def apply_row_id_config(df, config):
     if config.get("data_type") != "phospho":
@@ -105,12 +107,7 @@ def get_subset(df, subset_term, metadata, subset_variable):
     """
     ### find the rows that match the subset term, then take the sample_rep column (protein intensities are named after sample_rep)
     matching_sample_ids = metadata.loc[metadata[subset_variable].astype(str) == str(subset_term), "sample_rep"].tolist()
-    ## subset target columns
-    print(f"subset_variable: {subset_variable}")
-    print(f"subset_term: {subset_term}")
-    print("metadata[subset_variable].unique():", metadata[subset_variable].unique())
-    print("metadata.shape:", metadata.shape)
-    print("metadata.head():\n", metadata.head())
+
     subset_df = df[matching_sample_ids]
     if subset_df.empty:
         raise ValueError(f"No matches found for subset: {subset_term}")
@@ -253,8 +250,14 @@ def combine_plots(
     if not image_paths:
         print(f"No plots found for '{search_term}'.")
         return None
-    # Load and resize images
-    images = [Image.open(img).resize(resized_size, Image.LANCZOS) for img in image_paths]
+    # Convert each PDF to images (usually 1 page)
+    images = []
+    for path in image_paths:
+        if path.endswith(".pdf"):
+            pdf_images = convert_from_path(path, dpi=300)
+            images.append(pdf_images[0].resize(resized_size))
+        else:
+            images.append(Image.open(path).resize(resized_size))
     
     # images = [Image.open(img).resize(img_size, Image.LANCZOS) for img in image_paths]
     # Determine grid layout
