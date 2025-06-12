@@ -13,9 +13,8 @@ from src.utils.data_io import load_data
 from src.utils.data_utils import (
     normalise_column_names,
     validate_metadata,
-    validate_proteindata,
-    get_subset
-)
+    validate_proteindata
+    )
 
 # specify location of errors to standard output
 logging.basicConfig(

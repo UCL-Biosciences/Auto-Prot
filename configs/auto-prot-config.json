@@ -1,7 +1,10 @@
 {
 
-    "data_type": "prot",
-    "phospho_row_id" : "",
+    "data_type": "phospho",
+    "phospho_row_id" : {
+        "fields": ["Protein", "Position",	"Amino.acid",	"Multiplicity"],
+        "missing_value": "NA"
+      } ,
     "missing_threshold": 0.75,
 
     "normalise_method" : "vsn",
@@ -10,10 +13,10 @@
     "species" : "hsapiens",
     "pcomponents" : 2,
     
-    "protPath" : "input/data/proteindata.csv",
-    "metaPath" : "input/data/metadata.csv",
-    "outPath" : "output",
-    "json_outPath" : "output/data/data_for_report.json",
+    "protPath" : "input/data/protein_phospho_data_long.csv",
+    "metaPath" : "input/data/metadata_phospho.csv",
+    "outPath" : "output_phospho",
+    "json_outPath" : "output_phospho/data/data_for_report.json",
     
     "analyse_full_dataset": true,
     "analyse_subsets": true,
