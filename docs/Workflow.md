@@ -59,9 +59,10 @@ To make the code work, you must enter the correct parameters and combination of 
 
 ## Data Processing
 
+### Subsets
+You might wish to re-run the analysis on specific subsets of samples. For example, you might wish to select on samples from a given timepoint. You can choose whether to analyse any subsets by setting the config field `analyse_subsets` to `true`. You can define which subsets to analyse using the `subset_variable` (which variable to apply the subset too) and `subsets` fields. `subsets` needs a list of values to analyse e.g. ["1", "2"] if you want to analyse separately time points 1 and 2. By default, this will run the whole analysis for each subset. There is no default option to filter based on >1 variable.
 
 ## Analysis
-
 
 
 ## Creating the summary report
