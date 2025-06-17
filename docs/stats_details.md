@@ -28,8 +28,11 @@ To estimate each value, we use the `HistGradientBoostingRegressor` (HGBR) — a 
 While previous studies have found Random Forests particularly effective for imputation due to their robustness and ability to capture nonlinear feature interactions, we follow the approach used in AlphaPepStats by applying HGBR, which is similar to Random Forest but can offer higher predictive power.
 
 ## Differential Expression
-We use the Limma R Package (REF) to quantify differences between treatment groups for all proteins (following e.g. Lou et al. 2022)
+We use the Limma R Package (Ritchie et al. 2015) to quantify differences between treatment groups for all proteins (following e.g. Lou et al. 2022). Differential expression is calculated for each pair of treatments. 
 
+By default, it will fit a model comparing all samples in each treatment group (i.e. `~ treatment`). You can specify additional variables for the model using the config file. You should be able to specify any [valid R formula](https://www.datacamp.com/tutorial/r-formula-tutorial) contained in brackets. The DE_full_formula field specifies the formula for the full dataset, and can include any additional variables in the metadata. For example, you could fit a model with  `~ treatment + timepoint` to account for differences among timepoints.
+
+A separate formula is supplied for any subsets that you want to analyse DE for. This is because you might want to create subsets for a variable that is contained in the full dataset's model - e.g. timepoint - which might break the analysis.
 
 Be careful interpreting the direction of the differential expression calculations. By default, the pairs of treatment groups compared are all unique combinations of the treatment column in metadata. 
 
@@ -43,6 +46,8 @@ Krismer, Elena, et al. "AlphaPeptStats: an open-source Python package for automa
 Lou, Ronghui, et al. "Benchmarking commonly used software suites and analysis workflows for DIA proteomics and phosphoproteomics." Nature communications 14.1 (2023): 94.
 
 Jin, Liang, et al. "A comparative study of evaluating missing value imputation methods in label-free proteomics." Scientific reports 11.1 (2021): 1760.
+
+Ritchie, Matthew E., et al. "limma powers differential expression analyses for RNA-sequencing and microarray studies." Nucleic acids research 43.7 (2015): e47-e47.
 
 
 
