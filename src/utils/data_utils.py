@@ -67,11 +67,11 @@ def normalise_column_names(df, file_path=None, config = None):
         # some proteins do not produce any associated genes. these values are left blank in the index
         # we replace the NaNs with Unknown-Gene-X, where X is a unique number for each unknown gene.
         # Convert index to a Series to manipulate NaNs
-        index_series = df.index.to_series().astype(
-            "object"
-        )  ## 'object' allows strings and NAs
+        index_series = df.index.to_series().astype("object")  ## 'object' allows strings and NAs
+        # Strip whitespace and handle empty strings
+        index_series = index_series.str.strip()
         # Find NaN values in index
-        nan_mask = index_series.isna()
+        nan_mask = index_series.isna() | (index_series == "")
         # Replace NaNs with "Unknown-gene-N"
         index_series[nan_mask] = [
             f"Unknown-gene-{i+1}" for i in range(nan_mask.sum())
