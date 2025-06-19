@@ -25,18 +25,26 @@ def generate_report_html(
     config: dict
 ):
     """
-    Generate html report from outputs and markdown template
+    Generate an HTML report by populating a markdown template with outputs from the analysis.
 
-    Parameters:
-    - report_MD (str): Path to the markdown template file.
-    - report_html (str): Path to the html outputfile.
-    - top_20_prots_path (str): path to csv containing data on top 20 proteins by LFC
-    - enrichment_path (str): path to csv containing functional/pathway enrichment
-    - json_out (str): File for saving information to go into the final repo
+    This function fills placeholders in a markdown report template using data and metadata from differential
+    expression and pathway enrichment analysis. It then converts the markdown to HTML, embeds base64-encoded
+    images (if present), and writes a self-contained HTML report to file.
 
+    Git commit hashes of the template and report-generation script are also recorded in a JSON metadata file.
+
+    Args:
+        report_MD (str): Path to the markdown template file.
+        report_html (str): Path where the final HTML report will be written.
+        top_LFC_prots_path (str): Path to CSV containing top proteins by log fold change.
+        enrichment_path (str): Path to CSV containing pathway enrichment results.
+        enrichment_plot_path (str): Path to image file of the enrichment plot (e.g., PNG).
+        json_out (str): Path to a JSON file where report metadata and script/template versions are saved.
+        config (dict): Configuration dictionary with keys including:
+            - "outPath" (str): Path to output directory used for resolving image paths.
 
     Returns:
-
+        None. Writes HTML report to file and updates metadata JSON.
     """
     ### write to file the version of this script
     REPO_ROOT = get_repo_root()
@@ -182,7 +190,7 @@ if __name__ == "__main__":
         REPO_ROOT, config.get("outPath") + "/full_dataset/data/combined_top_pathway_enrichment.csv"
     )
     enrichment_plot_path = os.path.join(
-        REPO_ROOT, config.get("outPath") + "/full_dataset/plots/combined_pathway_enrichment_plot.pdf"
+        REPO_ROOT, config.get("outPath") + "/full_dataset/plots/combined_pathway_enrichment_plot.png"
     )
     json_out = os.path.join(REPO_ROOT, config.get("json_outPath"))
 

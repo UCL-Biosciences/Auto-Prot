@@ -196,7 +196,7 @@ def generate_pca(
     plt.title(plot_title)
     plt.tight_layout()
     # Save plot and PCA data
-    plot_path = os.path.join(output_dir, "plots", "pca_plot.pdf")
+    plot_path = os.path.join(output_dir, "plots", "pca_plot.png")
     data_path = os.path.join(output_dir, "data", "pca_data.csv")
     plt.savefig(plot_path, dpi=300)
     plt.close()
@@ -297,7 +297,7 @@ def generate_MDS(
     plt.title(plot_title)
     plt.tight_layout()
     # Save plot and PCA data
-    plot_path = os.path.join(output_dir, "plots", "mds_plot.pdf")
+    plot_path = os.path.join(output_dir, "plots", "mds_plot.png")
     data_path = os.path.join(output_dir, "data", "mds_data.csv")
     plt.savefig(plot_path, dpi=300)
     plt.close()
@@ -384,7 +384,7 @@ def generate_heatmap(df: pd.DataFrame, output_dir: str,
 
     # Title and save
     os.makedirs(os.path.join(output_dir, "plots"), exist_ok=True)
-    plot_path = os.path.join(output_dir, "plots", "heatmap_plot.pdf")
+    plot_path = os.path.join(output_dir, "plots", "heatmap_plot.png")
     plt.savefig(plot_path, dpi=300)
     plt.close()
     print(f"heatmap saved to {plot_path}")

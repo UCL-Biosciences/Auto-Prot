@@ -139,7 +139,7 @@ def make_volcano(
     # Set symmetrical x-axis
     # Save plot and PCA data
     # plt.xlim(-4, 4)
-    plot_path = os.path.join(output_dir, "plots", pair_name, "volcano_plot.pdf")
+    plot_path = os.path.join(output_dir, "plots", pair_name, "volcano_plot.png")
     if os.name == "nt":
         plot_path = "\\\\?\\" + os.path.abspath(plot_path)
     plt.savefig(plot_path, dpi=300)
@@ -164,21 +164,26 @@ def enrichment_analysis(
     """
     Performs pathway enrichment analysis using g:Profiler for differentially abundant proteins.
 
-    Based on log fold change and adjusted p-value thresholds from the config, the function extracts the most
-    relevant genes and uses g:Profiler to identify enriched biological pathways or GO terms. It generates both
-    a CSV file with results and a bubble plot of the top pathways.
+    This function applies over-representation analysis (ORA) via g:Profiler to identify enriched biological pathways
+    (e.g., KEGG) among significantly changing proteins. It selects genes based on log fold change and adjusted p-value
+    thresholds specified in the `config`, doesn't currently remove post-translational modification labels (e.g., "__phospho") if present,
+    and performs enrichment analysis for the configured species.
+
+    The results are saved as a CSV file, and a bubble plot of the top 20 pathways (by p-value) is saved as a PNG image.
 
     Args:
-        lm_results_df (pd.DataFrame): Differential expression results, including 'logFC', 'adj.P.Val', and 'P.Value'.
-        pair_name (str): Label for this treatment comparison (used in filenames and output folders).
-        config (dict): Configuration containing:
-            - "LFC_threshold" (float): Minimum absolute log2 fold change to define DE genes.
-            - "FDR_threshold" (float): Maximum adjusted p-value for DE.
-        output_dir (str): Root directory where results (plots and data) will be saved.
+        lm_results_df (pd.DataFrame): Differential expression results, with 'logFC', 'adj.P.Val', and 'P.Value'.
+        pair_name (str): Label for the treatment comparison, used in output filenames and titles.
+        config (dict): Configuration dictionary containing:
+            - "LFC_threshold" (float): Minimum |log2 fold change| to define differentially expressed genes.
+            - "FDR_threshold" (float): Maximum adjusted p-value to define significance.
+            - "species" (str): g:Profiler organism code (e.g., 'hsapiens').
+        output_dir (str): Root output directory where results and plots will be saved.
 
     Returns:
-        pd.DataFrame: Enrichment results from g:Profiler (may be empty if no DE genes were found).
+        pd.DataFrame or None: g:Profiler enrichment results (may be empty or None if no significant genes were found).
     """
+
     # threshold to define genes of interest
     LFC_threshold = config.get("LFC_threshold")
     FDR_threshold = config.get("FDR_threshold")
@@ -195,8 +200,8 @@ def enrichment_analysis(
     # in the case of phosphoproteomic data, gene names have a double __ with phosphorylation state added,
     # for now, we remove the phospho data from this set of genes
     # may want to look at separately later
-    if any(isinstance(gene, str) and "__" in gene for gene in pathway_query_genes):
-        pathway_query_genes = [str(gene).split("__")[0] for gene in pathway_query_genes]
+    # if any(isinstance(gene, str) and "__" in gene for gene in pathway_query_genes):
+    #     pathway_query_genes = [str(gene).split("__")[0] for gene in pathway_query_genes]
     # pathway database can be REAC, GO or KEGG. Also less common but available: CORUM, HPA, TF and MIRNA
     # defaults to REAC
     source = ["KEGG"]
@@ -259,7 +264,7 @@ def enrichment_analysis(
         plt.tight_layout()
         # Save plot data
         plot_path = os.path.join(
-            output_dir, "plots", pair_name, (pair_name + "_pathway_enrichment_plot.pdf")
+            output_dir, "plots", pair_name, (pair_name + "_pathway_enrichment_plot.png")
         )
         ## windows sometimes rejects long paths. Workaround:
         if os.name == "nt":
