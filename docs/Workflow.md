@@ -8,16 +8,39 @@ You might wish to re-run the analysis on specific subsets of samples. For exampl
 
 ## Analysis
 
+## 📝 Generating the HTML Report
+After running your analysis, you can generate a summary report in HTML format using the generate_report.py file.
 
-## Creating the summary report
-The report is generated in two main of steps:
-1. `python main.py` creates the output
-2. `src/reporting/generate_report.py` creates an html output file using the following:
-     * a template for the report `./reporting/report-template.md`
-     * outputs (tables, plots) from `main.py`
-     * values in `output/data/data_for_report.json` that go directly into the markdown text
-     * `src/reporting/generate_report.py` which converts the markdown template into an html file.
+This report compiles:
+- Metadata from your configuration and version control
+- A table of top proteins ranked by fold change
+- A table of pathway enrichment results (if available)
+- A bubble plot visualisation of enriched pathways
 
+### Usage
+To generate the report:
+
+1. Ensure the following files are available (all default outputs of the main pipeline). By default, it will look in the `outPath` defined in the config and use the full dataset files (i.e. not subsets).
+- report-template.md: A markdown template with placeholders for metadata and results.
+- combined_topLFC.csv: Contains proteins ranked by log2 fold change (used for the "Top proteins" section).
+- combined_top_pathway_enrichment.csv: Contains pathway enrichment results (can be empty or missing).
+- combined_pathway_enrichment_plot.png: A visualisation of enriched pathways.
+- auto-prot-config.json: Contains key configuration values, including outPath and species information.
+- A JSON metadata file defined by json_outPath in the config (auto-updated by the script).
+
+Run the report generation script:
+
+`python src/reporting/generate_report.py`
+
+This script:
+- Loads configuration from configs/auto-prot-config.json
+- Substitutes values into the markdown template
+- Converts it to HTML
+- Converts image file paths to actual images so you can share the report
+- Writes the final report to <outPath>/report-out.html
+
+Output
+You will find the report at: `<repo-root>/<outPath>/report-out.html`. All embedded content (tables, images, version hashes) is included in the single HTML file for easy sharing.
 
 ## Refs
 Välikangas, Tommi, Tomi Suomi, and Laura L. Elo. "A systematic evaluation of normalization methods in quantitative label-free proteomics." Briefings in bioinformatics 19.1 (2018): 1-11.
