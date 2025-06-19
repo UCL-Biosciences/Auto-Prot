@@ -45,41 +45,6 @@ Be careful interpreting the direction of the differential expression calculation
 ## Pathway Enrichment
 This analysis step performs pathway enrichment using the g:Profiler tool, focusing on proteins with large fold changes and low adjusted p-values, based on thresholds defined in the config. It uses over-representation analysis (ORA) to identify enriched biological processes or pathways. By default, we use KEGG ontology. This can be changed but currently needs to be changed in `src/analysis/pairwise.py`, `source = ["source"]` where source can be "KEGG", "GO", or "REAC". Results are saved as a CSV file and visualised as a bubble plot showing the top 20 pathways ranked by p-value. Note, there are many cases where relatively few proteins are differentially expressed and no enrichment terms are found. In this case you can investigate whether the code is running as expected and can reduce the thresholds that define differential expression through config fields `LFC_threshold` (default = 1) and `FDR_threshold` (default = 0.05).
 
-## 📝 Generating the HTML Report
-After running your analysis, you can generate a summary report in HTML format using the generate_report.py file.
-
-This report compiles:
-- Metadata from your configuration and version control
-- A table of top proteins ranked by fold change
-- A table of pathway enrichment results (if available)
-- A bubble plot visualisation of enriched pathways
-
-### Usage
-To generate the report:
-
-1. Ensure the following files are available (all default outputs of the main pipeline). By default, it will look in the `outPath` defined in the config and use the full dataset files (i.e. not subsets).
-- report-template.md: A markdown template with placeholders for metadata and results.
-- combined_topLFC.csv: Contains proteins ranked by log2 fold change (used for the "Top proteins" section).
-- combined_top_pathway_enrichment.csv: Contains pathway enrichment results (can be empty or missing).
-- combined_pathway_enrichment_plot.png: A visualisation of enriched pathways.
-- auto-prot-config.json: Contains key configuration values, including outPath and species information.
-- A JSON metadata file defined by json_outPath in the config (auto-updated by the script).
-
-Run the report generation script:
-
-`python src/reporting/generate_report.py`
-
-This script:
-- Loads configuration from configs/auto-prot-config.json
-- Substitutes values into the markdown template
-- Converts it to HTML
-- Converts image file paths to actual images so you can share the report
-- Writes the final report to <outPath>/report-out.html
-
-Output
-You will find the report at: `<repo-root>/<outPath>/report-out.html`. All embedded content (tables, images, version hashes) is included in the single HTML file for easy sharing.
-
-
 ## Refs
 Kokla, Marietta, et al. "Random forest-based imputation outperforms other methods for imputing LC-MS metabolomics data: a comparative study." BMC bioinformatics 20 (2019): 1-11.
 
