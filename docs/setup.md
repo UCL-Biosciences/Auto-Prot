@@ -38,22 +38,22 @@ You can place these in the `/data/` directory or specify a different path in the
 - **Columns** = sample names
 - All abundance values must be **numeric**
 - Missing values should be represented as `NA` (not blank cells)
-- The first column must contain unique protein identifiers
+- Any column with 'gene' in the column name will be picked to name the rows
 
 ---
 
 ### 2. Metadata (`metadata.csv`)
 
-| Sample_ID | treatment | replicate | species | abundance_col |
-|-----------|-----------|-----------|---------|----------------|
-| Sample1   | control   | 1         | human   | Sample1        |
-| Sample2   | treated   | 1         | human   | Sample2        |
+| sample_id | treatment | replicate | timepoint | abundance_col |
+|-----------|-----------|-----------|-----------|----------------|
+| Sample1   | control   | 1         | 1         | Sample1        |
+| Sample2   | treated   | 1         | 1         | Sample2        |
 
 - `Sample_ID`: matches a column in `proteindata.csv`
 - `abundance_col`: must exactly match the corresponding column name in `proteindata.csv`
 - `treatment`: required for group comparison and plotting
 - `replicate`: integer; used in visualisation
-- `species`: optional, used in enrichment/pathway lookup
+- `timepoint`: optional, can be included in model for differential expression or used to subset samples
 
 ---
 
