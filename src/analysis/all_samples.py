@@ -13,6 +13,58 @@ import seaborn as sns
 from adjustText import adjust_text
 
 
+from adjustText import adjust_text
+from matplotlib.patches import Ellipse
+
+
+### function for drawing centroids ellipses
+def add_group_ellipses_and_centroids(ax, df, x_col, y_col, group_col, palette=None, scale=4):
+    """
+    Add ellipses and centroids to a scatterplot grouped by a categorical column.
+
+    Args:
+        ax (matplotlib.axes.Axes): The axes to draw on.
+        df (pd.DataFrame): DataFrame containing data to group and plot.
+        x_col (str): Column name for X-axis values.
+        y_col (str): Column name for Y-axis values.
+        group_col (str): Column name used for grouping (e.g. treatment).
+        palette (dict, optional): Dict mapping group labels to colours.
+        scale (float): Multiplier on std dev for ellipse size (default 4 = ~95% CI).
+    """
+    for name, group in df.groupby(group_col):
+        ellipse_color = palette[name] if palette and name in palette else None
+        # Centroid
+        centroid_x = group[x_col].mean()
+        centroid_y = group[y_col].mean()
+        ax.plot(
+            centroid_x,
+            centroid_y,
+            marker='o',
+            markersize=8,
+            markerfacecolor='white',
+            markeredgewidth=1.5,
+            markeredgecolor=ellipse_color,
+            zorder=5,
+        )
+        # Ellipse
+        cov = np.cov(group[[x_col, y_col]].values.T)
+        lambda_, v = np.linalg.eig(cov)
+        lambda_ = np.sqrt(lambda_)
+        angle = np.rad2deg(np.arccos(v[0, 0]))
+        ell = Ellipse(
+            xy=(centroid_x, centroid_y),
+            width=lambda_[0] * scale,
+            height=lambda_[1] * scale,
+            angle=angle,
+            edgecolor=ellipse_color,
+            facecolor='none',
+            linewidth=1
+        )
+        ell.set_zorder(3)  # Ensure it's drawn above grid
+        ax.add_patch(ell)
+
+
+
 def generate_pca(
     df: pd.DataFrame,
     output_dir: str,
@@ -39,8 +91,17 @@ def generate_pca(
             - DataFrame with PCA coordinates and treatment.
             - 1D array of explained variance ratios.
     """
+    # Drop duplicates to get one colour per treatment
+    treatment_palette = (
+        metadata[["treatment", "colours"]]
+        .drop_duplicates("treatment")
+        .set_index("treatment")["colours"]
+        .to_dict()
+    )
     n_prot = df.shape[1]
 
+    ### PC calculated twice - first to identify optimal number of components
+    # i.e. the miminum number of components required to explain a given proportion of variance
     # First PCA to get full spectrum of variance
     full_pca = PCA()
     full_pca.fit(df)
@@ -85,15 +146,25 @@ def generate_pca(
     ]
 
     # Plot PCA
-    plt.figure(figsize=(8, 6))
+    plt.figure(figsize=(6, 4.5))
     plot_pca = sns.scatterplot(
         data=df_PCA,
         x=f"PC{pc_x}",
         y=f"PC{pc_y}",
         hue="treatment",
+        palette=treatment_palette
     )
-
-    # Create list of text objects
+    ax = plt.gca()
+    add_group_ellipses_and_centroids(
+        ax,
+        df_PCA,  # or mds_coords_df
+        x_col=f"PC{pc_x}",
+        y_col=f"PC{pc_y}",
+        group_col="treatment",
+        palette=treatment_palette
+    )
+    # Annotate points
+    # Add non-overlapping text labels
     texts = []
     for i in range(df_PCA.shape[0]):
         texts.append(
@@ -101,14 +172,21 @@ def generate_pca(
                 x=df_PCA[f"PC{pc_x}"].iloc[i],
                 y=df_PCA[f"PC{pc_y}"].iloc[i],
                 s=df_PCA.index[i],
-                fontsize=9,
+                fontsize=8,
                 ha="center",
-                va="bottom"
+                va="bottom",
             )
         )
 
-    # Adjust text to avoid overlaps
-    adjust_text(texts, arrowprops=dict(arrowstyle='-', color='grey', lw=0.5))
+    # Smart adjustment to avoid overlaps
+    adjust_text(
+        texts,
+        arrowprops=dict(arrowstyle="-", color="gray", lw=0.5),
+        expand_points=(1.1, 1.1),
+        expand_text=(1.2, 1.2),
+        force_text=(0.5, 0.5),
+    )
+
 
     plt.xlabel(pc_labels[0])
     plt.ylabel(pc_labels[1])
@@ -118,7 +196,7 @@ def generate_pca(
     plt.title(plot_title)
     plt.tight_layout()
     # Save plot and PCA data
-    plot_path = os.path.join(output_dir, "plots", "pca_plot.png")
+    plot_path = os.path.join(output_dir, "plots", "pca_plot.pdf")
     data_path = os.path.join(output_dir, "data", "pca_data.csv")
     plt.savefig(plot_path, dpi=300)
     plt.close()
@@ -146,6 +224,13 @@ def generate_MDS(
     Returns:
         pd.DataFrame: DataFrame containing MDS coordinates and associated metadata.
     """
+    # Drop duplicates to get one colour per treatment
+    treatment_palette = (
+        metadata[["treatment", "colours"]]
+        .drop_duplicates("treatment")
+        .set_index("treatment")["colours"]
+        .to_dict()
+    )
     # Perform MDS
     # pdist(x) computes the Euclidean distances between each pair of points in an array
     dissimilarity_array = pdist(df, metric="euclidean")
@@ -179,7 +264,16 @@ def generate_MDS(
         metadata.set_index("sample_rep")["treatment"]
     )
     #### Generate NMDS plot
-    plot_nmds = sns.scatterplot(data=mds_coords_df, x="MDS1", y="MDS2", hue="treatment")
+    plot_nmds = sns.scatterplot(data=mds_coords_df, x="MDS1", y="MDS2", hue="treatment",
+                                palette=treatment_palette)
+    add_group_ellipses_and_centroids(
+        plt.gca(),
+        mds_coords_df,
+        x_col="MDS1",
+        y_col="MDS2",
+        group_col="treatment",
+        palette=treatment_palette
+    )
     ## seaborn returns an axis-object rather than a figure, so you can still alter features of it. E.g. axes names:
     plot_nmds.set(xlabel="MDS 1", ylabel="MDS 2")
     # Add sample IDs from the 'target' column with an offset
@@ -203,7 +297,7 @@ def generate_MDS(
     plt.title(plot_title)
     plt.tight_layout()
     # Save plot and PCA data
-    plot_path = os.path.join(output_dir, "plots", "mds_plot.png")
+    plot_path = os.path.join(output_dir, "plots", "mds_plot.pdf")
     data_path = os.path.join(output_dir, "data", "mds_data.csv")
     plt.savefig(plot_path, dpi=300)
     plt.close()
@@ -224,14 +318,16 @@ def generate_heatmap(df: pd.DataFrame, output_dir: str,
     Args:
         df (pd.DataFrame): Protein abundance data (samples as rows, proteins as columns).
         output_dir (str): Directory to save the heatmap plot.
+        metadata (pd.DataFrame): Metadata with sample_rep, treatment, and colours columns.
+
 
     Returns:
         pd.DataFrame: Transposed abundance data used to generate the heatmap.
     """
     #### need the other orientation for heatmap
     # transpose and add sample ids as colnames
-    n_prot = df.shape[0]
-    plot_title = "heatmap of euclidean distance (n protein = " + str(n_prot) + ")"
+    df_heat = df
+    n_prot = df_heat.shape[0]
     
     # Start without col_colors
     col_colors = None
@@ -248,6 +344,9 @@ def generate_heatmap(df: pd.DataFrame, output_dir: str,
         df,
         fmt=".2f",
         cmap="viridis",
+        col_colors=col_colors,
+        xticklabels=True,
+        yticklabels=False,
     )
     # Get the sample IDs (column names) in the order determined by clustering
     clustered_columns = df.columns[heatmap.dendrogram_col.reordered_ind]
@@ -273,8 +372,19 @@ def generate_heatmap(df: pd.DataFrame, output_dir: str,
     heatmap.ax_heatmap.set_xticklabels(clustered_columns, rotation=45, ha = "right")
     heatmap.ax_heatmap.tick_params(axis="x", which="both", bottom=True, top=False)
 
-    plt.title(plot_title)
-    plot_path = os.path.join(output_dir, "plots", "heatmap_plot.png")
+    # Use clustered column order
+    clustered_cols = df_heat.columns[heatmap.dendrogram_col.reordered_ind]
+    heatmap.ax_heatmap.set_xticks(np.arange(len(clustered_cols)))
+    heatmap.ax_heatmap.set_xticklabels(clustered_cols, rotation=45, ha="left")
+
+    # Move x-axis labels to top
+    heatmap.ax_heatmap.xaxis.set_ticks_position("top")
+    heatmap.ax_heatmap.xaxis.set_label_position("top")
+    heatmap.ax_heatmap.tick_params(axis="x", which="both", bottom=False, top=True)
+
+    # Title and save
+    os.makedirs(os.path.join(output_dir, "plots"), exist_ok=True)
+    plot_path = os.path.join(output_dir, "plots", "heatmap_plot.pdf")
     plt.savefig(plot_path, dpi=300)
     plt.close()
     print(f"heatmap saved to {plot_path}")

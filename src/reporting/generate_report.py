@@ -22,6 +22,7 @@ def generate_report_html(
     enrichment_path: str,
     enrichment_plot_path: str,
     json_out: str,
+    config: dict
 ):
     """
     Generate html report from outputs and markdown template
@@ -140,17 +141,20 @@ def generate_report_html(
     table_replacements = {
         "{{ENRICHMENT_DF}}": enrichment_df,  ### pathway/functional enrichment
         "{{ENRICHMENT_PLOT}}": enrichment_plot_md,
-        "{{TOP_LFC_PROTS}}": top_LFC_df,  ### top 20 protein abundance data
+        "{{TOP_LFC_PROTS}}": top_LFC_df  ### top 20 protein abundance data
     }
 
     for key, value in table_replacements.items():
         tempMd = tempMd.replace(key, str(value))
 
+    # also replacing the {outPath} placeholder with real out dir
+    tempMd = tempMd.replace("{outPath}", config.get("outPath", "output"))
+
     # Convert the input to HTML
     tempHtml = markdown.markdown(tempMd)
 
     # Inline images as base64 so HTML is portable
-    tempHtml = inline_base64_images(html = tempHtml, base_dir=os.path.dirname(report_MD))
+    tempHtml = inline_base64_images(html = tempHtml, base_dir=os.path.dirname(config.get("outPath")))
 
     # If necessary, could print or edit the results at this point.
     # Open the HTML file and write the output.
@@ -162,20 +166,25 @@ def generate_report_html(
 if __name__ == "__main__":
     ### find repo root
     REPO_ROOT = get_repo_root()
+    ### path to config file containing key info - must be present!
+    config_path = os.path.join(REPO_ROOT, "configs/auto-prot-config.json")
+    ### Read in configuration data, stored in a json
+    with open(config_path) as f:
+        config = json.load(f)
 
     #### set location of report template and where html will be stored
     report_MD = os.path.join(REPO_ROOT, "./report/report-template.md")
-    report_html = os.path.join(REPO_ROOT, "./output/report-out.html")
+    report_html = os.path.join(REPO_ROOT, config.get("outPath") + "/report-out.html")
     top_LFC_prots_path = os.path.join(
-        REPO_ROOT, "./output/full_dataset/data/combined_topLFC.csv"
+        REPO_ROOT, config.get("outPath") + "/full_dataset/data/combined_topLFC.csv"
     )
     enrichment_path = os.path.join(
-        REPO_ROOT, "./output/full_dataset/data/combined_top_pathway_enrichment.csv"
+        REPO_ROOT, config.get("outPath") + "/full_dataset/data/combined_top_pathway_enrichment.csv"
     )
     enrichment_plot_path = os.path.join(
-        REPO_ROOT, "./output/full_dataset/plots/combined_pathway_enrichment_plot.png"
+        REPO_ROOT, config.get("outPath") + "/full_dataset/plots/combined_pathway_enrichment_plot.pdf"
     )
-    json_out = os.path.join(REPO_ROOT, "output/data/data_for_report.json")
+    json_out = os.path.join(REPO_ROOT, config.get("json_outPath"))
 
     generate_report_html(
         report_MD,
@@ -184,4 +193,5 @@ if __name__ == "__main__":
         enrichment_path,
         enrichment_plot_path,
         json_out,
+        config
     )

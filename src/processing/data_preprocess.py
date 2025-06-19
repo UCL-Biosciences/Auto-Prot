@@ -16,7 +16,7 @@ from sklearn.impute import IterativeImputer  # noqa: F401
 
 
 ## impute function
-def impute_prot_data(df, df_norm_t):
+def impute_prot_data(df_filtered, df_norm_t):
     """
     Impute missing values in a protein abundance matrix using a tree-based model.
 
@@ -24,7 +24,7 @@ def impute_prot_data(df, df_norm_t):
     median-normalised DataFrame. Warns if imputation shifts sample means by >0.2 SD.
 
     Args:
-        df (pd.DataFrame): Original (pre-imputation) DataFrame, used for index/column names.
+        df_filtered (pd.DataFrame): Filtered (pre-imputation) DataFrame, used for index/column names.
         df_norm_t (pd.DataFrame): Transposed, normalised DataFrame for imputation.
 
     Returns:
@@ -49,7 +49,7 @@ def impute_prot_data(df, df_norm_t):
     print(f"Imputation took {end - start:.2f} seconds")
     # convert back to df
     df_imp = pd.DataFrame(
-        imputation_array.transpose(), index=df.index, columns=df.columns
+        imputation_array.transpose(), index=df_filtered.index, columns=df_filtered.columns
     )
     # After creating df_imp, check whether any sample has undergone large change in mean value
     # Means per sample BEFORE (in transposed matrix → axis=1 = sample axis)
@@ -109,8 +109,36 @@ def normalise_vsn(file_path_in, file_path_normalised_out, meanSdPlot_path):
         check=True,
     )
 
+
+def filter_proteins_by_group_missingness(df, metadata, 
+                                         sample_col='sample_rep', group_col='treatment',
+                                         threshold=0.75):
+    """
+    Filter proteins based on missingness within each group.
+
+    Parameters:
+        df (pd.DataFrame): Protein abundance DataFrame (rows = proteins, columns = samples).
+        metadata (pd.DataFrame): Metadata with sample and group columns.
+        sample_col (str): Column name in metadata with sample names matching df columns.
+        group_col (str): Column name in metadata to group by (e.g., treatment).
+        threshold (float): Minimum fraction of non-missing values required per group.
+
+    Returns:
+        pd.DataFrame: Filtered protein DataFrame.
+    """
+    valid_sets = []
+    for group, group_df in metadata.groupby(group_col):
+        samples = group_df[sample_col]
+        sub_df = df[samples]
+        valid = sub_df.notna().mean(axis=1) > threshold
+        valid_sets.append(set(df.index[valid]))
+    keep_proteins = set.intersection(*valid_sets)
+    print("found ", len(keep_proteins), " proteins in ", (100 * threshold), "% of each treatment group")
+    return df.loc[list(keep_proteins)]
+
+
     
-def process_prot_data(df, config, outPath):
+def process_prot_data(df, config, outPath, metadata):
     """
     Preprocess protein abundance data by filtering, transforming, normalising, and imputing.
 
@@ -131,9 +159,13 @@ def process_prot_data(df, config, outPath):
             - 'df_imp': Final imputed data
     """
     df = df.replace(0, np.nan)
-    df = df[df.isnull().mean(axis=1) <= 0.2]
+    # filter for proteins found in XX% per treatment group
+    threshold = config.get("missing_threshold")
+    df_filtered = filter_proteins_by_group_missingness(df, metadata,
+                                                       threshold = threshold)
+    # df = df[df.isnull().mean(axis=1) <= 0.2]
     ### log2 all vals
-    df_log2 = np.log2(df)
+    df_log2 = np.log2(df_filtered)
     #### normalise and impute #####
     # Note It has been shown that normalizing the data first and then imputing the data performs better than the other way around (Karpievitch et al. 2012).
     # see e.g. AlphaPepStats
@@ -144,8 +176,8 @@ def process_prot_data(df, config, outPath):
     if normalise_method == "vsn":
         prot_path = os.path.join(outPath, "data/prots_no_zero_values.csv").replace("\\", "/")
         normalised_path = os.path.join(outPath, "data/prots_vsn_normalised.csv").replace("\\", "/")
-        meanSdPlot_path = os.path.join(outPath, "plots/vsn_meanSDplot.png").replace("\\", "/")
-        df.to_csv(prot_path, index=True)
+        meanSdPlot_path = os.path.join(outPath, "plots/vsn_meanSDplot.pdf").replace("\\", "/")
+        df_filtered.to_csv(prot_path, index=True)
         normalise_vsn(file_path_in = prot_path,
                       file_path_normalised_out = normalised_path,
                       meanSdPlot_path = meanSdPlot_path)
@@ -158,7 +190,7 @@ def process_prot_data(df, config, outPath):
     df_norm_t = df_norm.T  # shape: samples × proteins
     df_norm_t.columns = df_norm_t.columns.astype(str)
     #### impute ####
-    df_imp = impute_prot_data(df, df_norm_t)
+    df_imp = impute_prot_data(df_filtered, df_norm_t)
     return {
         "df": df,
         "df_log2": df_log2,
@@ -167,7 +199,7 @@ def process_prot_data(df, config, outPath):
     }
 
 
-def view_prot_distributions(dfs, plot_titles, metadata, outPath):
+def view_prot_distributions(dfs_values, plot_titles, metadata, outPath):
     """
     Visualise protein abundance distributions before and after processing.
 
@@ -176,7 +208,7 @@ def view_prot_distributions(dfs, plot_titles, metadata, outPath):
     - Kernel density estimates (KDEs) grouped by treatment
 
     Args:
-        dfs (Iterable[pd.DataFrame]): A sequence of processed DataFrames (e.g. raw, log2, normalised, imputed).
+        dfs_values (Iterable[pd.DataFrame]): A sequence of processed DataFrames (e.g. raw, log2, normalised, imputed).
         plot_titles (list[str]): Titles for each corresponding DataFrame.
         metadata (pd.DataFrame): Metadata containing 'sample_rep' and 'treatment'.
         outPath (str): Output directory for saving plots.
@@ -189,7 +221,7 @@ def view_prot_distributions(dfs, plot_titles, metadata, outPath):
     # Set up the figure with a 2x2 grid
     fig, axes = plt.subplots(2, 2, figsize=(15, 10))
     axes = axes.flatten()
-    for ax, data, title in zip(axes, dfs, plot_titles):
+    for ax, data, title in zip(axes, dfs_values, plot_titles):
         # Convert the DataFrame to long format: one row per measurement with sample id and intensity.
         long_df = data.melt(var_name="sample_rep", value_name="intensity")
         # Merge with metadata to obtain treatment information for each sample.
@@ -197,6 +229,16 @@ def view_prot_distributions(dfs, plot_titles, metadata, outPath):
         long_df = long_df.merge(
             metadata[["sample_rep", "treatment"]], on="sample_rep", how="left"
         )
+        # Sort samples by treatment, then sample_id, then sample_rep
+        sample_order = (
+            long_df.sort_values(["treatment", "sample_rep"])
+            ["sample_rep"]
+            .drop_duplicates()
+            .tolist()
+        )
+        # Set plot_label as a categorical with the desired order
+        long_df["sample_rep"] = pd.Categorical(long_df["sample_rep"],
+                                               categories=sample_order, ordered=True)
         # Plot boxplots: each sample's distribution is shown on the x-axis.
         # The boxes are colored by treatment.
         sns.boxplot(x="sample_rep", y="intensity", data=long_df, hue="treatment", ax=ax)
@@ -213,7 +255,7 @@ def view_prot_distributions(dfs, plot_titles, metadata, outPath):
     fig.legend(handles, labels, title="Treatment", loc="upper right")
     plt.tight_layout()
     plot_path = os.path.join(
-        outPath, "plots", "boxplots_preProcessing_all_samples_plot.png"
+        outPath, "plots", "boxplots_preProcessing_all_samples_plot.pdf"
     )
     if os.name == "nt":
         plot_path = "\\\\?\\" + os.path.abspath(plot_path)
@@ -223,7 +265,7 @@ def view_prot_distributions(dfs, plot_titles, metadata, outPath):
     # Set up the figure with a 2x2 grid for KDE plots
     fig, axes = plt.subplots(2, 2, figsize=(15, 10))
     axes = axes.flatten()
-    for ax, data, title in zip(axes, dfs, plot_titles):
+    for ax, data, title in zip(axes, dfs_values, plot_titles):
         # Convert the DataFrame to long format: one row per measurement with sample id and intensity.
         long_df = data.melt(var_name="sample_rep", value_name="intensity")
         # Merge with metadata to obtain treatment information for each sample.
@@ -240,7 +282,7 @@ def view_prot_distributions(dfs, plot_titles, metadata, outPath):
         ax.legend(title="Treatment")
     plt.tight_layout()
     plot_path = os.path.join(
-        outPath, "plots", "KDE_preProcessing_all_treatments_plot.png"
+        outPath, "plots", "KDE_preProcessing_all_treatments_plot.pdf"
     )
     if os.name == "nt":
         plot_path = "\\\\?\\" + os.path.abspath(plot_path)

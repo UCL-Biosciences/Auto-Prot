@@ -10,13 +10,14 @@ import pandas as pd
 import seaborn as sns
 
 from gprofiler import GProfiler
-
+from adjustText import adjust_text
 
 def make_volcano(
     df_pair: pd.DataFrame,
     output_dir: str,
     pair_name: str,
     config: dict,
+    formula: str,
     metadata_pair: pd.DataFrame = None,
 ) -> pd.DataFrame:
     """
@@ -35,6 +36,7 @@ def make_volcano(
             - "FDR_threshold" (float): Maximum adjusted p-value (FDR) to be differentially expressed.
             - "LFC_plot_p_or_FDRp" (str): Column to use for y-axis in volcano plot ("Log10_FDR_P_Value" or "Log10_unadjusted_p_Value").
         metadata_pair (pd.DataFrame, optional): Metadata for the subset of samples in this comparison.
+        formula (str): the formula passted to the DE calculation. May need to be different for full dataset and subsets.
 
     Returns:
         pd.DataFrame: DataFrame with differential expression results, including logFC, p-values, adjusted p-values, 
@@ -60,6 +62,7 @@ def make_volcano(
             pair_data_path.replace("\\", "/"),
             pair_metadata_path.replace("\\", "/"),
             pair_result_path.replace("\\", "/"),
+            formula ## formula used in DE analysis
         ],
         check=True,
     )
@@ -101,6 +104,30 @@ def make_volcano(
         legend=False,  # No legend for this plot
         alpha=0.7,  # Transparency for points
     )
+    ### label top 10 blue proteins
+    # Sort by adjusted p-value and take top 10 (or all if < 10)
+    top_proteins = diffExpr_df[diffExpr_df["Colour"] == "blue"].nsmallest(10, "adj.P.Val")
+    # Prepare text objects
+    texts = []
+    for _, row in top_proteins.iterrows():
+        texts.append(
+            plt.text(
+                row["logFC"],
+                row[Volcano_y_axis],
+                row.name,  # Assumes protein names are in the index
+                fontsize=8
+            )
+        )
+
+    # Automatically adjust text positions to minimise overlap
+    adjust_text(
+        texts,
+        arrowprops=dict(arrowstyle="->", color='gray', lw=0.5),
+        force_text=0.5, force_points=0.3,
+        expand_points=(1.2, 1.4),
+        expand_text=(1.2, 1.4),
+        only_move={'points': 'y', 'text': 'xy'}
+    )
     # Customize the plot
     plt.axvline(x=LFC_threshold, color="red", linestyle="--", linewidth=1)
     plt.axvline(x=-LFC_threshold, color="red", linestyle="--", linewidth=1)
@@ -112,7 +139,7 @@ def make_volcano(
     # Set symmetrical x-axis
     # Save plot and PCA data
     # plt.xlim(-4, 4)
-    plot_path = os.path.join(output_dir, "plots", pair_name, "volcano_plot.png")
+    plot_path = os.path.join(output_dir, "plots", pair_name, "volcano_plot.pdf")
     if os.name == "nt":
         plot_path = "\\\\?\\" + os.path.abspath(plot_path)
     plt.savefig(plot_path, dpi=300)
@@ -173,7 +200,7 @@ def enrichment_analysis(
     # pathway database can be REAC, GO or KEGG. Also less common but available: CORUM, HPA, TF and MIRNA
     # defaults to REAC
     source = ["KEGG"]
-    plot_title = "Pathway Enrichment (" + source[0] + ")"
+    plot_title = ( "Pathway Enrichment (" + source[0] + ") for treatments \n " + pair_name )
     # p value threshold defaults to 0.05
     p_threshold = 0.05
     # all results returns all results, not just those below p threshold
@@ -232,7 +259,7 @@ def enrichment_analysis(
         plt.tight_layout()
         # Save plot data
         plot_path = os.path.join(
-            output_dir, "plots", pair_name, (pair_name + "_pathway_enrichment_plot.png")
+            output_dir, "plots", pair_name, (pair_name + "_pathway_enrichment_plot.pdf")
         )
         ## windows sometimes rejects long paths. Workaround:
         if os.name == "nt":

@@ -13,9 +13,8 @@ from src.utils.data_io import load_data
 from src.utils.data_utils import (
     normalise_column_names,
     validate_metadata,
-    validate_proteindata,
-    get_subset
-)
+    validate_proteindata
+    )
 
 # specify location of errors to standard output
 logging.basicConfig(
@@ -199,7 +198,7 @@ def clean_data(
             ### pre process protein abundance data
             ## replace 0 with NA, remove prots with lots of missing data
             ## log2 transform, normalise using each sample's median, and impute using random forest
-            dfs = dpp.process_prot_data(df, config, outPath=outPath)
+            dfs = dpp.process_prot_data(df, config, metadata=metadata, outPath=outPath)
             ## to be shown when plotting distributions
             plot_titles = [
                 "Raw Intensities",
@@ -212,29 +211,6 @@ def clean_data(
             ## which df to use?
             df_to_use = config.get("df_to_use")
             df = dfs[df_to_use].dropna()
-            # # some proteins do not produce any associated genes. these values are left blank in the index
-            # # we replace the NaNs with Unknown-Gene-X, where X is a unique number for each unknown gene.
-            # # Convert index to a Series to manipulate NaNs
-            # index_series = df.index.to_series().astype(
-            #     "object"
-            # )  ## 'object' allows strings and NAs
-            # # Find NaN values in index
-            # nan_mask = index_series.isna()
-            # # Replace NaNs with "Unknown-gene-N"
-            # index_series[nan_mask] = [
-            #     f"Unknown-gene-{i+1}" for i in range(nan_mask.sum())
-            # ]
-            # # Set updated index
-            # df.index = index_series
-            # ### For phosphoproteomic data, there are abundances for phosphorylated proteins
-            # ### Each protein can be present multiple times - once per phosphorylation state
-            # ### For the analysis to proceed, we need a unique ID for the protein-phosphorylation state combination
-            # ## we append the phosporylation state (in column PTM.ModificationTitle and PTM.SiteAA) to the pg.genes column
-            # if config.get("data_type") == "phospho":
-            #     print("Gene names and phosphorylation state present. Combining to make unique gene names" )
-            #     df = apply_row_id_config(df, config)
-            # drop rows with duplicated index values <<<< This is a weird quirk of the phosphoproteomics data. Need to find a way of uniquely identifying rows. Added to github issue
-            # df = df[~df.index.duplicated(keep="first")]
             ### save some summary info to file for report
             prot_summary(df, nrow_original, json_out)
     df = df.drop_duplicates()

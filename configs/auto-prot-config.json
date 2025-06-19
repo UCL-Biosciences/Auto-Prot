@@ -2,6 +2,8 @@
 
     "data_type": "prot",
     "phospho_row_id" : "",
+    "missing_threshold": 0.75,
+
 
     "normalise_method" : "vsn",
     "df_to_use" : "df_imp",
@@ -16,7 +18,10 @@
     "analyse_full_dataset": true,
     "analyse_subsets": true,
     "subset_variable": "timepoint",
-    "subsets" : "",
+    "subsets" : ["1", "2"],
+
+    "DE_full_formula": "~ treatment + as.factor(timepoint)",
+    "DE_subset_formula": "~ treatment",
 
     "LFC_plot_p_or_FDRp": "Log10_FDR_P_Value",
     "LFC_threshold" : 1,

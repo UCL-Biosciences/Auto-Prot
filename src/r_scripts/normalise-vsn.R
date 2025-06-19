@@ -29,7 +29,7 @@ print( "fitting vsn" )
 vsn_fit <- vsn2(expr)
 # Save mean-SD plot to PNG
 ### ### mean and sd shouldn't be correlated! ### ###
-png(meanSdPlot_path, width = 800, height = 600)
+pdf(meanSdPlot_path, width = 800, height = 600)
 meanSdPlot(vsn_fit)
 dev.off()
 vsn_data <- predict(vsn_fit, expr)
