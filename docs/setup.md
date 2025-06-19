@@ -55,13 +55,15 @@ You can place these in the `/data/` directory or specify a different path in the
 - `replicate`: integer; used in visualisation
 - `timepoint`: optional, can be included in model for differential expression or used to subset samples
 
+Additional columns can be included in the metadata. They will mostly be ignored unless you want to include them in the differential expression model or use them to subset the data (see section on config file for how to do this).
+
 ---
 
 ## Example Files
 
 To generate example input data, `python src/utils/gen_random_data.py` will populate /input/data with valid `proteindata.csv` and `metadata.csv` files.
 
-## Directory Layout
+## Example Directory Layout
 /data/
   ├── proteindata.csv
   └── metadata.csv
