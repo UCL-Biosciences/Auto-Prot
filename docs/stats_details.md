@@ -1,16 +1,22 @@
 # Stats and Calculations
-This tool is designed to produce a reasonable first exploration of your data. However, no single approach works optimally for all datasets. You should check the data look sensible before drawing strong conclusions. Are the distributions as you would expect after logging, normalising and imputing? Do any technical replicates cluster tightly? Is there variation within or among treatments? Do the different clustering methods agree? Answers to these questions will tell you how stable the results are. There are four datasets you can use in the analysis: raw values, log2 values, sample-median normalised, or normalised and imputed. The default is normalised and imputed. The datast can be changed by using the "df_to_use" field in the `configs/auto-prot-config.json` file: "df", "df_log2", "df_median_norm", "df_imp" 
+This tool is designed to produce a reasonable first exploration of your data. However, no single approach works optimally for all datasets. You should check the data look sensible before drawing strong conclusions. Are the distributions as you would expect after logging, normalising and imputing? Do any technical replicates cluster tightly? Is there variation within or among treatments? Do the different clustering methods agree? Answers to these questions will tell you how stable the results are. There are four datasets you can use in the analysis: raw values, log2 values, sample-median normalised, or normalised and imputed. The default is normalised and imputed. The datast can be changed by using the "df_to_use" field in the `configs/auto-prot-config.json` file: "df", "df_log2", "df_median_norm", "df_imp" (see setup doc for more info).
 
 You are of course welcome (and encouraged) to adjust the code to work best for your dataset. [AlphaPepStats](https://github.com/MannLabs/alphapeptstats) has a more comprehensive set of options for pre-processing data, which can be added to this tool by editing the `data_processing.py` script.
 
 As always, we appreciate feedback and suggestions. Please create issues or get in touch - details on main README file.
 
 ## Pre Processing
+### Log Transformation
+If sample-median normalisation is used, values are log2-transformed. vsn normalisation requires raw values.
 
-#### Normalisation
-We saw considerable variability in mean and total abundance among samples and treatments. This can look like lots of proteins are overexpressed in a given treatment group, but reflects overall sample abundance (i.e. a sampling artefact) rather than genuine differences per protein. To address this, we normalise by dividing all values by the sample median. In most cases, we are looking for relative differences among treatments, so this strategy is appropriate. However, if most proteins really do go up/down in one condition, the effect will be reduced or lost. Similarly, you won't get a clear idea of the total abundance per sample/treatment.
+### Normalisation
+Normalisation is controlled in the config field "normalise_method". "vsn" will use variance stablisation normalisation, "sample-median" will subtract all values from the respective sample's median. Explained below.
 
-#### Imputation
+The default normalisation is variance stablisiation normalisation, as recommended by Välikangas et al (2018): "We found that variance stabilization normalization (Vsn) reduced variation the most between technical replicates in all examined data sets. Vsn also performed consistently well in the differential expression analysis." Note, "the Vsn normalization performs a transformation similar to the log transformation and requires the input data to be untransformed." More details in Välikangas et al.
+
+"sample-median" will normalise simply by subtracting all values from the median value for each protein. We saw considerable variability in mean and total abundance among samples and treatments. This can look like lots of proteins are overexpressed in a given treatment group, but reflects overall sample abundance (i.e. a sampling artefact) rather than genuine differences per protein. Subtracting the median can help with this but is not as effective as other methods.
+
+### Imputation
 Previous studies have found Random Forest imputation methods perform best (see below for refs). The pipeline can use python functions `HistGradientBoostingRegressor` and `IterativeImputer` but with more than 1,000 proteins, it becomes very slow with default parameters. There are some we have tweaked to reduce imputation time:
 - HistGradientBoostingRegressor
   -   `max_iter`
@@ -20,7 +26,7 @@ Previous studies have found Random Forest imputation methods perform best (see b
     - `max_iter`
     - `n_nearest_features`
 
-##### Imputation Details 
+#### Imputation Details 
 To impute missing values in protein abundance data, we use iterative multivariate imputation via the `IterativeImputer` from scikit-learn. This method estimates each missing value by modelling it as a function of the most correlated features, cycling through all features over multiple iterations to refine the estimates.
 
 To estimate each value, we use the `HistGradientBoostingRegressor` (HGBR) — a fast, regularised "gradient boosting" method that trains shallow decision trees sequentially to improve predictions. HGBR accelerates training using histogram-based feature binning and handles missing values natively.
@@ -36,6 +42,10 @@ A separate formula is supplied for any subsets that you want to analyse DE for. 
 
 Be careful interpreting the direction of the differential expression calculations. By default, the pairs of treatment groups compared are all unique combinations of the treatment column in metadata. 
 
+## Pathway Enrichment
+This analysis step performs pathway enrichment using the g:Profiler tool, focusing on proteins with large fold changes and low adjusted p-values, based on thresholds defined in the config. It uses over-representation analysis (ORA) to identify enriched biological processes or pathways. By default, we use KEGG ontology. This can be changed but currently needs to be changed in `src/analysis/pairwise.py`, `source = ["source"]` where source can be "KEGG", "GO", or "REAC". Results are saved as a CSV file and visualised as a bubble plot showing the top 20 pathways ranked by p-value. Note, there are many cases where relatively few proteins are differentially expressed and no enrichment terms are found. In this case you can investigate whether the code is running as expected and can reduce the thresholds that define differential expression through config fields `LFC_threshold` (default = 1) and `FDR_threshold` (default = 0.05).
+
+## Generate Report
 
 
 ## Refs
@@ -48,6 +58,8 @@ Lou, Ronghui, et al. "Benchmarking commonly used software suites and analysis wo
 Jin, Liang, et al. "A comparative study of evaluating missing value imputation methods in label-free proteomics." Scientific reports 11.1 (2021): 1760.
 
 Ritchie, Matthew E., et al. "limma powers differential expression analyses for RNA-sequencing and microarray studies." Nucleic acids research 43.7 (2015): e47-e47.
+
+Välikangas, Tommi, Tomi Suomi, and Laura L. Elo. "A systematic evaluation of normalization methods in quantitative label-free proteomics." Briefings in bioinformatics 19.1 (2018): 1-11.
 
 
 
