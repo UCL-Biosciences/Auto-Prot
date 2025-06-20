@@ -10,17 +10,17 @@
     
     "species" : "hsapiens",
     
-    "protPath" : "input/data/proteindata_human.tsv",
+    "protPath" : "input/data/proteindata.csv",
     "metaPath" : "input/data/metadata.csv",
-    "outPath" : "output_human",
-    "json_outPath" : "output_human/data/data_for_report.json",
+    "outPath" : "output",
+    "json_outPath" : "output/data/data_for_report.json",
     
     "analyse_full_dataset": true,
-    "analyse_subsets": true,
-    "subset_variable": "timepoint",
-    "subsets" : ["1", "2"],
+    "analyse_subsets": false,
+    "subset_variable": "",
+    "subsets" : [],
 
-    "DE_full_formula": "~ treatment + as.factor(timepoint)",
+    "DE_full_formula": "~ treatment",
     "DE_subset_formula": "~ treatment",
 
     "LFC_plot_p_or_FDRp": "Log10_FDR_P_Value",
