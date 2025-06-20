@@ -1,6 +1,8 @@
 # Proteomics Report
 This repository contains the Auto-Proteomics analysis pipeline for generating standardised reports from protein abundance datasets. Welcome.
 
+The pipeline is still in testing. Staging is the best branch to use but there might still be some things to fix. Would only suggest trying this if you know python and/or proteomics reasonably well :')
+
 This tool produces common outputs from MS proteomic and phosphoproteomic data. We want to make this possible for people with limited coding experience by requiring only some preparation steps and one line of code to run the pipeline. Parameters are determined in a "config" file so you don't need to look through the code to change things.
 
 By producing common exploratory outputs automatically, we hope you can spend more time thinking about your data and results. Note, this pipeline produces results automatically without thinking about the idiosyncracies of your beautiful, unique dataset. **This should never be used wihtout a full evaluation and validation of the results.** Best practice would be to run a similar analysis with your favourite software or collaborator to confirm our results are sensible.
