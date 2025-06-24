@@ -110,7 +110,6 @@ If you’d like to contribute a bug fix, feature, or improvement:
 
 Please note:
 - All code should be commented and use informative function/variable names
-- Use British English for spelling (e.g. "standardised" not "standardized")
 
 Need help? Open an issue or email - contact details above.
 
