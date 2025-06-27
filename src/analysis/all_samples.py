@@ -324,8 +324,7 @@ def generate_heatmap(df: pd.DataFrame, output_dir: str,
     Returns:
         pd.DataFrame: Transposed abundance data used to generate the heatmap.
     """
-    #### need the other orientation for heatmap
-    # transpose and add sample ids as colnames
+    # note df not transposed for heatmap
     df_heat = df
     n_prot = df_heat.shape[0]
     
