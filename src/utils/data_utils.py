@@ -319,6 +319,7 @@ def combine_csv_files(
         for file in files:
             if fnmatch.fnmatch(file, filename):  # supports wildcards like * and ?
                 csv_files.append(os.path.join(root, file))
+    csv_files = [csv for csv in csv_files if not fnmatch.fnmatch(os.path.basename(csv), "combined*.csv")]
     # # Search for matching CSV files in subdirectories
     # search_pattern = os.path.join(output_dir, "data", "**", filename)
     # csv_files = glob(os.path.join(output_dir, "data", "*", filename)) + glob(os.path.join(output_dir, "data", "*", "*", filename))
@@ -336,14 +337,11 @@ def combine_csv_files(
         folder_name = os.path.basename(os.path.dirname(file))
         # Read CSV and select top `n` rows
         df = pd.read_csv(file)
-
         if sort_by_logfc and "logFC" in df.columns:
             df = df.sort_values(by="logFC", ascending=False, key=abs)
-
         df = df.head(top_n)
         # Add the extracted folder name as a new column
         df[new_column] = folder_name
-        
         # Append to the list
         combined_data.append(df)
     # Merge all data

@@ -59,6 +59,8 @@ def main():
         outPath=outPath,
         config=config,
     )
+    # if you have already processed the data and want to read in a previously saved version
+    # import pandas as pd; df_protAbundance = pd.read_csv(os.path.join(outPath, "data/proteinAbundance.csv"))
 
     print("Data loaded and processed...")
     # Analysis
