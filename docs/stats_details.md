@@ -33,6 +33,50 @@ To estimate each value, we use the `HistGradientBoostingRegressor` (HGBR) — a 
 
 While previous studies have found Random Forests particularly effective for imputation due to their robustness and ability to capture nonlinear feature interactions, we follow the approach used in AlphaPepStats by applying HGBR, which is similar to Random Forest but can offer higher predictive power.
 
+## Exploratory Analysis
+In proteomics data analysis, before diving into pairwise treatment comparisons or complex modelling, it's critical to understand the** overall structure** of the dataset. Exploratory visualisations such as PCA, MDS, and heatmaps offer intuitive ways to:
+- Assess **variation between biological conditions or treatments**.
+- Evaluate **replicate consistency** (do replicates cluster together?).
+- Detect** outliers or unexpected batch effects**.
+- Identify **global patterns** in protein expression across all samples.
+
+These methods are unsupervised and data-driven—they do not rely on predefined hypotheses, making them powerful tools for data QC and hypothesis generation.
+
+**What does clustering tell us?**
+Clustering groups samples or proteins that behave similarly across the dataset. For example:
+- If all replicates from a treatment cluster together, it suggests consistent treatment effects.
+- If samples from different treatments intermingle, it may indicate weak or overlapping biological signals—or a need to inspect metadata or preprocessing.
+
+Visualising these groupings in 2D (e.g. PCA, MDS) or as a clustered heatmap helps you visually **validate assumptions** and **guide downstream analysis**.
+
+### PCA (Principal Component Analysis)
+**Purpose:** Display thousands of proteins using plots with two axes. Reduce dimensionality while retaining as much variance as possible. Highlights major axes of variation in the data.
+
+**Calculation:**
+- `sklearn.decomposition.PCA` is run twice
+  - PCA is run to determine how many components are needed to explain 95% of the total variance.
+  - PCA is then re-run using that optimal number of components.
+- A 2D scatterplot of the first two components (PC1 and PC2) is generated.
+- Group centroids and 95% confidence ellipses are added (via custom function using covariance - ellipses are scaled to 4x standard deviation ≈95% CI).
+- Log-transformed, (VSN-)normalised data are not re-scaled for PCA as VSN stablises variance. If you use a different normalisation, you might need to scale the data.
+
+### MDS (Metric Multidimensional Scaling)
+**Purpose:** Visualise similarity or dissimilarity between samples based on distance metrics (here, Euclidean distance on protein abundance).
+
+**Calculation:** 
+- Distance matrix is computed via `scipy.spatial.distance.pdist`.
+- MDS is performed using `sklearn.manifold.MDS` with `dissimilarity="precomputed"` and `metric=True`.
+- Again, plots show ellipses and centroids for treatments.
+
+### Heatmap
+**Purpose:** Visualise the full protein abundance matrix, clustering both proteins and samples to reveal global patterns.
+
+**Calculation:**
+- Uses `seaborn.clustermap` to perform hierarchical clustering.
+- Dendrograms reflect similarity between samples/proteins.
+- Column colours are dynamically re-ordered to match clustering.
+- Heatmap uses the raw input orientation (samples = rows, proteins = columns), unlike PCA and MDS, which require transposed data.
+
 ## Differential Expression
 We use the Limma R Package (Ritchie et al. 2015) to quantify differences between treatment groups for all proteins (following e.g. Lou et al. 2022). Differential expression is calculated for each pair of treatments. 
 
