@@ -71,16 +71,24 @@ def make_volcano(
     n_prot = diffExpr_df.shape[0]
     diffExpr_df["Log10_FDR_P_Value"] = -np.log10(diffExpr_df["adj.P.Val"])
     diffExpr_df["Log10_unadjusted_p_Value"] = -np.log10(diffExpr_df["P.Value"])
-    ### whether to plot the -log10(p_value) i.e. unadjusted or -log10(FDR_p_value) is specified in json field "LFC_plot_p_or_FDRp"
+    ### whether to plot the -log10(p_value) i.e. unadjusted or -log10(FDR_p_value) is specified in json field "LFC_plot_p_or_FDRp" ("Log10_FDR_P_Value" or "Log10_unadjusted_p_Value")
     LFC_threshold = config.get("LFC_threshold")
     FDR_threshold = config.get("FDR_threshold")
     Volcano_y_axis = config.get("LFC_plot_p_or_FDRp")
     Volcano_y_data = diffExpr_df[Volcano_y_axis]
     # Add the Colour column based on LOG2FC and p_values_FDR
+    ### colour blue when p value < threshold defined in config (LFC_threshold)
+    ### by default, use FDR adjusted p value
+    ### but might want to use unadjusted p value to compare with others
+    ### defined by LFC_plot_p_or_FDRp in config:
+    if Volcano_y_axis == "Log10_FDR_P_Value":
+        p_cutoff_column = "adj.P.Val"
+    elif Volcano_y_axis == "Log10_unadjusted_p_Value":
+        p_cutoff_column = "P.Value"
     diffExpr_df["Colour"] = diffExpr_df.apply(
         lambda row: (
             "blue"
-            if (abs(row["logFC"]) > LFC_threshold and row["adj.P.Val"] < FDR_threshold)
+            if (abs(row["logFC"]) > LFC_threshold and row[p_cutoff_column] < FDR_threshold)
             else "gray"
         ),
         axis=1,
