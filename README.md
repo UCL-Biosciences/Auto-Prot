@@ -26,7 +26,7 @@ If you think the results look reasonable and you want to make use of them, pleas
 This tool has been tested on Windows and macOS.
 
 ### 1. Clone the repository
-`git clone https://github.com/jdgilbert245/05-Auto-Prot`
+`git clone https://github.com/jdgilbert245/Auto-Prot`
 
 ### 2. Navigate into the project
 `cd /path/to/where/you/downloaded/repo`
