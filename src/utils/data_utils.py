@@ -65,7 +65,23 @@ def normalise_column_names(df, file_path=None, config = None):
     if "protein" in file_path:
         genes_columns = [col for col in df.columns if "gene" in col.lower()]
         if genes_columns:  # If any column contains 'genes'
-            df = df.set_index(df[genes_columns[0]].str.split(";").str[0])
+            # Set initial index
+            base_index = df[genes_columns[0]].str.split(";").str[0]
+            # Count how many times each base value appears
+            counts = base_index.value_counts()
+            # Identify which ones are duplicated
+            duplicated = base_index.isin(counts[counts > 1].index)
+            # Create a suffix only for duplicates
+            suffixes = (
+                base_index[duplicated]
+                .groupby(base_index[duplicated])
+                .cumcount() + 1
+            ).astype(str)
+            # Create the final index
+            new_index = base_index.copy()
+            new_index[duplicated] = new_index[duplicated] + '-' + suffixes
+            # Set the new index
+            df.index = new_index
         # some proteins do not produce any associated genes. these values are left blank in the index
         # we replace the NaNs with Unknown-Gene-X, where X is a unique number for each unknown gene.
         # Convert index to a Series to manipulate NaNs
