@@ -94,9 +94,7 @@ For more details on the analysis and calculations, see `docs/Workflow.md` and `d
 We want this tool to be useful and accessible for as many people as possible - comments and feedback are very welcome. Please send to [james.d.gilbert@ucl.ac.uk](mailto:james.d.gilbert@ucl.ac.uk). 
 
 ## ⚙️ Configuration
-There is a configuration (config) file that allows the user to control lots of parts of the analysis without editing any code. For instructions, see the workflow document.
-
-The template for the report can be edited: `report/report-template.md`
+There is a configuration (config) file that allows the user to control lots of parts of the analysis without editing any code. For instructions, see the workflow document. Changes to the config file are ignored (config file in .gitignore) so the default config doesn't get overwritten and continues to work when downloaded.
 
 ## 🤝 Contributing
 
