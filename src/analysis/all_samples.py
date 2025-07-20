@@ -320,96 +320,126 @@ def generate_heatmap(df: pd.DataFrame, output_dir: str,
         output_dir (str): Directory to save the heatmap plot.
         metadata (pd.DataFrame): Metadata with sample_rep, treatment, and colours columns.
 
-
     Returns:
-        pd.DataFrame: Transposed abundance data used to generate the heatmap.
+        pd.DataFrame: The (unchanged) abundance DataFrame, returned for chaining if needed.
     """
-    # note df not transposed for heatmap
-    df_heat = df
-    n_prot = df_heat.shape[0]
-    
-    # Start without col_colors
-    col_colors = None
-    colour_map = None
+    # 1) Build the colour strip from metadata in the SAME order as df.columns
+    # Map each sample_rep to its colour
+    colour_map = metadata.set_index("sample_rep")["colours"]
+    # Create a list/Series of colours aligned to df.columns
+    col_colors = df.columns.map(colour_map)
 
-    if metadata is not None:
-        required_cols = {"sample_rep", "treatment", "colours"}
-        if not required_cols.issubset(metadata.columns):
-            raise ValueError(f"Metadata must contain columns: {required_cols}")
-        colour_map = metadata.set_index("sample_rep")["colours"]
-
-    # Create clustermap
-    heatmap = sns.clustermap(
+    # 2) Generate the clustermap
+    #    - df: your data matrix
+    #    - cmap: the heat-map palette
+    #    - col_colors: tells Seaborn to draw a full-width strip under the dendrogram
+    #    - cbar_pos=None: suppress the tiny default legend in the corner
+    cg = sns.clustermap(
         df,
         fmt=".2f",
         cmap="viridis",
         col_colors=col_colors,
         xticklabels=True,
         yticklabels=False,
+        #cbar_pos=None
     )
-    # Get the sample IDs (column names) in the order determined by clustering
-    clustered_columns = df.columns[heatmap.dendrogram_col.reordered_ind]
-    # the colours in the metadata reflect the order of samples in the metadata
-    # to add to the heatmap, need to re order them so they match the samples as ordered in the heatmap
-    if colour_map is not None:  
-        # Map the reordered sample IDs to their corresponding colours
-        col_colors = clustered_columns.map(colour_map)   
-        # Manually add a horizontal bar (colour strip) under the column dendrogram
-        heatmap.ax_col_dendrogram.bar(
-            x=np.arange(len(col_colors)),   # Bar positions match the clustered column order
-            height=1,                     # Height of the bar (low so it sits under the dendrogram)
-            color=col_colors,               # Colours corresponding to each sample
-            linewidth=0,                    # No border around bars
-            align="center"                  # Center the bar with respect to tick positions
-        )
-    col_colors = df.columns.map(colour_map)
-    # Move x-axis labels to top
-    heatmap.ax_heatmap.xaxis.set_ticks_position("bottom")
-    heatmap.ax_heatmap.xaxis.set_label_position("bottom")
-    # Set tick positions and labels to match the clustered order
-    heatmap.ax_heatmap.set_xticks(np.arange(len(clustered_columns)))
-    heatmap.ax_heatmap.set_xticklabels(clustered_columns, rotation=45, ha = "right")
-    heatmap.ax_heatmap.tick_params(axis="x", which="both", bottom=True, top=False)
 
-    # Use clustered column order
-    clustered_cols = df_heat.columns[heatmap.dendrogram_col.reordered_ind]
-    heatmap.ax_heatmap.set_xticks(np.arange(len(clustered_cols)))
-    heatmap.ax_heatmap.set_xticklabels(clustered_cols, rotation=45, ha="left")
+    # 3) Tidy up the x-axis labels to appear on top, matching the clustered order
+    #    - reordered_ind gives you the new column ordering
+    ordered_cols = df.columns[cg.dendrogram_col.reordered_ind]
+    cg.ax_heatmap.xaxis.set_ticks_position("top")
+    cg.ax_heatmap.xaxis.set_label_position("top")
+    cg.ax_heatmap.set_xticks(np.arange(len(ordered_cols)))
+    cg.ax_heatmap.set_xticklabels(ordered_cols, rotation=45, ha="left")
 
-    # Move x-axis labels to top
-    heatmap.ax_heatmap.xaxis.set_ticks_position("top")
-    heatmap.ax_heatmap.xaxis.set_label_position("top")
-    heatmap.ax_heatmap.tick_params(axis="x", which="both", bottom=False, top=True)
-
-    # Title and save
-    os.makedirs(os.path.join(output_dir, "plots"), exist_ok=True)
+    # 4) Save the figure at high resolution and close it to free memory
     plot_path = os.path.join(output_dir, "plots", "heatmap_plot.png")
-    plt.savefig(plot_path, dpi=300)
-    plt.close()
-    print(f"heatmap saved to {plot_path}")
+    cg.savefig(plot_path, dpi=300)
+    plt.close(cg.fig)
+    print(f"Heatmap saved to {plot_path}")
+
+    # Return the original DataFrame (in case the caller wants to chain further operations)
     return df
 
 
+#     """
+#     Creates a clustered heatmap of protein abundance data using Euclidean distance.
 
-    # # Move x-axis labels (column names) to the top
-    # heatmap.ax_heatmap.xaxis.set_ticks_position("top")  # Move ticks to the top
-    # heatmap.ax_heatmap.xaxis.set_label_position("top")  # Move axis label to the top
-    # # Remove dendrogram tick labels
-    # heatmap.ax_heatmap.set_xticks(
-    #     np.arange(len(df_heat.columns))
-    # )  # Set tick positions for columns
-    # heatmap.ax_heatmap.set_xticklabels(
-    #     df_heat.columns, rotation=45, ha="left"
-    # )  # Use only column names
-    # # Explicitly disable extra tick labels from the dendrogram
-    # heatmap.ax_heatmap.tick_params(axis="x", which="both", bottom=False, top=True)
+#     Proteins are clustered along rows and samples along columns. Dendrograms and clustering
+#     are based on the transposed abundance matrix.
+
+#     Args:
+#         df (pd.DataFrame): Protein abundance data (samples as rows, proteins as columns).
+#         output_dir (str): Directory to save the heatmap plot.
+#         metadata (pd.DataFrame): Metadata with sample_rep, treatment, and colours columns.
+
+
+#     Returns:
+#         pd.DataFrame: Transposed abundance data used to generate the heatmap.
+#     """
+#     # note df not transposed for heatmap
     
-    # # Set labels and title
-    # plt.title(plot_title)
-    # # plt.tight_layout()
-    # # Save plot and PCA data
-    # plot_path = os.path.join(output_dir, "plots", "heatmap_plot.png")
-    # plt.savefig(plot_path, dpi=300)
-    # plt.close()
-    # print(f"heatmap saved to {plot_path}")
-    # return df_heat
+#     # Start without col_colors
+#     col_colors = None
+#     colour_map = None
+
+#     # assign col_colors
+#     if metadata is not None:
+#         required_cols = {"sample_rep", "treatment", "colours"}
+#         if not required_cols.issubset(metadata.columns):
+#             raise ValueError(f"Metadata must contain columns: {required_cols}")
+#         # sample_rep and colours:
+#         colour_map = metadata.set_index("sample_rep")["colours"]
+#         # map so that they reflect clustered
+#         col_colors = df.columns.map(colour_map)
+#     else:
+#         col_colors = None
+        
+
+#     # Create clustermap
+#     heatmap = sns.clustermap(
+#         df,
+#         fmt=".2f",
+#         cmap="viridis",
+#         col_colors=col_colors,
+#         xticklabels=True,
+#         yticklabels=False,
+#     )
+#     # Get the sample IDs (column names) in the order determined by clustering
+#     clustered_columns = df.columns[heatmap.dendrogram_col.reordered_ind]
+#     # the colours in the metadata reflect the order of samples in the metadata
+#     # to add to the heatmap, need to re order them so they match the samples as ordered in the heatmap
+#     if colour_map is not None:  
+#         # Map the reordered sample IDs to their corresponding colours
+#         col_colors = clustered_columns.map(colour_map)   
+#         # Manually add a horizontal bar (colour strip) under the column dendrogram
+#         heatmap.ax_col_dendrogram.bar(
+#             x=np.arange(len(col_colors)),   # Bar positions match the clustered column order
+#             height=1,                     # Height of the bar (low so it sits under the dendrogram)
+#             color=col_colors,               # Colours corresponding to each sample
+#             linewidth=0,                    # No border around bars
+#             align="center"                  # Center the bar with respect to tick positions
+#         )
+#     #col_colors = df.columns.map(colour_map)
+#     # Move x-axis labels to top
+#     heatmap.ax_heatmap.xaxis.set_ticks_position("top")
+#     heatmap.ax_heatmap.xaxis.set_label_position("top")
+#     heatmap.ax_heatmap.tick_params(axis="x", which="both", bottom=False, top=True)
+
+#     # Set tick positions and labels to match the clustered order
+#     heatmap.ax_heatmap.set_xticks(np.arange(len(clustered_columns)))
+#     heatmap.ax_heatmap.set_xticklabels(clustered_columns, rotation=45, ha = "right")
+
+#     # Use clustered column order
+#     heatmap.ax_heatmap.set_xticks(np.arange(len(clustered_columns)))
+#     heatmap.ax_heatmap.set_xticklabels(clustered_columns, rotation=45, ha="left")
+# plt.show
+#     # Title and save
+#     os.makedirs(os.path.join(output_dir, "plots"), exist_ok=True)
+#     plot_path = os.path.join(output_dir, "plots", "heatmap_plot.png")
+#     plt.savefig(plot_path, dpi=300)
+#     plt.close()
+#     print(f"heatmap saved to {plot_path}")
+#     return df
+
+
