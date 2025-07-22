@@ -95,6 +95,7 @@ To make the code work, you must enter the correct parameters and combination of 
 - phospho_row_id. If phosphorylation dataset, protein and gene names will be duplicated in multiple rows, with rows having different PTM info. This parameter determines which other columns will be used to create a unique ID for each row.
 - missing_threshold. threshold for missingness (0-1). Protein must have been observed in more than this threshold per group. If 0.8, protein must be in 80% of samples per group or will be removed.
 - normalise_method. "vsn" = variance stabilisation normalisation from the vsn R package, as recommended by Välikangas et al (2018). "sample-median" will normalise by subtracting each sample's median value from all of that sample's protein intensities.
+- imputation_method. Whether to use sklearn's histgradboosteriterator ("hist_grad_boost") or pimms' collaborative filter ("pimms_collabfilter") for imputation.
 - df_to_use. Which dataset to use in the pipeline. Options are raw data ("df_to_use" : "df" NOT REOMMENDED), log2 transformed data ("df_to_use" : "df_log2"), normalised data ("df_to_use" : "df_norm"), or normalised and imputed data ("df_to_use" : "df_imp").
 - species. which species to use when looking up the annotation information for pathway enrichment analysis.
 - protPath. path to protein data
