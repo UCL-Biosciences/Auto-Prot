@@ -4,8 +4,8 @@
     "phospho_row_id" : "",
     "missing_threshold": 0.75,
 
-
     "normalise_method" : "vsn",
+    "imputation_method" : "pimms_collabfilter",
     "df_to_use" : "df_imp",
     
     "species" : "hsapiens",

@@ -1,6 +1,7 @@
 ### Data pre-processing
 ## log, normalise and impute protein abundance data
 
+import glob
 import os
 import time
 import subprocess
@@ -12,11 +13,11 @@ import seaborn as sns
 import sklearn.ensemble
 from sklearn.experimental import enable_iterative_imputer  # noqa: F401
 from sklearn.impute import IterativeImputer  # noqa: F401
-
+from pimmslearn.sklearn.cf_transformer import CollaborativeFilteringTransformer
 
 
 ## impute function
-def impute_prot_data(df_filtered, df_norm_t):
+def impute_prot_data_histgradboost(df_filtered, df_norm_t):
     """
     Impute missing values in a protein abundance matrix using a tree-based model.
 
@@ -136,6 +137,75 @@ def filter_proteins_by_group_missingness(df, metadata,
     print("found ", len(keep_proteins), " proteins in ", (100 * threshold), "% of each treatment group")
     return df.loc[list(keep_proteins)]
 
+def impute_pimms_cf(
+    df: pd.DataFrame,
+    n_factors: int = 30,
+    batch_size: int = 4096,
+    epochs_max: int = 20,
+    cuda: bool = False,
+    target_column: str = "intensity"
+) -> pd.DataFrame:
+    """
+    Impute missing values in a proteomics intensity matrix using PIMMS's collaborative-filtering.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Wide-form DataFrame of shape (n_samples, n_proteins), where rows are sample IDs,
+        columns are protein IDs, and values are log2-transformed intensities (floats). Missing values should
+        be represented as NaN.
+    n_factors : int, optional
+        Number of latent factors to learn for both samples and proteins (default=30).
+    batch_size : int, optional
+        Batch size for training the collaborative-filtering model (default=4096).
+    epochs_max : int, optional
+        Maximum number of training epochs (default=20).
+    cuda : bool, optional
+        Whether to use GPU acceleration (if available). Defaults to False.
+    target_column : str, optional
+        Name to assign to the intensity column when stacking into a long-form Series.
+        Defaults to "intensity".
+
+    Returns
+    -------
+    pd.DataFrame
+        DataFrame of the same shape and indexing as `df`, with all NaNs imputed.
+        Imputed values are the model’s predictions, combined with the original observed values.
+
+    Example
+    -------
+    >>> df_imputed = impute_pimms_cf(raw_df, n_factors=50, epochs_max=30, cuda=True)
+    """
+    # 1. Stack to long form
+    df.index.name = "sample_id"
+    df.columns.name = "protein_id"
+    series = df.stack()
+    series.name = target_column
+    #series.index.names = ["sample_id", "protein_id"]
+    # 2. Initialize transformer
+    # controlling batch size
+    cf = CollaborativeFilteringTransformer(
+        target_column=target_column,
+        sample_column="sample_id",
+        item_column="protein_id",
+        n_factors=n_factors,
+        batch_size = ( int(len(series)/10 ) )
+    )
+    # 3. Fit and transform
+    start_time = time.time()
+    cf.fit(series, cuda=cuda, epochs_max=epochs_max)
+    imputed_long = cf.transform(series)
+    elapsed = time.time() - start_time
+    print(f"[PIMMS CF] Imputation completed in {elapsed:.1f} seconds.")
+    plt.close('all')
+    ## clean up files produced by pimms cf
+    for file in glob.glob("collab_training*"):
+        os.remove(file)
+    for file in glob.glob("model_params*"):
+        os.remove(file)
+    # 4. Unstack back to wide form
+    df_imputed = pd.DataFrame(imputed_long.unstack(level="protein_id").transpose()) 
+    return df_imputed
 
     
 def process_prot_data(df, config, outPath, metadata):
@@ -190,7 +260,12 @@ def process_prot_data(df, config, outPath, metadata):
     df_norm_t = df_norm.T  # shape: samples × proteins
     df_norm_t.columns = df_norm_t.columns.astype(str)
     #### impute ####
-    df_imp = impute_prot_data(df_filtered, df_norm_t)
+    if config.get("imputation_method") == "hist_grad_boost":
+        print("imputing with histogram gradient booster")
+        df_imp = impute_prot_data_histgradboost(df_filtered, df_norm_t)
+    elif config.get("imputation_method") == "pimms_collabfilter":
+        print("imputing with pimms: collaborative filtering")
+        df_imp = impute_pimms_cf(df = df_norm_t)
     return {
         "df": df,
         "df_log2": df_log2,
