@@ -17,7 +17,16 @@ The default normalisation is variance stablisiation normalisation, as recommende
 "sample-median" will normalise simply by subtracting all values from the median value for each protein. We saw considerable variability in mean and total abundance among samples and treatments. This can look like lots of proteins are overexpressed in a given treatment group, but reflects overall sample abundance (i.e. a sampling artefact) rather than genuine differences per protein. Subtracting the median can help with this but is not as effective as other methods.
 
 ### Imputation
-Previous studies have found Random Forest imputation methods perform best (see below for refs). The pipeline can use python functions `HistGradientBoostingRegressor` and `IterativeImputer` but with more than 1,000 proteins, it becomes very slow with default parameters. There are some we have tweaked to reduce imputation time:
+#### Collaborative Filter
+When you pick the “pimms_collabfiltering” option, the pipeline treats your protein-by-sample matrix like a recommender system: it first learns a compact set of latent factors for proteins and samples via alternating‐least‐squares (ALS) matrix factorisation, then uses those factors in a simple iterative regressor to fill in missing values one protein at a time. You can speed it up by asking it to find fewer latent factors or to make fewer ALS passes over the data, and by limiting how many other proteins it considers when regressing each one, or you can improve accuracy (at the cost of longer runtimes) by increasing those same settings. To speed up the collaborative‐filtering imputer, you can:
+- Reduce the number of latent factors (factors) so the ALS solver learns a smaller, simpler representation.
+- Lower the ALS iteration count (iterations) so it makes fewer passes over the data.
+- Decrease the neighbor count (n_nearest_features) so each regression only looks at a handful of other proteins.
+
+To improve accuracy (at the expense of runtime), you do the opposite:
+
+#### Gradient Boosting
+Previous studies have found Random Forest imputation methods perform best (see below for refs). If the "imputation_method" config field is set to "hist_grad_boost", the pipeline will use python functions `HistGradientBoostingRegressor` and `IterativeImputer`. This is a robust machine learning imputation method similar to random forest, but with more than 1,000 proteins, it becomes very slow with default parameters. There are some we have tweaked to reduce imputation time:
 - HistGradientBoostingRegressor
   -   `max_iter`
   -   `min_samples_leaf`
