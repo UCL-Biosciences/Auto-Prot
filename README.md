@@ -58,24 +58,9 @@ Running `python main.py` will generate:
 - Summary statistics
 - PCA and clustering plots
 - Differential expression tables
+- An html report summarising the results.  Note, the report contains all pairwise comparisons for volcano plots and pathway enrichment - if you have lots of treatments, it might get messy :')
 
 These are saved in `/output/`.
-
-### 5. Generate the report
-To generate an HTML report summarising all results:
-1. Deactivate the analysis environment:  
-   `conda deactivate`
-2. Create and activate the report environment:  
-   `conda env create -f configs/auto-prot-env-markdown-YOUR-OS-HERE.yml`  
-   `conda activate markdown`
-3. Run the report generator:  
-   `python src/reporting/generate_report.py`
-
-The final report will be saved as:  
-`output/report-out.html`
-
-Now we generate the report (from the main directory): `python src/reporting/generate_report.py`. This will save the report in `output/report-out.html`. Note, the report contains all pairwise comparisons for volcano plots and pathway enrichment - if you have lots of treatments, it might get messy :')
-
 
 ## 📂 Project Structure
 /docs                 # Documentation files  
