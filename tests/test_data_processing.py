@@ -5,6 +5,7 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 
 import json
+import yaml
 
 import numpy as np
 import pandas as pd
@@ -54,7 +55,7 @@ def test_clean_meta(tmp_path):
     assert result["colours"].nunique() == result["treatment"].nunique()
 
     # 4. JSON file should exist and contain summary keys
-    data = json.loads(json_out.read_text())
+    data = yaml.safe_loads(json_out.read_text())
     assert data["NUM_SAMPLES"] == 3
     assert data["NUM_TREATMENTS"] == 2
     # TREATMENTS string should mention both Ctl and Drug
@@ -128,7 +129,7 @@ def test_prot_summary(tmp_path):
     prot_summary(df, nrow_original, str(json_out))
 
     # 4. Read the JSON back in
-    data = json.loads(json_out.read_text())
+    data = yaml.safe_loads(json_out.read_text())
 
     # --- Check unchanged keys ---
     assert data["FOO"] == 123
@@ -291,7 +292,7 @@ def test_process_data_metadata_branch(monkeypatch, tmp_path):
     assert isinstance(result, pd.DataFrame)
     assert "sample_rep" in result.columns
     # And the JSON file should have been touched by clean_meta
-    summary = json.loads(json_out.read_text())
+    summary = yaml.safe_loads(json_out.read_text())
     assert "NUM_SAMPLES" in summary
 
 

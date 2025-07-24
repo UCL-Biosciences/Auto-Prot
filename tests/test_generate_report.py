@@ -1,6 +1,6 @@
 import sys
 import types
-import json
+import yaml
 import pandas as pd
 from pathlib import Path
 from unittest import mock

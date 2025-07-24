@@ -4,7 +4,7 @@
 ## Inputs must be protein abundance file and metadata, as specified below and in the github README.
 
 ## Import libraries
-import json
+import yaml
 import os
 import subprocess
 import src.analysis.analysis as an
@@ -32,10 +32,10 @@ def main():
     # machine-specific paths and code should run on different users' machines
     REPO_ROOT = env.get_repo_root()
     ### path to config file containing key info - must be present!
-    config_path = os.path.join(REPO_ROOT, "configs/auto-prot-config.json")
+    config_path = os.path.join(REPO_ROOT, "configs/auto-prot-config.yaml")
     ### Read in configuration data, stored in a json
     with open(config_path) as f:
-        config = json.load(f)
+        config = yaml.safe_load(f)
     # File paths for input and output, defined in config file
     proteinDataPath = os.path.join(REPO_ROOT, config["protPath"])
     metadataPath = os.path.join(REPO_ROOT, config["metaPath"])
@@ -67,7 +67,7 @@ def main():
     print("Running analysis...")
 
     # if subsetting not required, go through with full datasets
-    if config.get("analyse_full_dataset") is True:
+    if config["analyse_full_dataset"] is True:
         full_outPath = os.path.join(outPath, "full_dataset")
         make_outdir(full_outPath)
         an.run_analysis(
@@ -79,16 +79,16 @@ def main():
             formula = full_formula,
         )
         print("Full analysis complete.")
-    if config.get("analyse_subsets") is True:
+    if config["analyse_subsets"] is True:
         # Read subsets from config
-        if not config.get("subsets") :
-            subset_terms = metadata[config.get("subset_variable")].unique()
-        if config.get("subsets") :
+        if not config["subsets"]:
+            subset_terms = metadata[config["subset_variable"]].unique()
+        if config["subsets"]:
             subset_terms = list(config["subsets"])
         # Loop through subsets
         for subset in subset_terms:
             print(f"Processing subset: {subset}")
-            subset_variable = config.get("subset_variable")
+            subset_variable = config["subset_variable"]
             ### find the rows in metadata that match the subset term
             subset_metadata = metadata.loc[metadata[subset_variable].astype(str) == str(subset),]
             # Subset data based on index search term

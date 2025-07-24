@@ -11,7 +11,7 @@ from pdf2image import convert_from_path
 
 
 def apply_row_id_config(df, config):
-    if config.get("data_type") != "phospho":
+    if config["data_type"] != "phospho":
         return df  # Skip modification
 
     row_id_cfg = config.get("phospho_row_id", {})
@@ -100,7 +100,7 @@ def normalise_column_names(df, file_path=None, config = None):
         ### Each protein can be present multiple times - once per phosphorylation state
         ### For the analysis to proceed, we need a unique ID for the protein-phosphorylation state combination
         ## we append the phosporylation state (in column PTM.ModificationTitle and PTM.SiteAA) to the pg.genes column
-        if config.get("data_type") == "phospho":
+        if config["data_type"] == "phospho":
             print("Gene names and phosphorylation state present. Combining to make unique gene names" )
             df = apply_row_id_config(df, config)
     return df

@@ -1,6 +1,6 @@
 ### Read in and pre-process data ###
-
 import json
+import yaml
 import logging
 import os
 
@@ -148,7 +148,7 @@ def prot_summary(df, nrow_original, json_out):
 
     # read data from json file
     with open(json_out) as f:
-        existing_data = json.load(f)
+        existing_data = yaml.safe_load(f)
 
     # Append new data
     existing_data.update(abundance_stats)
@@ -209,7 +209,7 @@ def clean_data(
             ## note dfs is name of df and data itself. .values() access the data
             dpp.view_prot_distributions(dfs.values(), plot_titles, metadata, outPath)
             ## which df to use?
-            df_to_use = config.get("df_to_use")
+            df_to_use = config["df_to_use"]
             df = dfs[df_to_use].dropna()
             ### save some summary info to file for report
             prot_summary(df, nrow_original, json_out)
