@@ -5,6 +5,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 import json
+import yaml
 import os
 import subprocess
 
@@ -81,7 +82,7 @@ def generate_report_html(
 
     # read data from json file
     with open(json_out) as f:
-        existing_data = json.load(f)
+        existing_data = yaml.safe_load(f)
 
     script_meta = {
         "GENERATE_REPORT_VERSION": generate_version,
@@ -97,7 +98,7 @@ def generate_report_html(
 
     # Load metadata values
     with open(json_out) as f:
-        values = json.load(f)
+        values = yaml.safe_load(f)
 
     # Load data from csv
     # read straight to html so it can slot into the template
@@ -156,13 +157,13 @@ def generate_report_html(
         tempMd = tempMd.replace(key, str(value))
 
     # also replacing the {outPath} placeholder with real out dir
-    tempMd = tempMd.replace("{outPath}", config.get("outPath", "output"))
+    tempMd = tempMd.replace("{outPath}", config.get("outPath"))
 
     # Convert the input to HTML
     tempHtml = markdown2.markdown(tempMd)
 
     # Inline images as base64 so HTML is portable
-    tempHtml = inline_base64_images(html = tempHtml, base_dir=os.path.dirname(config.get("outPath")))
+    tempHtml = inline_base64_images(html = tempHtml, base_dir=os.path.dirname(config["outPath"]))
 
     # If necessary, could print or edit the results at this point.
     # Open the HTML file and write the output.
@@ -175,24 +176,24 @@ if __name__ == "__main__":
     ### find repo root
     REPO_ROOT = get_repo_root()
     ### path to config file containing key info - must be present!
-    config_path = os.path.join(REPO_ROOT, "configs/auto-prot-config.json")
+    config_path = os.path.join(REPO_ROOT, "configs/auto-prot-config.yaml")
     ### Read in configuration data, stored in a json
     with open(config_path) as f:
-        config = json.load(f)
+        config = yaml.safe_load(f)
 
     #### set location of report template and where html will be stored
     report_MD = os.path.join(REPO_ROOT, "./report/report-template.md")
-    report_html = os.path.join(REPO_ROOT, config.get("outPath") + "/report-out.html")
+    report_html = os.path.join(REPO_ROOT, config["outPath"] + "/report-out.html")
     top_LFC_prots_path = os.path.join(
-        REPO_ROOT, config.get("outPath") + "/full_dataset/data/combined_topLFC.csv"
+        REPO_ROOT, config["outPath"] + "/full_dataset/data/combined_topLFC.csv"
     )
     enrichment_path = os.path.join(
-        REPO_ROOT, config.get("outPath") + "/full_dataset/data/combined_top_pathway_enrichment.csv"
+        REPO_ROOT, config["outPath"] + "/full_dataset/data/combined_top_pathway_enrichment.csv"
     )
     enrichment_plot_path = os.path.join(
-        REPO_ROOT, config.get("outPath") + "/full_dataset/plots/combined_pathway_enrichment_plot.png"
+        REPO_ROOT, config["outPath"] + "/full_dataset/plots/combined_pathway_enrichment_plot.png"
     )
-    json_out = os.path.join(REPO_ROOT, config.get("json_outPath"))
+    json_out = os.path.join(REPO_ROOT, config["json_outPath"])
 
     generate_report_html(
         report_MD,

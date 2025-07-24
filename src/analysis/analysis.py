@@ -3,6 +3,7 @@
 ## Using objects created previously: metadata, df_protAbundance
 import itertools
 import json
+import yaml
 import os
 import subprocess
 import warnings
@@ -156,7 +157,7 @@ def run_analysis(
 
     # read data from json file
     with open(json_out) as f:
-        existing_data = json.load(f)
+        existing_data = yaml.safe_load(f)
 
     analysis_meta = {"ANALYSIS_VERSION": analysis_version}
 

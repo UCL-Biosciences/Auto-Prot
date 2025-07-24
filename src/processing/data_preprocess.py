@@ -230,7 +230,7 @@ def process_prot_data(df, config, outPath, metadata):
     """
     df = df.replace(0, np.nan)
     # filter for proteins found in XX% per treatment group
-    threshold = config.get("missing_threshold")
+    threshold = config["missing_threshold"]
     df_filtered = filter_proteins_by_group_missingness(df, metadata,
                                                        threshold = threshold)
     # df = df[df.isnull().mean(axis=1) <= 0.2]
@@ -242,7 +242,7 @@ def process_prot_data(df, config, outPath, metadata):
     #### normalise ####
     ## currently two options supported: vsn (recommended) and sample-median
     ## vsn requires raw positive intensities, sample median works on log2-transformed data
-    normalise_method = config.get("normalise_method")
+    normalise_method = config["normalise_method"]
     if normalise_method == "vsn":
         prot_path = os.path.join(outPath, "data/prots_no_zero_values.csv").replace("\\", "/")
         normalised_path = os.path.join(outPath, "data/prots_vsn_normalised.csv").replace("\\", "/")
@@ -260,10 +260,10 @@ def process_prot_data(df, config, outPath, metadata):
     df_norm_t = df_norm.T  # shape: samples × proteins
     df_norm_t.columns = df_norm_t.columns.astype(str)
     #### impute ####
-    if config.get("imputation_method") == "hist_grad_boost":
+    if config["imputation_method"] == "hist_grad_boost":
         print("imputing with histogram gradient booster")
         df_imp = impute_prot_data_histgradboost(df_filtered, df_norm_t)
-    elif config.get("imputation_method") == "pimms_collabfilter":
+    elif config["imputation_method"] == "pimms_collabfilter":
         print("imputing with pimms: collaborative filtering")
         df_imp = impute_pimms_cf(df = df_norm_t)
     return {

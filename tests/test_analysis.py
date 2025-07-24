@@ -2,6 +2,7 @@ import pandas as pd
 import tempfile
 import os
 import json
+import yaml
 import pytest
 from pathlib import Path
 from src.analysis.analysis import run_analysis
@@ -69,5 +70,5 @@ def test_run_analysis_end_to_end(minimal_input):
 
         # Version metadata
         with open(json_out) as f:
-            meta = json.load(f)
+            meta = yaml.safe_load(f)
         assert "ANALYSIS_VERSION" in meta
