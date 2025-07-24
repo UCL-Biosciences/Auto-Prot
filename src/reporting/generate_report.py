@@ -8,7 +8,7 @@ import json
 import os
 import subprocess
 
-import markdown  # conda env info in configs/auto-prot-env-markdown-macOS.yml
+import markdown2  # conda env info in configs/auto-prot-env-markdown-macOS.yml
 import pandas as pd
 
 from src.utils.check_env import get_repo_root
@@ -159,7 +159,7 @@ def generate_report_html(
     tempMd = tempMd.replace("{outPath}", config.get("outPath", "output"))
 
     # Convert the input to HTML
-    tempHtml = markdown.markdown(tempMd)
+    tempHtml = markdown2.markdown(tempMd)
 
     # Inline images as base64 so HTML is portable
     tempHtml = inline_base64_images(html = tempHtml, base_dir=os.path.dirname(config.get("outPath")))

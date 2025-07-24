@@ -6,7 +6,7 @@
 ## Import libraries
 import json
 import os
-
+import subprocess
 import src.analysis.analysis as an
 import src.processing.data_processing as dp
 
@@ -116,3 +116,12 @@ def main():
 #### If executed in main script, run the function to produce the output
 if __name__ == "__main__":
     main()
+
+print( "generating html report...")
+subprocess.run(
+        [
+            "conda", "run", "-n", "markdown", "python",
+            "src/reporting/generate_report.py"
+        ],
+        check=True
+    )
