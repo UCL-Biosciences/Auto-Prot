@@ -1,5 +1,5 @@
 # Proteomics Report
-This repository contains the Auto-Proteomics analysis pipeline for generating standardised reports from protein abundance datasets. Welcome.
+This repository contains the Auto-Proteomics analysis pipeline for generating standardised reports from protein intensity datasets. Welcome.
 
 The pipeline is still in testing. Staging is the best branch to use but there might still be some things to fix. Would only suggest trying this if you know python and/or proteomics reasonably well :')
 
