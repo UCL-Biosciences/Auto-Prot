@@ -86,26 +86,74 @@ Additional columns can be included in the metadata. They will mostly be ignored 
 
 To generate example input data, `python src/utils/gen_random_data.py` will populate /input/data with valid `proteindata.csv` and `metadata.csv` files.
 
+An example of the report generated is available in `docs/example-report-out.html`.
+
 ## Config file
 We want this tool to be accessible for people with limited coding experience. Therefore, key parameters can be set without the need to change any code. These parameters are controlled from a config file in json format. By default: `configs/auto-prot-config.json`. The main functions in the code find this file and extract the parameters as required.
 
 To make the code work, you must enter the correct parameters and combination of parameters. For example, if you change the input file but not the output file, it will overwrite any previous output in the output file.
 
-- data_type. "prot" = proteomics, this is the default use. "phospho" = phosphoproteomic data. This invokes some additional processing steps e.g. filtering to keep only phosphorylation of STY amino acids, other post-translational modifications are removed.
-- phospho_row_id. If phosphorylation dataset, protein and gene names will be duplicated in multiple rows, with rows having different PTM info. This parameter determines which other columns will be used to create a unique ID for each row.
-- missing_threshold. threshold for missingness (0-1). Protein must have been observed in more than this threshold per group. If 0.8, protein must be in 80% of samples per group or will be removed.
-- normalise_method. "vsn" = variance stabilisation normalisation from the vsn R package, as recommended by Välikangas et al (2018). "sample-median" will normalise by subtracting each sample's median value from all of that sample's protein intensities.
-- imputation_method. Whether to use sklearn's histgradboosteriterator ("hist_grad_boost") or pimms' collaborative filter ("pimms_collabfilter") for imputation.
-- df_to_use. Which dataset to use in the pipeline. Options are raw data ("df_to_use" : "df" NOT REOMMENDED), log2 transformed data ("df_to_use" : "df_log2"), normalised data ("df_to_use" : "df_norm"), or normalised and imputed data ("df_to_use" : "df_imp").
-- species. which species to use when looking up the annotation information for pathway enrichment analysis.
-- protPath. path to protein data
-- metaPath. path to metadata
-- outPath. path to general output directory
-- json_outPath. Path to a file (json format) to store some information that is referenced in the html report
-- analyse_full_dataset. whether to analyse the full dataset, which means without filtering any proteins.
-- analyse_subsets. whether to run the analysis on subsets of samples.
-- subset_variable. which variable to subset the data on when running on subsets.
-- subsets. if empty, will run on all unique values of the subset_variable. If you want to run on specific subsets, enter them here.
+### Input Data
+
+**data_type.** Type of data. Options:
+- "prot" → Proteomics (default)
+- "phospho" → Phosphoproteomics
+
+**phospho_row_id.fields.** Columns used to create unique row IDs if using phosphoproteomics. Ignore if `data_type = "prot"`. Example given in the config.yaml file.
+
+**phospho_row_id.missing_value**. Value to use if any of the above fields are missing. Default: "NA"
+
+**missing_threshold.** Proportion threshold for missingness per group (0–1). Example: 0.75 means proteins must appear in at least 75% of samples per group. Default: 0.75
+
+### Normalisation and imputation
+
+**normalise_method.** Normalisation method. Options: "vsn" (variance stabilisation, recommended), "sample-median"
+
+**imputation_method.**: Imputation method. Options: "pimms_collabfilter", "hist_grad_boost"
+
+**df_to_use.** Which dataset to analyse. Options: "df" → Raw (not recommended), "df_log2" → Log2 transformed, "df_norm" → Normalised, "df_imp" → Normalised + imputed. Default: df_imp
+
+### Annotation
+
+**species.** Species for pathway enrichment. Examples: "hsapiens", "mmusculus". Default: "hsapiens"
+
+#FILE PATHS
+
+**protPath**: Path to protein data file. Example: input/data/proteindata.csv
+
+**metaPath**: Path to metadata file. Example: input/data/metadata.csv
+
+**outPath**: Directory for all outputs. Example: output
+
+**json_outPath**: JSON file for storing report-related info. Example: output/data/data_for_report.json
+
+#### Subsetting
+
+**analyse_full_dataset.** Analyse full dataset i.e. all samples. true/false. Default: true
+
+**analyse_subsets.** Analyse subsets based on a metadata variable. true/false. Default: false
+
+**subset_variable.** Metadata column to subset on. Example: "timepoint"
+
+**subsets.** Specific subset values to run. Empty = all values of subset_variable. Example: "timepoint 1" or ["treatment A", "treatment B"]
+
+#### Differential Expression Calculation
+
+**DE_full_formula.** Formula for DE on full dataset (R-style model formula). Example: "~ treatment"
+
+**DE_subset_formula.** Formula for DE on subsets. Example: "~ treatment". Ignore if not running the analysis on any subsets.
+
+#### Figures
+
+**LFC_plot_p_or_FDRp.** Which p-value metric to use on volcano plot. Options: "Log10_P_Value", "Log10_FDR_P_Value" (default). If there are no proteins meeting thresholds for LFC and FDR p-value, you might want to use an unadjsuted (i.e. less conservative) p-value. Be cautious.
+
+**LFC_threshold.** Log2 fold-change threshold for highlighting points. Default: 1
+
+**FDR_threshold.** FDR cut-off for colouring points. Default: 0.05
+
+#### Pathway Enrichment
+
+**enrichment_pathways.** Pathway database for enrichment. Options: KEGG, Reactome, GO. Default: KEGG
 
 ## Need help?
-If your data isn’t working or you'd like to check formatting, feel free to get in touch: james.d.gilbert@ucl.ac.uk.
+If your data isn’t working or you'd like to check formatting, feel free to get in touch. Contact details in main README.
