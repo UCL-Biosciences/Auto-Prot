@@ -5,7 +5,7 @@ The pipeline is still in testing. Staging is the best branch to use but there mi
 
 This tool produces common outputs from MS proteomic and phosphoproteomic data. We want to make this possible for people with limited coding experience by requiring only some preparation steps and one line of code to run the pipeline. Parameters are determined in a "config" file so you don't need to look through the code to change things.
 
-By producing common exploratory outputs automatically, we hope you can spend more time thinking about your data and results. Note, this pipeline produces results automatically without thinking about the idiosyncracies of your beautiful, unique dataset. **This should never be used wihtout a full evaluation and validation of the results.** Best practice would be to run a similar analysis with your favourite software or collaborator to confirm our results are sensible.
+By producing common exploratory outputs automatically, we hope you can spend more time thinking about your data and results. Note, this pipeline produces results automatically without thinking about the idiosyncracies of your beautiful, unique dataset. **This should never be used without a full evaluation and validation of the results.** Best practice would be to run a similar analysis with your favourite software or collaborator to confirm our results are sensible.
 
 If you think the results look reasonable and you want to make use of them, please review the tool carefully. We hope the docs give you an idea of what we are doing and why. We have tried to annotate the code so that you can also understand how the pipeline works. If you would like further info or to suggest an improvement to the pipeline, please get in touch. Contact details below.
 
@@ -58,7 +58,7 @@ Running `python main.py` will generate:
 - Summary statistics
 - PCA and clustering plots
 - Differential expression tables
-- An html report summarising the results.  Note, the report contains all pairwise comparisons for volcano plots and pathway enrichment - if you have lots of treatments, it might get messy :')
+- An html report summarising the results. An example generated from simulated data is available in `../docs/`
 
 These are saved in `/output/`.
 
