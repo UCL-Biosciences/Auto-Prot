@@ -21,7 +21,7 @@ Important note: mass spectrometry instruments record the intensities of proteins
 
 In MS proteomics, it is common to have a lot of missing values. Some analyses (e.g. PCA, some machine learning techniques) can't handle missing values. That means you must either remove all proteins with any missing values or impute the missing values. Whether to do that is an important decision and requires consideration from researchers.
 
-Different imputation methods vary in speed, scalability, and how well they preserve biological structure. Gradient boosting offers high accuracy but can be slow on large datasets, while PIMMS is faster and scales better, especially with thousands of proteins, though it may be slightly less precise in capturing fine-grained patterns. Imputation options are controlled in the `config` file. See `docs/setup.md` for details.
+Different imputation methods vary in speed, scalability, and how well they preserve biological structure. Gradient boosting offers high accuracy but can be slow on large datasets, while PIMMS is faster and scales better, especially with thousands of proteins, though it may be slightly less precise in capturing fine-grained patterns. PIMMS' collaborative filtering model is tested on a dataset with ~ 50 samples and may not perform well with smaller datasets. Imputation options are controlled in the `config` file. See `docs/setup.md` for details.
 
 Note, gradient boosting normalisation requires normalised values, while PIMMS works with the raw or log-transformed values.
 
