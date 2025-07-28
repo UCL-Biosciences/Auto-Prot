@@ -17,21 +17,27 @@ The default normalisation is variance stablisiation normalisation, as recommende
 "sample-median" will normalise simply by subtracting all values from the median value for each protein. We saw considerable variability in mean and total abundance among samples and treatments. This can look like lots of proteins are overexpressed in a given treatment group, but reflects overall sample abundance (i.e. a sampling artefact) rather than genuine differences per protein. Subtracting the median can help with this but is not as effective as other methods.
 
 ### Imputation
-Previous studies have found Random Forest imputation methods perform best (see below for refs). The pipeline can use python functions `HistGradientBoostingRegressor` and `IterativeImputer` but with more than 1,000 proteins, it becomes very slow with default parameters. There are some we have tweaked to reduce imputation time:
-- HistGradientBoostingRegressor
-  -   `max_iter`
-  -   `min_samples_leaf`
-  -   `max_depth`
--   IterativeImputer
-    - `max_iter`
-    - `n_nearest_features`
+Important note: in many proteomics datasets, it is not possible to know whether a zero 
 
-#### Imputation Details 
-To impute missing values in protein abundance data, we use iterative multivariate imputation via the `IterativeImputer` from scikit-learn. This method estimates each missing value by modelling it as a function of the most correlated features, cycling through all features over multiple iterations to refine the estimates.
+Different imputation methods vary in speed, scalability, and how well they preserve biological structure. Gradient boosting offers high accuracy but can be slow on large datasets, while PIMMS is faster and scales better, especially with thousands of proteins, though it may be slightly less precise in capturing fine-grained patterns. Imputation options are controlled in the `config` file. See `docs/setup.md` for details.
 
-To estimate each value, we use the `HistGradientBoostingRegressor` (HGBR) — a fast, regularised "gradient boosting" method that trains shallow decision trees sequentially to improve predictions. HGBR accelerates training using histogram-based feature binning and handles missing values natively.
+Note, gradient boosting normalisation requires normalised values, while PIMMS works with the raw or log-transformed values.
 
-While previous studies have found Random Forests particularly effective for imputation due to their robustness and ability to capture nonlinear feature interactions, we follow the approach used in AlphaPepStats by applying HGBR, which is similar to Random Forest but can offer higher predictive power.
+#### Gradient Boosting Imputation
+Previous studies have found Random Forest imputation methods perform best (see below for refs). The pipeline can use python functions `HistGradientBoostingRegressor` and `IterativeImputer` but with more than 1,000 proteins, it becomes slow with default parameters. You can see the parameters we used to improve performance in `src/processing/data_preprocess.py` (see `impute_prot_data_histgradboost` function).
+
+To fill in missing values in our protein abundance data, we use a method called _iterative multivariate imputation_ with scikit-learn’s `IterativeImputer`. This approach predicts each missing value based on the values of correlated proteins. It goes through the data several times, gradually improving its guesses by learning patterns between proteins.
+
+For each prediction, we use a model called `HistGradientBoostingRegressor` (HGBR). This is a fast and efficient machine learning algorithm that builds a series of simple decision trees, where each new tree helps correct the errors of the previous ones. HGBR is especially useful here because it can handle missing values directly and speeds up training by grouping similar values into bins.
+
+While previous studies have found Random Forests particularly effective for imputation due to their robustness and ability to capture nonlinear feature interactions, we follow the approach used in AlphaPepStats (Krismer et al., 2023) by applying HGBR, which is similar to Random Forest but can offer higher predictive power.
+
+#### PIMMS Imputation
+PIMMS (Proteomics Imputation Modeling Mass Spectrometry; Webel et al. 2024) is a deep learning-based framework designed to impute missing values in MS-based proteomics data. Unlike traditional methods that rely on distributional assumptions or local similarity (e.g. random forest or k-nearest neighbours), PIMMS uses self-supervised models trained directly on intensity data to learn complex patterns between proteins and samples.
+
+PIMMS includes three model types: collaborative filtering (CF), denoising autoencoders (DAE), and variational autoencoders (VAE). All are trained to reconstruct observed intensities and predict missing ones, without requiring normalisation. These models scale well to high-dimensional proteomics data and can outperform or match traditional imputation methods on multiple datasets.
+
+In our pipeline, we use the collaborative filtering model implemented in the `impute_pimms_cf` function (see src/processing/data_preprocess.py). This method learns latent representations of samples and proteins and predicts missing values using their interactions. It runs efficiently on medium to large datasets and supports GPU acceleration. Compared to other methods, PIMMS-CF offers a good balance of scalability, performance, and robustness across a wide range of intensity values and missingness patterns.
 
 ## Exploratory Analysis
 In proteomics data analysis, before diving into pairwise treatment comparisons or complex modelling, it's critical to understand the** overall structure** of the dataset. Exploratory visualisations such as PCA, MDS, and heatmaps offer intuitive ways to:
@@ -102,5 +108,5 @@ Ritchie, Matthew E., et al. "limma powers differential expression analyses for R
 
 Välikangas, Tommi, Tomi Suomi, and Laura L. Elo. "A systematic evaluation of normalization methods in quantitative label-free proteomics." Briefings in bioinformatics 19.1 (2018): 1-11.
 
-
+Webel, Henry, et al. "Imputation of label-free quantitative mass spectrometry-based proteomics data using self-supervised deep learning." Nature Communications 15.1 (2024): 5405.
 
