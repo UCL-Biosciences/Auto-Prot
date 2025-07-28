@@ -265,7 +265,7 @@ def process_prot_data(df, config, outPath, metadata):
         df_imp = impute_prot_data_histgradboost(df_filtered, df_norm_t)
     elif config["imputation_method"] == "pimms_collabfilter":
         print("imputing with pimms: collaborative filtering")
-        df_imp = impute_pimms_cf(df = df_norm_t)
+        df_imp = impute_pimms_cf(df = df_log2.T)
     return {
         "df": df,
         "df_log2": df_log2,
