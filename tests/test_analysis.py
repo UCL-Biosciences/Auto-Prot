@@ -7,7 +7,6 @@ import pytest
 from pathlib import Path
 from src.analysis.analysis import run_analysis
 
-@pytest.fixture
 def minimal_input():
     df = pd.DataFrame({
         'sample1': [1.0, 2.0, 3.0],
@@ -15,23 +14,26 @@ def minimal_input():
         'sample3': [3.0, 3.0, 1.0],
         'sample4': [4.0, 4.0, 4.0],
     }, index=['P1', 'P2', 'P3'])
-
+    #
     metadata = pd.DataFrame({
         'sample_rep': ['sample1', 'sample2', 'sample3', 'sample4'],
         'treatment': ['A', 'A', 'B', 'B'],
         'colours' : ['red', 'red', 'blue', 'blue']
     })
-
+    #
     config = {
         "LFC_threshold": 1.0,
         "FDR_threshold": 0.05,
-        "LFC_plot_p_or_FDRp": "Log10_FDR_P_Value"
+        "LFC_plot_p_or_FDRp": "Log10_FDR_P_Value",
+        "formula" : "~ treatment"
     }
-
+    #
     return df, metadata, config
 
-def test_run_analysis_end_to_end(minimal_input):
-    df, metadata, config = minimal_input
+
+
+def test_run_analysis_end_to_end():
+    df, metadata, config = minimal_input()
 
     with tempfile.TemporaryDirectory() as tmpdir:
         tmpdir_path = Path(tmpdir)
@@ -50,6 +52,7 @@ def test_run_analysis_end_to_end(minimal_input):
             output_dir=str(tmpdir_path),
             config=config,
             json_out=str(json_out),
+            formula = config["formula"]
         )
 
         # Basic results structure

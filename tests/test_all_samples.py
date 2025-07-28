@@ -5,23 +5,35 @@ import os
 from pathlib import Path
 from src.analysis.all_samples import generate_pca, generate_MDS, generate_heatmap
 
+## for generating mini datasets
+def gen_spiked_data(effect_size=2.0, n_prots = 100, n_samples = 10):
+    np.random.seed(0)
+    df = pd.DataFrame(
+        np.random.rand(n_samples, n_prots),
+        index=[f"S{i}" for i in range(n_samples)],
+        columns=[f"Prot{i}" for i in range(n_prots)]
+    )
+    # Add metadata
+    metadata = pd.DataFrame({
+        "sample_rep": [f"S{i}" for i in range(n_samples)],
+        "treatment": ["ctrl"] * int((n_samples / 2)) + ["treated"] * int((n_samples/2)),
+        "colours": ["#1f77b4"] * 5 + ["#ff7f0e"] * 5
+    })
+    #
+    # Spike in signal: increase abundance for first 5 proteins in treated samples
+    treated_samples = metadata[metadata["treatment"] == "treated"]["sample_rep"]
+    spiked_proteins = [f"Prot{i}" for i in range(25)]
+    df.loc[treated_samples, spiked_proteins] += effect_size
+    #
+    return df, metadata, spiked_proteins
+
+# Generate a small dataset for testing
+df, metadata, spiked_proteins = gen_spiked_data()
+
 #########
 # test pca
 #########
-
-
-def test_generate_pca_basic():
-    # Simulate input data
-    np.random.seed(0)
-    df = pd.DataFrame(
-        np.random.rand(5, 10),  # 5 samples, 10 proteins
-        index=[f"S{i}" for i in range(5)],
-        columns=[f"Prot{i}" for i in range(10)]
-    )
-    metadata = pd.DataFrame({
-        "sample_rep": [f"S{i}" for i in range(5)],
-        "treatment": ["ctrl", "ctrl", "treated", "treated", "ctrl"]
-    })
+def test_generate_pca_basic(df = df, metadata = metadata):
 
     with tempfile.TemporaryDirectory() as tmpdir:
         # Create expected subdirs
@@ -45,24 +57,27 @@ def test_generate_pca_basic():
         # Check explained variance is reasonable
         assert df_pca.filter(like="PC").shape[1] >= 2
 
-        print("Test passed: PCA function works with minimal data.")
+        ### the above makes a big difference in 25% of proteins.
+        ### It adds the same amount so the variance should be easy to capture in one PC
+        ### therefore, we should see big difference in control and treated
+        # Check that samples separate by treatment
+        treated = metadata[metadata["treatment"] == "treated"]["sample_rep"]
+        control = metadata[metadata["treatment"] == "ctrl"]["sample_rep"]
+        #
+        # all samples within trt should be either positive or negative on PC1
+        pc1 = df_pca.iloc[:,0]
+        if (pc1.loc[treated] > 0).all() and (pc1.loc[control] < 0).all():
+            pass  # OK
+        elif (pc1.loc[treated] < 0).all() and (pc1.loc[control] > 0).all():
+            pass  # Also OK
+        else:
+            raise AssertionError("function did not cleanly separate groups on axis 1")
 
 #########
 # test mds
 #########
 
-def test_generate_mds_basic():
-    # Create dummy data
-    np.random.seed(1)
-    df = pd.DataFrame(
-        np.random.rand(5, 8),  # 5 samples, 8 proteins
-        index=[f"S{i}" for i in range(5)],
-        columns=[f"Prot{i}" for i in range(8)]
-    )
-    metadata = pd.DataFrame({
-        "sample_rep": [f"S{i}" for i in range(5)],
-        "treatment": ["A", "A", "B", "B", "A"]
-    })
+def test_generate_mds_basic(df = df, metadata = metadata):
 
     with tempfile.TemporaryDirectory() as tmpdir:
         # Ensure plots and data folders exist
@@ -86,24 +101,19 @@ def test_generate_mds_basic():
         # Check for missing treatment
         assert df_mds["treatment"].isnull().sum() == 0
 
-        print("Test passed: MDS function runs and outputs valid files.")
+        # Check that MDS separates treated and control groups
+        treated = df_mds[df_mds["treatment"] == "treated"]
+        control = df_mds[df_mds["treatment"] == "ctrl"]
+
+        # Basic separation check on MDS1
+        mean_treated = treated.iloc[:, :2].mean().mean()
+        mean_control = control.iloc[:, :2].mean().mean()
+
+        assert abs(mean_treated - mean_control) > 1.0, "MDS failed to separate spiked groups"
     
 
-def test_generate_heatmap_basic():
-    # Dummy protein abundance data
-    np.random.seed(42)
-    df = pd.DataFrame(
-        np.random.rand(4, 6),  # 4 samples, 6 proteins
-        index=["S1", "S2", "S3", "S4"],
-        columns=[f"P{i}" for i in range(6)]
-    )
-
-    # Dummy metadata with treatment and colour
-    metadata = pd.DataFrame({
-        "sample_rep": ["S1", "S2", "S3", "S4"],
-        "treatment": ["control", "control", "treated", "treated"],
-        "colours": ["#1f77b4", "#1f77b4", "#ff7f0e", "#ff7f0e"]
-    })
+def test_generate_heatmap_basic(df = df.T, # note heatmap expects samples in cols
+                                metadata = metadata):
 
     with tempfile.TemporaryDirectory() as tmpdir:
         os.makedirs(os.path.join(tmpdir, "plots"))
@@ -111,11 +121,9 @@ def test_generate_heatmap_basic():
         df_out = generate_heatmap(df, tmpdir, metadata)
 
         # Check output DataFrame structure
-        assert df_out.shape == (6, 4)  # Transposed: 6 proteins, 4 samples
-        assert all(df_out.columns == ["S1", "S2", "S3", "S4"])
+        assert df_out.shape == df.shape
+        assert all(df_out.columns == [f"S{i}" for i in range(10)])
 
         # Check that heatmap image is saved
         plot_path = Path(tmpdir) / "plots" / "heatmap_plot.png"
         assert plot_path.exists(), "Heatmap plot was not saved."
-
-        print("Test passed: heatmap with metadata colour bar generated successfully.")
