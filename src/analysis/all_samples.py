@@ -98,6 +98,7 @@ def generate_pca(
         .set_index("treatment")["colours"]
         .to_dict()
     )
+    df = df.dropna(axis = 'columns') # note PCA can't handle missing 
     n_prot = df.shape[1]
 
     ### PC calculated twice - first to identify optimal number of components
