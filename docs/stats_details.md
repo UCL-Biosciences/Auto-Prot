@@ -17,7 +17,7 @@ The default normalisation is variance stablisiation normalisation, as recommende
 "sample-median" will normalise simply by subtracting all values from the median value for each protein. We saw considerable variability in mean and total abundance among samples and treatments. This can look like lots of proteins are overexpressed in a given treatment group, but reflects overall sample abundance (i.e. a sampling artefact) rather than genuine differences per protein. Subtracting the median can help with this but is not as effective as other methods.
 
 ### Imputation
-Important note: in many proteomics datasets, it is not possible to know whether a zero 
+Important note: mass spectrometry instruments record the intensities of proteins that are detected above a certain threshold. Below that threshold, it is not clear whether a protein is completely absent or whether it just wasn't detected in the sample. We therefore assume all zeros are missing values and convert them to NA before further processing.
 
 Different imputation methods vary in speed, scalability, and how well they preserve biological structure. Gradient boosting offers high accuracy but can be slow on large datasets, while PIMMS is faster and scales better, especially with thousands of proteins, though it may be slightly less precise in capturing fine-grained patterns. Imputation options are controlled in the `config` file. See `docs/setup.md` for details.
 
