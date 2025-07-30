@@ -29,6 +29,8 @@ from src.utils.data_utils import normalise_column_names
 # Test clean_meta()
 # ————————————————————————————————————————————
 def test_clean_meta(tmp_path):
+    """Test the clean_meta function from data_processing.py."""
+
     # 1. Build a tiny metadata DataFrame
     df = pd.DataFrame(
         {
@@ -41,6 +43,10 @@ def test_clean_meta(tmp_path):
     json_out = os.path.join( tmp_path,  "meta_out.json" )
 
     # 2. Call clean_meta
+    #    - It should return a DataFrame with sample_rep and colours columns
+    #    - It should also write a JSON file with summary keys
+    #    - The JSON file should contain NUM_SAMPLES, NUM_TREATMENTS, and TREATMENTS keys
+    #    - The TREATMENTS string should mention both Ctl and Drug
     result = clean_meta(df.copy(), str(json_out))
 
     # 3. Check new columns
@@ -70,6 +76,7 @@ def test_clean_meta(tmp_path):
 # Test clean_prot()
 # ————————————————————————————————————————————
 def test_clean_prot():
+    """Test the clean_prot function from data_processing.py."""
     # 1. Create a prot DataFrame with two realistic protein‐abundance columns plus one extra
     df = pd.DataFrame(
         {
@@ -113,6 +120,7 @@ def test_clean_prot():
 # Test prot_summary()
 # ————————————————————————————————————————————
 def test_prot_summary(tmp_path):
+    """Test the prot_summary function from data_processing.py."""
     # 1. Prepare a small DataFrame of processed protein abundances:
     #    Two proteins (rows), two samples (columns)
     df = pd.DataFrame(
@@ -175,6 +183,7 @@ def test_clean_data_without_metadata():
 # Test clean_data proteindata happy path
 # ────────────────────────────────────────────────────
 def test_clean_data(tmp_path, monkeypatch):
+    """Test the clean_data function from data_processing.py with proteindata branch."""
     # ────────────────────────────────────────────────────
     # 1) Skip plotting so tests stay headless
     # ────────────────────────────────────────────────────
@@ -267,6 +276,7 @@ def write_csv(path, df):
 # Test full clean function with metadata
 # ────────────────────────────────────────────────────
 def test_process_data_metadata_branch( tmp_path ):
+    """Test the process_data function from data_processing.py with metadata branch."""
 
     # 1) Create a tiny metadata CSV
     long_cols = [
@@ -312,6 +322,7 @@ def test_process_data_metadata_branch( tmp_path ):
 # Test process protein data
 # ────────────────────────────────────────────────────
 def test_process_data_proteindata_branch(monkeypatch, tmp_path):
+    """Test the process_data function from data_processing.py with proteindata branch."""
 
     monkeypatch.setattr(dpp, "view_prot_distributions", lambda *a, **k: None)
 

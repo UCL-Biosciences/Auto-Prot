@@ -8,6 +8,13 @@ from pathlib import Path
 from src.analysis.analysis import run_analysis
 
 def minimal_input():
+    """
+    Create a minimal input DataFrame and metadata for testing.
+    Returns:
+        df (pd.DataFrame): Minimal input data.
+        metadata (pd.DataFrame): Sample metadata.
+        config (dict): Configuration for the analysis.
+    """
     df = pd.DataFrame({
         'sample1': [1.0, 2.0, 3.0],
         'sample2': [2.0, 1.0, 3.0],
@@ -33,6 +40,11 @@ def minimal_input():
 
 
 def test_run_analysis_end_to_end():
+    """
+    Test the end-to-end analysis pipeline with minimal input.
+    This function checks that the analysis runs without errors
+    and produces the expected output structure.
+    """
     df, metadata, config = minimal_input()
 
     with tempfile.TemporaryDirectory() as tmpdir:
