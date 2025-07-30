@@ -3,6 +3,7 @@
 
 import fnmatch
 import os
+import warnings
 
 import pandas as pd
 
@@ -27,11 +28,12 @@ def apply_row_id_config(df, config):
     # Safely get values from each field, fill missing if needed
     unique_phos_name = []
     for field in fields:
+        print(field)
         if field in df.columns:
             part = df[field].fillna(missing).astype(str)
+            unique_phos_name.append(part)
         else:
             print(f"Warning: field '{field}' not in DataFrame; not adding to unique row IDs") # if the field is missing
-        unique_phos_name.append(part)
 
     # Combine extra parts with underscores
     extra_str = unique_phos_name[0]
@@ -222,8 +224,8 @@ def validate_proteindata(data, metadata):
         )
     # Check for missing values (NaNs) in the entire DataFrame
     if data.isna().any().any():
-        raise ValueError(
-            "Error: The protein abundance df contains missing (NaN) values!"
+        warnings.warn(
+            "Warning: The protein abundance df contains missing (NaN) values!"
         )
 
 #### combine plots made for different treatment groups
@@ -302,6 +304,8 @@ def combine_plots(
         if os.name == "nt":
             output_filename = "\\\\?\\" + os.path.abspath(output_filename)
     # Save the final image
+    # Save the final image
+    os.makedirs(os.path.dirname(output_filename), exist_ok=True)
     combined_image.save(output_filename)
     print(f"Combined plot saved to: {output_filename}")
 
