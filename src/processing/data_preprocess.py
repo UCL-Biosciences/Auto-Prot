@@ -138,7 +138,7 @@ def filter_proteins_by_group_missingness(
     for group, group_df in metadata.groupby(group_col):
         samples = group_df[sample_col]
         sub_df = df[samples]
-        valid = sub_df.notna().mean(axis=1) > threshold
+        valid = sub_df.notna().mean(axis=1) >= threshold
         valid_sets.append(set(df.index[valid]))
     keep_proteins = set.intersection(*valid_sets)
     print(
