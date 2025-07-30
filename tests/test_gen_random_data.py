@@ -1,37 +1,44 @@
-import tempfile
 import os
 import pandas as pd
-from src.utils.gen_random_data import generate_protein_data  # replace with actual module name
+import tempfile
+import shutil
+from src.utils.gen_random_data import generate_protein_data  # update path if needed
 
-def test_generate_dummy_protein_data_creates_valid_files():
-    # Create a temporary directory to simulate the repo root
-    with tempfile.TemporaryDirectory() as tmpdir:
-        # Create a dummy gene list file
-        gene_file_path = os.path.join(tmpdir, "input/data/human_genes.txt")
-        os.makedirs(os.path.dirname(gene_file_path), exist_ok=True)
-        pd.DataFrame({"Symbol": [f"GENE{i}" for i in range(200)]}).to_csv(gene_file_path, index=False)
+def test_generate_protein_data_creates_files():
+    # Create temporary directory to simulate repo_root
+    with tempfile.TemporaryDirectory() as temp_root:
+        # Prepare dummy gene list
+        gene_list_path = os.path.join(temp_root, "input", "data")
+        os.makedirs(gene_list_path, exist_ok=True)
+        gene_df = pd.DataFrame({"Symbol": [f"Gene{i}" for i in range(200)]})
+        gene_df.to_csv(os.path.join(gene_list_path, "human_genes.txt"), index=False)
 
-        n_genes = 100
-        samples = list('ABCDEF')
-        n_replicates = 4
+        # Run generator
+        generate_protein_data(
+            repo_root=temp_root,
+            human_genes_file="input/data/human_genes.txt",
+            n_genes=50,
+            n_treatments=2,
+            output_prefix="input/data/",
+            random_seed=42,
+        )
 
-        # Run the data generator
-        generate_protein_data(repo_root=tmpdir,
-                              n_genes = n_genes,
-                              samples = samples,
-                              n_replicates = n_replicates)
+        # Check output files
+        protein_file = os.path.join(temp_root, "input", "data", "proteindata.csv")
+        metadata_file = os.path.join(temp_root, "input", "data", "metadata.csv")
 
-        # Check the output files exist
-        data_file = os.path.join(tmpdir, "input/data/proteindata.csv")
-        metadata_file = os.path.join(tmpdir, "input/data/metadata.csv")
-        assert os.path.exists(data_file)
+        assert os.path.exists(protein_file)
         assert os.path.exists(metadata_file)
 
-        # Load the files and test basic expectations
-        df = pd.read_csv(data_file, index_col=0)
-        meta = pd.read_csv(metadata_file)
+        # Read files and check basic structure
+        proteindf = pd.read_csv(protein_file, index_col=0)
+        metadf = pd.read_csv(metadata_file)
 
-        assert df.shape[0] == n_genes  # 100 genes
-        assert "prot_abundance_A_1" in df.columns  # test for a column
-        assert meta.shape[0] == len(samples) * n_replicates  # 6 samples × 5 replicates
-        assert meta["protein_abundance_name"].nunique() == df.shape[1]
+        assert "PTM.ModificationTitle" in proteindf.columns
+        assert "PTM.SiteLocation" in proteindf.columns
+        assert "PTM.SiteAA" in proteindf.columns
+
+        assert "sample_id" in metadf.columns
+        assert "replicate" in metadf.columns
+        assert "protein_abundance_name" in metadf.columns
+        assert len(proteindf) == 50
