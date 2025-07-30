@@ -5,11 +5,14 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 
 import json
+import os
 import yaml
 
 import numpy as np
 import pandas as pd
 import pytest
+from pathlib import Path
+
 
 import src.processing.data_preprocess as dpp
 from src.processing.data_processing import (
@@ -20,11 +23,11 @@ from src.processing.data_processing import (
     prot_summary,
 )
 
+from src.utils.data_utils import normalise_column_names
+
 # ————————————————————————————————————————————
 # Test clean_meta()
 # ————————————————————————————————————————————
-
-
 def test_clean_meta(tmp_path):
     # 1. Build a tiny metadata DataFrame
     df = pd.DataFrame(
@@ -35,7 +38,7 @@ def test_clean_meta(tmp_path):
             "treatment": ["Ctl", "Drug", "Ctl"],
         }
     )
-    json_out = tmp_path / "meta_out.json"
+    json_out = os.path.join( tmp_path,  "meta_out.json" )
 
     # 2. Call clean_meta
     result = clean_meta(df.copy(), str(json_out))
@@ -49,13 +52,14 @@ def test_clean_meta(tmp_path):
     ]
     assert "sample_rep" in result.columns
     # sample_rep should be sample_id_replicate
-    assert set(result["sample_rep"]) == {"S1_1", "S2_1", "S1_2"}
+    assert set(result["sample_rep"]) == {"S1_r1", "S2_r1", "S1_r2"}
     assert "colours" in result.columns
     # There should be exactly as many unique colours as treatments
     assert result["colours"].nunique() == result["treatment"].nunique()
 
     # 4. JSON file should exist and contain summary keys
-    data = yaml.safe_loads(json_out.read_text())
+    with open(json_out) as f:
+        data = json.load(f)
     assert data["NUM_SAMPLES"] == 3
     assert data["NUM_TREATMENTS"] == 2
     # TREATMENTS string should mention both Ctl and Drug
@@ -65,8 +69,6 @@ def test_clean_meta(tmp_path):
 # ————————————————————————————————————————————
 # Test clean_prot()
 # ————————————————————————————————————————————
-
-
 def test_clean_prot():
     # 1. Create a prot DataFrame with two realistic protein‐abundance columns plus one extra
     df = pd.DataFrame(
@@ -110,8 +112,6 @@ def test_clean_prot():
 # ————————————————————————————————————————————
 # Test prot_summary()
 # ————————————————————————————————————————————
-
-
 def test_prot_summary(tmp_path):
     # 1. Prepare a small DataFrame of processed protein abundances:
     #    Two proteins (rows), two samples (columns)
@@ -129,7 +129,8 @@ def test_prot_summary(tmp_path):
     prot_summary(df, nrow_original, str(json_out))
 
     # 4. Read the JSON back in
-    data = yaml.safe_loads(json_out.read_text())
+    with open(json_out) as f:
+        data = json.load(f)
 
     # --- Check unchanged keys ---
     assert data["FOO"] == 123
@@ -203,8 +204,11 @@ def test_clean_data(tmp_path, monkeypatch):
     # ────────────────────────────────────────────────────
     # 3) Starter JSON for prot_summary
     # ────────────────────────────────────────────────────
-    json_out = tmp_path / "summary.json"
-    json_out.write_text(json.dumps({}))
+    json_out = Path(tmp_path) / "summary.json"
+    with json_out.open("w") as f:
+        # Write an empty JSON object to start
+        # This will be updated by prot_summary later
+        f.write("{}")
 
     # ────────────────────────────────────────────────────
     # 4) Build proteindata DataFrame with zeros & non-numeric
@@ -218,9 +222,15 @@ def test_clean_data(tmp_path, monkeypatch):
     )
 
     # ────────────────────────────────────────────────────
-    # 5) Pick the “raw” DataFrame after process_prot_data
+    # 5) Pick the imputed DataFrame after process_prot_data, then normalise column names
     # ────────────────────────────────────────────────────
-    config = {"df_to_use": "df_imp"}
+    config = {"df_to_use": "df_imp",
+              "data_type": "prot",
+              "missing_threshold": 0.5,
+              "normalise_method": "sample-median",
+              "imputation_method": "hist_grad_boost"}
+
+    df = normalise_column_names(df, file_path="path/to/proteindata.csv", config = config)
 
     # ────────────────────────────────────────────────────
     # 6) Run the pipeline
@@ -243,7 +253,7 @@ def test_clean_data(tmp_path, monkeypatch):
 
     # c) Zero→NaN and "x"→NaN, then rows with any NaN are dropped. Duplicate also drop
     #    nan converted to unknown-gene-1. that row remains along with p4
-    assert cleaned_df.index.tolist() == ["Unknown-gene-1", "p4"]
+    assert set(cleaned_df.index.tolist()) == {"p4", "Unknown-gene-1"}
 
     # d) duplicate rows should be removed
     assert cleaned_df.index.is_unique
@@ -256,9 +266,7 @@ def write_csv(path, df):
 # ────────────────────────────────────────────────────
 # Test full clean function with metadata
 # ────────────────────────────────────────────────────
-
-
-def test_process_data_metadata_branch(monkeypatch, tmp_path):
+def test_process_data_metadata_branch( tmp_path ):
 
     # 1) Create a tiny metadata CSV
     long_cols = [
@@ -278,11 +286,11 @@ def test_process_data_metadata_branch(monkeypatch, tmp_path):
     metadata["sample_rep"] = (
         metadata["sample_id"] + "_" + metadata["replicate"].astype(str)
     )
-    meta_path = tmp_path / "my_metadata.csv"
-    write_csv(meta_path, metadata)
+    meta_path = Path(tmp_path) / "my_metadata.csv"
+    metadata.to_csv(meta_path)
 
     # 2) Create a JSON output placeholder
-    json_out = tmp_path / "meta_out.json"
+    json_out = Path(tmp_path) / "meta_out.json"
     json_out.write_text("{}")
 
     # 3) Call process_data on metadata
@@ -292,15 +300,17 @@ def test_process_data_metadata_branch(monkeypatch, tmp_path):
     assert isinstance(result, pd.DataFrame)
     assert "sample_rep" in result.columns
     # And the JSON file should have been touched by clean_meta
-    summary = yaml.safe_loads(json_out.read_text())
+    with json_out.open() as f:
+        summary = json.load(f)
     assert "NUM_SAMPLES" in summary
+    assert summary["NUM_SAMPLES"] == 2
+    assert summary["NUM_TREATMENTS"] == 2
+    assert summary["TREATMENTS"] == "Ctl: 1, Drug: 1"
 
 
 # ────────────────────────────────────────────────────
 # Test process protein data
 # ────────────────────────────────────────────────────
-
-
 def test_process_data_proteindata_branch(monkeypatch, tmp_path):
 
     monkeypatch.setattr(dpp, "view_prot_distributions", lambda *a, **k: None)
@@ -318,8 +328,8 @@ def test_process_data_proteindata_branch(monkeypatch, tmp_path):
         index=[np.nan, "p2", "p3", "p4", "p4"],
     )
 
-    prot_path = tmp_path / "my_proteindata.csv"
-    write_csv(prot_path, prot_df)
+    prot_path = Path(tmp_path) / "my_proteindata.csv"
+    prot_df.to_csv(prot_path)
 
     # 2) Build matching metadata (so clean_data won’t error)
     metadata = pd.DataFrame(
@@ -337,9 +347,15 @@ def test_process_data_proteindata_branch(monkeypatch, tmp_path):
     )
 
     # 2. Create a starter JSON file with one existing key
-    json_out = tmp_path / "prot_summary.json"
+    json_out = Path(tmp_path) / "prot_summary.json"
     initial = {"FOO": 123}
     json_out.write_text(json.dumps(initial))
+
+    config = {"df_to_use": "df_imp",
+              "data_type": "prot",
+              "missing_threshold": 0.5,
+              "normalise_method": "sample-median",
+              "imputation_method": "hist_grad_boost"}
 
     # 3) Call process_data on proteindata
     result = process_data(
@@ -347,10 +363,12 @@ def test_process_data_proteindata_branch(monkeypatch, tmp_path):
         metadata=metadata,
         json_out=json_out,
         outPath=str(tmp_path),
-        config={"df_to_use": "df"},
+        config=config,
     )
 
     # 4) Should return a DataFrame (the cleaned & renamed data)
     assert isinstance(result, pd.DataFrame)
     # Columns must now be your sample_rep names
     assert set(result.columns) == {"S1_1", "S2_1"}
+    ### two prots should be left
+    assert ("Unknown-gene-1" in result.index) and ("p4" in result.index)

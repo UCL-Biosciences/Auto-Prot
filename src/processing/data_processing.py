@@ -264,6 +264,7 @@ def process_data(file_path, metadata=None, json_out=None, outPath=None, config=N
 
         # protein data takes a while to produce and you might want to read or look without processing every time
         # write to file for easy access
+        os.makedirs(os.path.join(outPath, "data"), exist_ok=True)
         df.to_csv(os.path.join(outPath, "data/proteinAbundance.csv"), index=True)
 
     return df
