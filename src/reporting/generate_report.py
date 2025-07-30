@@ -5,15 +5,15 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 import json
-import yaml
 import os
 import subprocess
 
 import markdown2  # conda env info in configs/auto-prot-env-markdown-macOS.yml
 import pandas as pd
+import yaml
 
-from src.utils.check_env import get_repo_root
 from src.reporting.image_conversion import inline_base64_images
+from src.utils.check_env import get_repo_root
 
 
 def generate_report_html(
@@ -23,7 +23,7 @@ def generate_report_html(
     enrichment_path: str,
     enrichment_plot_path: str,
     json_out: str,
-    config: dict
+    config: dict,
 ):
     """
     Generate an HTML report by populating a markdown template with outputs from the analysis.
@@ -128,9 +128,7 @@ def generate_report_html(
 
     # similarly for the enrichment plot
     if os.path.exists(enrichment_plot_path):
-        enrichment_plot_md = (
-            f'<img src="{enrichment_plot_path}">'
-        )
+        enrichment_plot_md = f'<img src="{enrichment_plot_path}">'
     else:
         enrichment_plot_md = (
             "<p><em>No pathway enrichment plot available. "
@@ -150,7 +148,7 @@ def generate_report_html(
     table_replacements = {
         "{{ENRICHMENT_DF}}": enrichment_df,  ### pathway/functional enrichment
         "{{ENRICHMENT_PLOT}}": enrichment_plot_md,
-        "{{TOP_LFC_PROTS}}": top_LFC_df  ### top 20 protein abundance data
+        "{{TOP_LFC_PROTS}}": top_LFC_df,  ### top 20 protein abundance data
     }
 
     for key, value in table_replacements.items():
@@ -163,7 +161,9 @@ def generate_report_html(
     tempHtml = markdown2.markdown(tempMd)
 
     # Inline images as base64 so HTML is portable
-    tempHtml = inline_base64_images(html = tempHtml, base_dir=os.path.dirname(config["outPath"]))
+    tempHtml = inline_base64_images(
+        html=tempHtml, base_dir=os.path.dirname(config["outPath"])
+    )
 
     # If necessary, could print or edit the results at this point.
     # Open the HTML file and write the output.
@@ -188,10 +188,12 @@ if __name__ == "__main__":
         REPO_ROOT, config["outPath"] + "/full_dataset/data/combined_topLFC.csv"
     )
     enrichment_path = os.path.join(
-        REPO_ROOT, config["outPath"] + "/full_dataset/data/combined_top_pathway_enrichment.csv"
+        REPO_ROOT,
+        config["outPath"] + "/full_dataset/data/combined_top_pathway_enrichment.csv",
     )
     enrichment_plot_path = os.path.join(
-        REPO_ROOT, config["outPath"] + "/full_dataset/plots/combined_pathway_enrichment_plot.png"
+        REPO_ROOT,
+        config["outPath"] + "/full_dataset/plots/combined_pathway_enrichment_plot.png",
     )
     json_out = os.path.join(REPO_ROOT, config["json_outPath"])
 
@@ -202,5 +204,5 @@ if __name__ == "__main__":
         enrichment_path,
         enrichment_plot_path,
         json_out,
-        config
+        config,
     )

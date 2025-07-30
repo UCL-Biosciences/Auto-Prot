@@ -1,9 +1,12 @@
+import json
 import os
 import tempfile
-import json
+
 import pandas as pd
 import pytest
+
 from src.reporting.generate_report import generate_report_html
+
 
 @pytest.fixture
 def mock_report_setup():
@@ -28,30 +31,33 @@ def mock_report_setup():
 
         # Create dummy top LFC CSV
         top_lfc_csv = os.path.join(temp_dir, "top_lfc.csv")
-        pd.DataFrame({
-            "gene": ["A", "B"],
-            "logFC": [1.2, -0.8]
-        }).to_csv(top_lfc_csv, index=False)
+        pd.DataFrame({"gene": ["A", "B"], "logFC": [1.2, -0.8]}).to_csv(
+            top_lfc_csv, index=False
+        )
 
         # Create dummy enrichment CSV
         enrich_csv = os.path.join(temp_dir, "enrich.csv")
-        pd.DataFrame({
-            "source": ["GO"],
-            "native": ["GO:0001"],
-            "name": ["test pathway"],
-            "p_value": [0.01],
-            "term_size": [10],
-            "query_size": [5],
-            "intersection_size": [2],
-            "precision": [0.4],
-            "recall": [0.2],
-            "treatment_pair": ["A_vs_B"]
-        }).to_csv(enrich_csv, index=False)
+        pd.DataFrame(
+            {
+                "source": ["GO"],
+                "native": ["GO:0001"],
+                "name": ["test pathway"],
+                "p_value": [0.01],
+                "term_size": [10],
+                "query_size": [5],
+                "intersection_size": [2],
+                "precision": [0.4],
+                "recall": [0.2],
+                "treatment_pair": ["A_vs_B"],
+            }
+        ).to_csv(enrich_csv, index=False)
 
         # Create dummy image
         enrich_img = os.path.join(temp_dir, "plot.png")
         with open(enrich_img, "wb") as f:
-            f.write(b"\x89PNG\r\n\x1a\n" + b"0" * 100)  # minimal PNG header + dummy content
+            f.write(
+                b"\x89PNG\r\n\x1a\n" + b"0" * 100
+            )  # minimal PNG header + dummy content
 
         # Create JSON metadata with a PROJECT_NAME key
         with open(config["json_outPath"], "w") as f:
@@ -67,8 +73,9 @@ def mock_report_setup():
             "enrichment_path": enrich_csv,
             "enrichment_plot_path": enrich_img,
             "json_out": config["json_outPath"],
-            "config": config
+            "config": config,
         }
+
 
 def test_generate_report_html_generates_file(mock_report_setup):
     args = mock_report_setup
@@ -89,14 +96,13 @@ def test_generate_report_html_generates_file(mock_report_setup):
         assert "TEMPLATE_VERSION" in meta
 
 
-
 # def test_generate_report_html_patch(tmp_path):
 #      # Fake the 'markdown' module before anything imports it
 #     sys.modules["markdown"] = types.SimpleNamespace(markdown=lambda x: f"<p>{x}</p>")
-    
+
 #     # Now you can import safely
 #     from src.reporting.generate_report import generate_report_html
-    
+
 #     # Set up dummy paths
 #     report_md_path = tmp_path / "template.md"
 #     report_html_path = tmp_path / "report.html"
@@ -131,7 +137,7 @@ def test_generate_report_html_generates_file(mock_report_setup):
 #     # Patch markdown and git
 #     with mock.patch("subprocess.check_output", return_value=b"dummyhash"), \
 #          mock.patch("markdown.markdown", return_value="<p>Rendered HTML</p>"):
-        
+
 #         generate_report_html(
 #             str(report_md_path),
 #             str(report_html_path),

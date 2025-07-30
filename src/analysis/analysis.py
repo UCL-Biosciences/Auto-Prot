@@ -3,16 +3,15 @@
 ## Using objects created previously: metadata, df_protAbundance
 import itertools
 import json
-import yaml
 import os
 import subprocess
 import warnings
 
-import numpy as np
 import pandas as pd
+import yaml
 
-from src.analysis.all_samples import generate_pca, generate_MDS, generate_heatmap
-from src.analysis.pairwise import make_volcano, enrichment_analysis    
+from src.analysis.all_samples import generate_heatmap, generate_MDS, generate_pca
+from src.analysis.pairwise import enrichment_analysis, make_volcano
 from src.utils.check_env import get_repo_root
 from src.utils.data_utils import combine_csv_files, combine_plots
 
@@ -21,6 +20,7 @@ warnings.filterwarnings(
     "ignore",
     message="Negative binomial dispersion parameter alpha not set. Using default value alpha=1.0.",
 )
+
 
 ##########################################################################
 #### This is the main function for analysing data, combining the above ###
@@ -31,10 +31,10 @@ def run_analysis(
     output_dir: str,
     config: dict,
     json_out: str,
-    formula: str
+    formula: str,
 ) -> dict:
     """
-    Runs the full analysis pipeline for a protein abundance dataset, including clustering (PCA, MDS, heatmap) 
+    Runs the full analysis pipeline for a protein abundance dataset, including clustering (PCA, MDS, heatmap)
     sample-level visualisations and pairwise comparisons (differential abundance, volcano plot, pathway enrichment).
 
     The pipeline includes:
@@ -100,7 +100,7 @@ def run_analysis(
             metadata_pair=metadata_pair,
             pair_name=pair_name,
             config=config,
-            formula = formula
+            formula=formula,
         )
         results_name = "df_lm_" + pair_name
         results[results_name] = lm_results_df
@@ -125,7 +125,7 @@ def run_analysis(
         filename="limma_output.csv",
         output_dir=output_dir,
         output_filename=os.path.join(output_dir, "data/combined_topLFC.csv"),
-        sort_by_logfc=True
+        sort_by_logfc=True,
     )
 
     # Combine pathway enrichment data

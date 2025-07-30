@@ -1,8 +1,10 @@
 import os
-import pandas as pd
 import tempfile
-import shutil
+
+import pandas as pd
+
 from src.utils.gen_random_data import generate_protein_data  # update path if needed
+
 
 def test_generate_protein_data_creates_files():
     # Create temporary directory to simulate repo_root

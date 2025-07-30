@@ -8,9 +8,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
-
-from gprofiler import GProfiler
 from adjustText import adjust_text
+from gprofiler import GProfiler
+
 
 def make_volcano(
     df_pair: pd.DataFrame,
@@ -39,7 +39,7 @@ def make_volcano(
         formula (str): the formula passted to the DE calculation. May need to be different for full dataset and subsets.
 
     Returns:
-        pd.DataFrame: DataFrame with differential expression results, including logFC, p-values, adjusted p-values, 
+        pd.DataFrame: DataFrame with differential expression results, including logFC, p-values, adjusted p-values,
                       and plot colour classification.
     """
     #### calculate DE using limma (R package) ####
@@ -62,7 +62,7 @@ def make_volcano(
             pair_data_path.replace("\\", "/"),
             pair_metadata_path.replace("\\", "/"),
             pair_result_path.replace("\\", "/"),
-            formula ## formula used in DE analysis
+            formula,  ## formula used in DE analysis
         ],
         check=True,
     )
@@ -88,7 +88,10 @@ def make_volcano(
     diffExpr_df["Colour"] = diffExpr_df.apply(
         lambda row: (
             "blue"
-            if (abs(row["logFC"]) > LFC_threshold and row[p_cutoff_column] < FDR_threshold)
+            if (
+                abs(row["logFC"]) > LFC_threshold
+                and row[p_cutoff_column] < FDR_threshold
+            )
             else "gray"
         ),
         axis=1,
@@ -114,7 +117,9 @@ def make_volcano(
     )
     ### label top 10 blue proteins
     # Sort by adjusted p-value and take top 10 (or all if < 10)
-    top_proteins = diffExpr_df[diffExpr_df["Colour"] == "blue"].nsmallest(10, "adj.P.Val")
+    top_proteins = diffExpr_df[diffExpr_df["Colour"] == "blue"].nsmallest(
+        10, "adj.P.Val"
+    )
     # Prepare text objects
     texts = []
     for _, row in top_proteins.iterrows():
@@ -123,18 +128,19 @@ def make_volcano(
                 row["logFC"],
                 row[Volcano_y_axis],
                 row.name,  # Assumes protein names are in the index
-                fontsize=8
+                fontsize=8,
             )
         )
 
     # Automatically adjust text positions to minimise overlap
     adjust_text(
         texts,
-        arrowprops=dict(arrowstyle="->", color='gray', lw=0.5),
-        force_text=0.5, force_points=0.3,
+        arrowprops=dict(arrowstyle="->", color="gray", lw=0.5),
+        force_text=0.5,
+        force_points=0.3,
         expand_points=(1.2, 1.4),
         expand_text=(1.2, 1.4),
-        only_move={'points': 'y', 'text': 'xy'}
+        only_move={"points": "y", "text": "xy"},
     )
     # Customize the plot
     plt.axvline(x=LFC_threshold, color="red", linestyle="--", linewidth=1)
@@ -213,7 +219,7 @@ def enrichment_analysis(
     # pathway database can be REAC, GO or KEGG. Also less common but available: CORUM, HPA, TF and MIRNA
     # defaults to REAC
     source = ["KEGG"]
-    plot_title = ( "Pathway Enrichment (" + source[0] + ") for treatments \n " + pair_name )
+    plot_title = "Pathway Enrichment (" + source[0] + ") for treatments \n " + pair_name
     # p value threshold defaults to 0.05
     p_threshold = 0.05
     # all results returns all results, not just those below p threshold
@@ -234,7 +240,9 @@ def enrichment_analysis(
         )  # REAC for Reactome
         ### gprofiler can return empty results that write to file. In that case, return nothing
         if pathway_result.empty:
-            print(f"⚠️ No enriched pathways found for {pair_name}. Skipping save and plot.")
+            print(
+                f"⚠️ No enriched pathways found for {pair_name}. Skipping save and plot."
+            )
             return None
         ### save results to file
         enrichment_path = os.path.join(

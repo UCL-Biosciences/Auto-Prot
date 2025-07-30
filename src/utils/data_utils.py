@@ -6,9 +6,8 @@ import os
 import warnings
 
 import pandas as pd
-
-from PIL import Image
 from pdf2image import convert_from_path
+from PIL import Image
 
 
 def apply_row_id_config(df, config):
@@ -33,7 +32,9 @@ def apply_row_id_config(df, config):
             part = df[field].fillna(missing).astype(str)
             unique_phos_name.append(part)
         else:
-            print(f"Warning: field '{field}' not in DataFrame; not adding to unique row IDs") # if the field is missing
+            print(
+                f"Warning: field '{field}' not in DataFrame; not adding to unique row IDs"
+            )  # if the field is missing
 
     # Combine extra parts with underscores
     extra_str = unique_phos_name[0]
@@ -46,7 +47,7 @@ def apply_row_id_config(df, config):
     return df
 
 
-def normalise_column_names(df, file_path=None, config = None):
+def normalise_column_names(df, file_path=None, config=None):
     """
     Standardise column names and optionally combine phosphorylation information.
 
@@ -75,27 +76,25 @@ def normalise_column_names(df, file_path=None, config = None):
             duplicated = base_index.isin(counts[counts > 1].index)
             # Create a suffix only for duplicates
             suffixes = (
-                base_index[duplicated]
-                .groupby(base_index[duplicated])
-                .cumcount() + 1
+                base_index[duplicated].groupby(base_index[duplicated]).cumcount() + 1
             ).astype(str)
             # Create the final index
             new_index = base_index.copy()
-            new_index[duplicated] = new_index[duplicated] + '-' + suffixes
+            new_index[duplicated] = new_index[duplicated] + "-" + suffixes
             # Set the new index
             df.index = new_index
         # some proteins do not produce any associated genes. these values are left blank in the index
         # we replace the NaNs with Unknown-Gene-X, where X is a unique number for each unknown gene.
         # Convert index to a Series to manipulate NaNs
-        index_series = df.index.to_series().astype("object")  ## 'object' allows strings and NAs
+        index_series = df.index.to_series().astype(
+            "object"
+        )  ## 'object' allows strings and NAs
         # Strip whitespace and handle empty strings
         index_series = index_series.str.strip()
         # Find NaN values in index
         nan_mask = index_series.isna() | (index_series == "")
         # Replace NaNs with "Unknown-gene-N"
-        index_series[nan_mask] = [
-            f"Unknown-gene-{i+1}" for i in range(nan_mask.sum())
-        ]
+        index_series[nan_mask] = [f"Unknown-gene-{i+1}" for i in range(nan_mask.sum())]
         # Set updated index
         df.index = index_series
         ### For phosphoproteomic data, there are abundances for phosphorylated proteins
@@ -103,7 +102,9 @@ def normalise_column_names(df, file_path=None, config = None):
         ### For the analysis to proceed, we need a unique ID for the protein-phosphorylation state combination
         ## we append the phosporylation state (in column PTM.ModificationTitle and PTM.SiteAA) to the pg.genes column
         if config["data_type"] == "phospho":
-            print("Gene names and phosphorylation state present. Combining to make unique gene names" )
+            print(
+                "Gene names and phosphorylation state present. Combining to make unique gene names"
+            )
             df = apply_row_id_config(df, config)
     return df
 
@@ -124,7 +125,9 @@ def get_subset(df, subset_term, metadata, subset_variable):
         ValueError: If no index values contain the subset term.
     """
     ### find the rows that match the subset term, then take the sample_rep column (protein intensities are named after sample_rep)
-    matching_sample_ids = metadata.loc[metadata[subset_variable].astype(str) == str(subset_term), "sample_rep"].tolist()
+    matching_sample_ids = metadata.loc[
+        metadata[subset_variable].astype(str) == str(subset_term), "sample_rep"
+    ].tolist()
 
     subset_df = df[matching_sample_ids]
     if subset_df.empty:
@@ -228,6 +231,7 @@ def validate_proteindata(data, metadata):
             "Warning: The protein abundance df contains missing (NaN) values!"
         )
 
+
 #### combine plots made for different treatment groups
 def combine_plots(
     search_term,
@@ -259,10 +263,17 @@ def combine_plots(
         for file in files:
             if search_term in file:
                 image_paths.append(os.path.join(root, file))
-    image_paths = [img for img in image_paths if not fnmatch.fnmatch(os.path.basename(img), "combined_*_plot.png")]
+    image_paths = [
+        img
+        for img in image_paths
+        if not fnmatch.fnmatch(os.path.basename(img), "combined_*_plot.png")
+    ]
     # Determine resize size
     if len(image_paths) == 1:
-        resized_size = (int(img_size[0] * 0.6), int(img_size[1] * 0.6))  # shrink solo image
+        resized_size = (
+            int(img_size[0] * 0.6),
+            int(img_size[1] * 0.6),
+        )  # shrink solo image
     else:
         resized_size = img_size
     if not image_paths:
@@ -276,7 +287,7 @@ def combine_plots(
             images.append(pdf_images[0].resize(resized_size))
         else:
             images.append(Image.open(path).resize(resized_size))
-    
+
     # images = [Image.open(img).resize(img_size, Image.LANCZOS) for img in image_paths]
     # Determine grid layout
     cols = min(max_cols, len(images))
@@ -312,9 +323,12 @@ def combine_plots(
 
 ### for combining data from different treatments for display in the report ###
 def combine_csv_files(
-    filename, output_dir, output_filename=None, top_n=10, new_column="treatment_pair",
+    filename,
+    output_dir,
+    output_filename=None,
+    top_n=10,
+    new_column="treatment_pair",
     sort_by_logfc=False,
-
 ):
     """
     General function to combine CSV files from subdirectories into a single file.
@@ -339,7 +353,11 @@ def combine_csv_files(
         for file in files:
             if fnmatch.fnmatch(file, filename):  # supports wildcards like * and ?
                 csv_files.append(os.path.join(root, file))
-    csv_files = [csv for csv in csv_files if not fnmatch.fnmatch(os.path.basename(csv), "combined*.csv")]
+    csv_files = [
+        csv
+        for csv in csv_files
+        if not fnmatch.fnmatch(os.path.basename(csv), "combined*.csv")
+    ]
     # # Search for matching CSV files in subdirectories
     # search_pattern = os.path.join(output_dir, "data", "**", filename)
     # csv_files = glob(os.path.join(output_dir, "data", "*", filename)) + glob(os.path.join(output_dir, "data", "*", "*", filename))
@@ -375,6 +393,6 @@ def combine_csv_files(
     # Ensure output directory exists
     os.makedirs(os.path.dirname(output_filename), exist_ok=True)
     # Save combined CSV
-    
+
     combined_df.to_csv(output_filename, index=False)
     print(f"Combined file saved at: {output_filename}")

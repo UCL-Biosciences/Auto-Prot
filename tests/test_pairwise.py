@@ -1,8 +1,11 @@
 import os
 import tempfile
-import pandas as pd
+
 import numpy as np
-from src.analysis.pairwise import make_volcano, enrichment_analysis
+import pandas as pd
+
+from src.analysis.pairwise import enrichment_analysis, make_volcano
+
 
 def test_make_volcano_integration_with_spikes():
     """
@@ -19,9 +22,7 @@ def test_make_volcano_integration_with_spikes():
 
     # Create baseline expression (proteins = rows, samples = cols)
     expr_matrix = pd.DataFrame(
-        np.random.normal(5, 0.5, (30, 6)),
-        index=proteins,
-        columns=samples
+        np.random.normal(5, 0.5, (30, 6)), index=proteins, columns=samples
     )
 
     # Spike 3 proteins with large differences
@@ -33,10 +34,9 @@ def test_make_volcano_integration_with_spikes():
     df_pair = expr_matrix
 
     # Metadata: 3 A, 3 B
-    metadata_pair = pd.DataFrame({
-        "sample_id": samples,
-        "treatment": ["A"] * 3 + ["B"] * 3
-    })
+    metadata_pair = pd.DataFrame(
+        {"sample_id": samples, "treatment": ["A"] * 3 + ["B"] * 3}
+    )
 
     # Configuration for volcano plot
     # Use a threshold that will detect the spiked proteins
@@ -45,7 +45,7 @@ def test_make_volcano_integration_with_spikes():
     config = {
         "LFC_threshold": 1.0,
         "FDR_threshold": 0.05,
-        "LFC_plot_p_or_FDRp": "Log10_FDR_P_Value"
+        "LFC_plot_p_or_FDRp": "Log10_FDR_P_Value",
     }
 
     # Formula for linear model
@@ -56,11 +56,11 @@ def test_make_volcano_integration_with_spikes():
     # Run the full volcano plot pipeline
     # tempfile is used to avoid writing to disk permanently
     with tempfile.TemporaryDirectory() as tmpdir:
-          # Ensure output directories exist
+        # Ensure output directories exist
         os.makedirs(os.path.dirname(tmpdir), exist_ok=True)
         os.makedirs(os.path.join(tmpdir, "data", pair_name), exist_ok=True)
         os.makedirs(os.path.join(tmpdir, "plots", pair_name), exist_ok=True)
-        
+
         # Run the volcano plot generation
         # This will perform the differential expression analysis
         # and create the volcano plot and associated files
@@ -72,7 +72,7 @@ def test_make_volcano_integration_with_spikes():
             pair_name=pair_name,
             config=config,
             metadata_pair=metadata_pair,
-            formula=formula
+            formula=formula,
         )
 
         # Output paths
@@ -93,12 +93,16 @@ def test_make_volcano_integration_with_spikes():
         assert (spiked["Colour"] == "blue").all(), "Spiked proteins not detected as DE"
         # confirm not spiked proteins are gray
         not_spiked = result_df.loc[~result_df.index.isin(spike_proteins)]
-        assert (not_spiked["Colour"] == "gray").all(), "Spiked proteins not detected as DE"
+        assert (
+            not_spiked["Colour"] == "gray"
+        ).all(), "Spiked proteins not detected as DE"
 
         # Confirm top-20 CSV is sorted by abs(logFC)
         top20_df = pd.read_csv(top20_path, index_col=0)
         abs_lfc = top20_df["logFC"].abs().values
-        assert (abs_lfc == sorted(abs_lfc, reverse=True)).all(), "Top 20 not sorted by abs(logFC)"
+        assert (
+            abs_lfc == sorted(abs_lfc, reverse=True)
+        ).all(), "Top 20 not sorted by abs(logFC)"
 
 
 def test_enrichment_analysis_creates_outputs_with_real_genes():
@@ -114,9 +118,26 @@ def test_enrichment_analysis_creates_outputs_with_real_genes():
     # These genes are commonly studied in cancer research
     # Ensures some pathway enrichment is found
     real_genes = [
-        "TP53", "EGFR", "MTOR", "PIK3CA", "AKT1", "MAPK1", "KRAS",
-        "PTEN", "RB1", "CDK4", "MYC", "ERBB2", "CCND1", "CDKN2A",
-        "FOXO3", "BRAF", "MDM2", "CTNNB1", "SMAD4", "STAT3"
+        "TP53",
+        "EGFR",
+        "MTOR",
+        "PIK3CA",
+        "AKT1",
+        "MAPK1",
+        "KRAS",
+        "PTEN",
+        "RB1",
+        "CDK4",
+        "MYC",
+        "ERBB2",
+        "CCND1",
+        "CDKN2A",
+        "FOXO3",
+        "BRAF",
+        "MDM2",
+        "CTNNB1",
+        "SMAD4",
+        "STAT3",
     ]
 
     # Simulate significant values
@@ -136,11 +157,7 @@ def test_enrichment_analysis_creates_outputs_with_real_genes():
     full_df = pd.concat([df, noise_df])
 
     # config for enrichment analysis
-    config = {
-        "LFC_threshold": 1.0,
-        "FDR_threshold": 0.05,
-        "species": "hsapiens"
-    }
+    config = {"LFC_threshold": 1.0, "FDR_threshold": 0.05, "species": "hsapiens"}
 
     pair_name = "A_vs_B"
 
@@ -160,8 +177,12 @@ def test_enrichment_analysis_creates_outputs_with_real_genes():
         assert "name" in result.columns
         assert "p_value" in result.columns
 
-        csv_path = os.path.join(tmpdir, "data", pair_name, f"{pair_name}_pathway_enrichment.csv")
-        plot_path = os.path.join(tmpdir, "plots", pair_name, f"{pair_name}_pathway_enrichment_plot.png")
+        csv_path = os.path.join(
+            tmpdir, "data", pair_name, f"{pair_name}_pathway_enrichment.csv"
+        )
+        plot_path = os.path.join(
+            tmpdir, "plots", pair_name, f"{pair_name}_pathway_enrichment_plot.png"
+        )
 
         assert os.path.exists(csv_path), "Expected enrichment CSV not created"
         assert os.path.exists(plot_path), "Expected enrichment plot not created"

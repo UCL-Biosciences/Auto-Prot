@@ -5,8 +5,6 @@ import os
 
 import pandas as pd
 
-from src.utils.data_utils import get_subset
-
 
 def load_data(file_path):
     """

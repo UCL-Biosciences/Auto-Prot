@@ -6,13 +6,11 @@ sys.path.append(str(Path(__file__).resolve().parents[1]))
 
 import json
 import os
-import yaml
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import pytest
-from pathlib import Path
-
 
 import src.processing.data_preprocess as dpp
 from src.processing.data_processing import (
@@ -22,8 +20,8 @@ from src.processing.data_processing import (
     process_data,
     prot_summary,
 )
-
 from src.utils.data_utils import normalise_column_names
+
 
 # ————————————————————————————————————————————
 # Test clean_meta()
@@ -40,7 +38,7 @@ def test_clean_meta(tmp_path):
             "treatment": ["Ctl", "Drug", "Ctl"],
         }
     )
-    json_out = os.path.join( tmp_path,  "meta_out.json" )
+    json_out = os.path.join(tmp_path, "meta_out.json")
 
     # 2. Call clean_meta
     #    - It should return a DataFrame with sample_rep and colours columns
@@ -233,13 +231,15 @@ def test_clean_data(tmp_path, monkeypatch):
     # ────────────────────────────────────────────────────
     # 5) Pick the imputed DataFrame after process_prot_data, then normalise column names
     # ────────────────────────────────────────────────────
-    config = {"df_to_use": "df_imp",
-              "data_type": "prot",
-              "missing_threshold": 0.5,
-              "normalise_method": "sample-median",
-              "imputation_method": "hist_grad_boost"}
+    config = {
+        "df_to_use": "df_imp",
+        "data_type": "prot",
+        "missing_threshold": 0.5,
+        "normalise_method": "sample-median",
+        "imputation_method": "hist_grad_boost",
+    }
 
-    df = normalise_column_names(df, file_path="path/to/proteindata.csv", config = config)
+    df = normalise_column_names(df, file_path="path/to/proteindata.csv", config=config)
 
     # ────────────────────────────────────────────────────
     # 6) Run the pipeline
@@ -275,7 +275,7 @@ def write_csv(path, df):
 # ────────────────────────────────────────────────────
 # Test full clean function with metadata
 # ────────────────────────────────────────────────────
-def test_process_data_metadata_branch( tmp_path ):
+def test_process_data_metadata_branch(tmp_path):
     """Test the process_data function from data_processing.py with metadata branch."""
 
     # 1) Create a tiny metadata CSV
@@ -362,11 +362,13 @@ def test_process_data_proteindata_branch(monkeypatch, tmp_path):
     initial = {"FOO": 123}
     json_out.write_text(json.dumps(initial))
 
-    config = {"df_to_use": "df_imp",
-              "data_type": "prot",
-              "missing_threshold": 0.5,
-              "normalise_method": "sample-median",
-              "imputation_method": "hist_grad_boost"}
+    config = {
+        "df_to_use": "df_imp",
+        "data_type": "prot",
+        "missing_threshold": 0.5,
+        "normalise_method": "sample-median",
+        "imputation_method": "hist_grad_boost",
+    }
 
     # 3) Call process_data on proteindata
     result = process_data(
