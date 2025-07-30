@@ -105,7 +105,7 @@ def test_process_prot_data_runs():
 
     config = {
         "missing_threshold": 0.6,
-        "normalise_method": "sample-median",          # avoid VSN dependency
+        "normalise_method": "vsn",          # test VSN dependency
         "imputation_method": "hist_grad_boost",       # faster and local
     }
 
@@ -132,3 +132,34 @@ def test_process_prot_data_runs():
         assert (outputs["df_log2"] <= np.log2(df.max().max())).all().all()
 
 
+
+def test_view_prot_distributions_creates_plots():
+    # Simulate 4 stages of processed data (raw, log2, norm, imputed)
+    sample_reps = ["S1_1", "S1_2", "S2_1", "S2_2"]
+    dfs = []
+    for _ in range(4):
+        df = pd.DataFrame(
+            np.random.rand(10, len(sample_reps)) * 100,
+            columns=sample_reps,
+            index=[f"Gene{i}" for i in range(10)]
+        )
+        dfs.append(df)
+
+    titles = ["Raw", "Log2", "Norm", "Imputed"]
+
+    metadata = pd.DataFrame({
+        "sample_rep": sample_reps,
+        "treatment": ["A", "A", "B", "B"]
+    })
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        plots_dir = os.path.join(tmpdir, "plots")
+        os.makedirs(plots_dir, exist_ok=True)
+
+        view_prot_distributions(dfs, titles, metadata, tmpdir)
+
+        boxplot_path = os.path.join(plots_dir, "boxplots_preProcessing_all_samples_plot.png")
+        kdeplot_path = os.path.join(plots_dir, "KDE_preProcessing_all_treatments_plot.png")
+
+        assert os.path.exists(boxplot_path), "Boxplot not generated"
+        assert os.path.exists(kdeplot_path), "KDE plot not generated"
