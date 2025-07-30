@@ -8,6 +8,7 @@ import warnings
 import pandas as pd
 from pdf2image import convert_from_path
 from PIL import Image
+import math
 
 
 def apply_row_id_config(df, config):
@@ -232,93 +233,99 @@ def validate_proteindata(data, metadata):
         )
 
 
-#### combine plots made for different treatment groups
 def combine_plots(
     search_term,
     search_path,
     output_dir,
     output_filename=None,
-    img_size=(800, 600),
     max_cols=3,
 ):
     """
     Finds all images matching the search_term in subdirectories of search_path,
-    arranges them in a grid with up to max_cols columns, and saves a single PNG.
+    arranges them in a grid with up to max_cols columns using their original size,
+    and saves a single PNG.
 
     Parameters:
     - search_term (str): The filename pattern to search for (e.g., "volcano_plot.png").
     - search_path (str): The base directory where images are stored.
+    - output_dir (str): Base output directory for saving the combined image.
     - output_filename (str): The filename for the combined image (auto-generated if None).
-    - img_size (tuple): (width, height) to resize images.
-    - max_cols (int): Maximum number of columns in the grid.
+    - max_cols (int): Maximum number of columns in the output grid.
 
     Returns:
     - str: Path to the saved combined image, or None if no images found.
     """
+
     if os.name == "nt":
+        # Windows long path workaround
         search_path = "\\\\?\\" + os.path.abspath(search_path)
-    # Find all matching images
+
+    # Find matching image paths
     image_paths = []
     for root, _, files in os.walk(search_path):
         for file in files:
-            if search_term in file:
+            if search_term in file and not fnmatch.fnmatch(file, "combined_*_plot.png"):
                 image_paths.append(os.path.join(root, file))
-    image_paths = [
-        img
-        for img in image_paths
-        if not fnmatch.fnmatch(os.path.basename(img), "combined_*_plot.png")
-    ]
-    # Determine resize size
-    if len(image_paths) == 1:
-        resized_size = (
-            int(img_size[0] * 0.6),
-            int(img_size[1] * 0.6),
-        )  # shrink solo image
-    else:
-        resized_size = img_size
+
     if not image_paths:
         print(f"No plots found for '{search_term}'.")
         return None
-    # Convert each PDF to images (usually 1 page)
+
+    # Load images at original size
     images = []
     for path in image_paths:
         if path.endswith(".pdf"):
-            pdf_images = convert_from_path(path, dpi=300)
-            images.append(pdf_images[0].resize(resized_size))
+            img = convert_from_path(path, dpi=300)[0]  # Use first page
         else:
-            images.append(Image.open(path).resize(resized_size))
+            img = Image.open(path)
+        images.append(img)
 
-    # images = [Image.open(img).resize(img_size, Image.LANCZOS) for img in image_paths]
-    # Determine grid layout
-    cols = min(max_cols, len(images))
-    rows = len(images) // cols
-    rows = (
-        len(images) + cols - 1
-    ) // cols  # Round up to fit all images by adding cols - 1
-    # Create a blank canvas
-    combined_width = cols * resized_size[0]
-    combined_height = rows * resized_size[1]
-    combined_image = Image.new(
-        "RGB", (combined_width, combined_height), (255, 255, 255)
-    )  # 255,255,255 specifies background colour = white
-    # Paste images into grid
+    # Grid layout
+    num_images = len(images)
+    cols = min(max_cols, num_images)
+    rows = math.ceil(num_images / cols)
+
+    # Determine max width per column and max height per row
+    col_widths = [0] * cols
+    row_heights = [0] * rows
     for idx, img in enumerate(images):
-        x_offset = (idx % cols) * img_size[0]
-        y_offset = (idx // cols) * img_size[1]
-        combined_image.paste(img, (x_offset, y_offset))
+        col = idx % cols
+        row = idx // cols
+        w, h = img.size
+        col_widths[col] = max(col_widths[col], w)
+        row_heights[row] = max(row_heights[row], h)
+
+    # Total size of combined image
+    total_width = sum(col_widths)
+    total_height = sum(row_heights)
+    combined_image = Image.new("RGB", (total_width, total_height), (255, 255, 255))  # white background
+
+    # Paste images into grid
+    y_offset = 0
+    for row in range(rows):
+        x_offset = 0
+        for col in range(cols):
+            idx = row * cols + col
+            if idx >= num_images:
+                break
+            img = images[idx]
+            combined_image.paste(img, (x_offset, y_offset))
+            x_offset += col_widths[col]
+        y_offset += row_heights[row]
+
     # Generate output filename if not provided
     if output_filename is None:
         output_filename = os.path.join(
             output_dir, f"plots/combined_{search_term.replace('.png', '')}.png"
         )
-        ## windows sometimes rejects long paths. Workaround:
         if os.name == "nt":
             output_filename = "\\\\?\\" + os.path.abspath(output_filename)
-    # Save the final image
-    # Save the final image
+
     os.makedirs(os.path.dirname(output_filename), exist_ok=True)
     combined_image.save(output_filename)
     print(f"Combined plot saved to: {output_filename}")
+    return output_filename
+
 
 
 ### for combining data from different treatments for display in the report ###
