@@ -204,7 +204,7 @@ def clean_data(
                 "Raw Intensities",
                 "Log₂ Transformed",
                 "Normalised",
-                "Normalised then Imputed",
+                "Imputed",
             ]
             ## note dfs is name of df and data itself. .values() access the data
             dpp.view_prot_distributions(dfs.values(), plot_titles, metadata, outPath)
