@@ -5,11 +5,13 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 import os
-import pandas as pd
-import numpy as np
 import random
 
+import numpy as np
+import pandas as pd
+
 from src.utils.check_env import get_repo_root
+
 
 def generate_protein_data(
     repo_root,
@@ -18,13 +20,13 @@ def generate_protein_data(
     n_genes=100,
     samples=None,
     n_replicates=5,
-    n_timepoints = 2,
+    n_timepoints=2,
     spike_multiplier=4,
     na_fraction=0.05,
     random_seed=0,
-    output_prefix="input/data/"
+    output_prefix="input/data/",
 ):
-    
+
     random.seed(random_seed)
     np.random.seed(random_seed)
 
@@ -41,19 +43,28 @@ def generate_protein_data(
     n_total_samp_rep = len(samples) * n_replicates
     n_samples_per_treatment = int(n_total_samp_rep / n_treatments)
 
-    treatments = ["positive"] * n_samples_per_treatment + ["negative"] * n_samples_per_treatment
+    treatments = ["positive"] * n_samples_per_treatment + [
+        "negative"
+    ] * n_samples_per_treatment
 
     # Read and sample genes
-    genes = pd.read_csv(os.path.join(repo_root, human_genes_file))["Symbol"].dropna().unique().tolist()
+    genes = (
+        pd.read_csv(os.path.join(repo_root, human_genes_file))["Symbol"]
+        .dropna()
+        .unique()
+        .tolist()
+    )
     sampled_genes = random.sample(genes, n_genes)
 
     # Generate data
     gene_means = np.random.uniform(3, 5, size=n_genes)
     gene_sigmas = np.random.uniform(0.3, 1.5, size=n_genes)
-    data = np.array([
-        np.random.lognormal(mean=mu, sigma=sigma, size=n_total_samp_rep)
-        for mu, sigma in zip(gene_means, gene_sigmas)
-    ])
+    data = np.array(
+        [
+            np.random.lognormal(mean=mu, sigma=sigma, size=n_total_samp_rep)
+            for mu, sigma in zip(gene_means, gene_sigmas)
+        ]
+    )
     df = pd.DataFrame(data, index=sampled_genes, columns=col_names)
     df.index.name = "PG.genes"
     # Spiking
@@ -71,34 +82,40 @@ def generate_protein_data(
 
     # Add PTM columns
     n_rows = df.shape[0]
-    
+
     # PTM.ModificationTitle: 90% "Phospho (STY)", 10% "Carbamidomethyl (C)"
     mod_titles = np.random.choice(
-        ["Phospho (STY)", "Carbamidomethyl (C)"],
-        size=n_rows,
-        p=[0.9, 0.1]
+        ["Phospho (STY)", "Carbamidomethyl (C)"], size=n_rows, p=[0.9, 0.1]
     )
 
     # Add to DataFrame
     df["PTM.ModificationTitle"] = mod_titles
     df["PTM.SiteAA"] = ["S"] * n_rows
-    df["PTM.SiteLocation"] =  np.random.randint(1, 1001, size=n_rows)
+    df["PTM.SiteLocation"] = np.random.randint(1, 1001, size=n_rows)
 
     # Save protein data
     os.makedirs(os.path.join(repo_root, output_prefix), exist_ok=True)
     df.to_csv(os.path.join(repo_root, output_prefix, "proteindata.csv"))
 
     # Save metadata
-    metadata_df = pd.DataFrame({
-        "sample_id": [s for s in samples for _ in range(n_replicates)],
-        "replicate": list(range(1, n_replicates + 1)) * len(samples),
-        "timepoint" : (list(range(1, n_timepoints + 1)) * ((n_total_samp_rep // n_timepoints) + 1))[:n_total_samp_rep],
-        "treatment": treatments,
-        "protein_abundance_name": col_names,
-    })
-    metadata_df.to_csv(os.path.join(repo_root, output_prefix, "metadata.csv"), index=False)
+    metadata_df = pd.DataFrame(
+        {
+            "sample_id": [s for s in samples for _ in range(n_replicates)],
+            "replicate": list(range(1, n_replicates + 1)) * len(samples),
+            "timepoint": (
+                list(range(1, n_timepoints + 1))
+                * ((n_total_samp_rep // n_timepoints) + 1)
+            )[:n_total_samp_rep],
+            "treatment": treatments,
+            "protein_abundance_name": col_names,
+        }
+    )
+    metadata_df.to_csv(
+        os.path.join(repo_root, output_prefix, "metadata.csv"), index=False
+    )
 
     print("Dummy protein data and metadata saved.")
+
 
 if __name__ == "__main__":
     from pathlib import Path

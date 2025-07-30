@@ -1,24 +1,23 @@
-#### analysis of all_samples 
+#### analysis of all_samples
 ## e.g. pca, mds, heatmap
 ## as opposed to pairwise treatment analysis
 import os
-import pandas as pd
-import numpy as np
 
-from sklearn.decomposition import PCA
-from sklearn.manifold import MDS
 import matplotlib.pyplot as plt
-from scipy.spatial.distance import pdist, squareform
+import numpy as np
+import pandas as pd
 import seaborn as sns
 from adjustText import adjust_text
-
-
-from adjustText import adjust_text
 from matplotlib.patches import Ellipse
+from scipy.spatial.distance import pdist, squareform
+from sklearn.decomposition import PCA
+from sklearn.manifold import MDS
 
 
 ### function for drawing centroids ellipses
-def add_group_ellipses_and_centroids(ax, df, x_col, y_col, group_col, palette=None, scale=4):
+def add_group_ellipses_and_centroids(
+    ax, df, x_col, y_col, group_col, palette=None, scale=4
+):
     """
     Add ellipses and centroids to a scatterplot grouped by a categorical column.
 
@@ -39,9 +38,9 @@ def add_group_ellipses_and_centroids(ax, df, x_col, y_col, group_col, palette=No
         ax.plot(
             centroid_x,
             centroid_y,
-            marker='o',
+            marker="o",
             markersize=8,
-            markerfacecolor='white',
+            markerfacecolor="white",
             markeredgewidth=1.5,
             markeredgecolor=ellipse_color,
             zorder=5,
@@ -57,12 +56,11 @@ def add_group_ellipses_and_centroids(ax, df, x_col, y_col, group_col, palette=No
             height=lambda_[1] * scale,
             angle=angle,
             edgecolor=ellipse_color,
-            facecolor='none',
-            linewidth=1
+            facecolor="none",
+            linewidth=1,
         )
         ell.set_zorder(3)  # Ensure it's drawn above grid
         ax.add_patch(ell)
-
 
 
 def generate_pca(
@@ -70,7 +68,7 @@ def generate_pca(
     output_dir: str,
     metadata: pd.DataFrame = None,
     variance_threshold: float = 0.95,
-    plot_components: tuple[int, int] = (1, 2)
+    plot_components: tuple[int, int] = (1, 2),
 ) -> tuple[pd.DataFrame, np.ndarray]:
     """
     Performs PCA on protein abundance data, plots selected components, and saves results.
@@ -87,7 +85,7 @@ def generate_pca(
         plot_components (Tuple[int, int]): Principal components to plot (1-based index, e.g., (1, 2)).
 
     Returns:
-        Tuple[pd.DataFrame, np.ndarray]: 
+        Tuple[pd.DataFrame, np.ndarray]:
             - DataFrame with PCA coordinates and treatment.
             - 1D array of explained variance ratios.
     """
@@ -98,7 +96,7 @@ def generate_pca(
         .set_index("treatment")["colours"]
         .to_dict()
     )
-    df = df.dropna(axis = 'columns') # note PCA can't handle missing 
+    df = df.dropna(axis="columns")  # note PCA can't handle missing
     n_prot = df.shape[1]
 
     ### PC calculated twice - first to identify optimal number of components
@@ -115,7 +113,7 @@ def generate_pca(
     # Perform PCA with optimal number of components
     pca = PCA(n_components=n_components)
     principal_components = pca.fit_transform(df)
-    
+
     plot_title = "PCA Plot (n proteins = " + str(n_prot) + ")"
     # Create DataFrame with PCA results
     df_PCA = pd.DataFrame(
@@ -138,7 +136,7 @@ def generate_pca(
 
     # Calculate variance explained by each component
     explained_variance = pca.explained_variance_ratio_
-    
+
     # Plot selected components
     pc_x, pc_y = plot_components
     pc_labels = [
@@ -153,7 +151,7 @@ def generate_pca(
         x=f"PC{pc_x}",
         y=f"PC{pc_y}",
         hue="treatment",
-        palette=treatment_palette
+        palette=treatment_palette,
     )
     ax = plt.gca()
     add_group_ellipses_and_centroids(
@@ -162,7 +160,7 @@ def generate_pca(
         x_col=f"PC{pc_x}",
         y_col=f"PC{pc_y}",
         group_col="treatment",
-        palette=treatment_palette
+        palette=treatment_palette,
     )
     # Annotate points
     # Add non-overlapping text labels
@@ -188,10 +186,9 @@ def generate_pca(
         force_text=(0.5, 0.5),
     )
 
-
     plt.xlabel(pc_labels[0])
     plt.ylabel(pc_labels[1])
-    
+
     # Set labels and title
     plot_pca.set(xlabel=pc_labels[0], ylabel=pc_labels[1])
     plt.title(plot_title)
@@ -214,7 +211,7 @@ def generate_MDS(
     Performs metric multidimensional scaling (MDS) using Euclidean distance on protein abundance data,
     and saves a scatter plot of the resulting coordinates.
 
-    This method visualises pairwise sample dissimilarities in a reduced 2D space. Sample points are 
+    This method visualises pairwise sample dissimilarities in a reduced 2D space. Sample points are
     optionally coloured by treatment group using metadata.
 
     Args:
@@ -255,9 +252,7 @@ def generate_MDS(
         dissimilarity_matrix
     )  # If dissimilarity=='precomputed', the input should be the dissimilarity matrix.
     # Convert the NMDS coordinates (nmds_coords) to a pandas DataFrame
-    mds_coords_df = pd.DataFrame(
-        mds_coords, columns=["MDS1", "MDS2"], index=df.index
-    )
+    mds_coords_df = pd.DataFrame(mds_coords, columns=["MDS1", "MDS2"], index=df.index)
     # pull over treatment from metadata
     # df_PCA . look up by index . and map to
     # metadata . temporarily set index to sample_id [ and find treatment ]
@@ -265,15 +260,20 @@ def generate_MDS(
         metadata.set_index("sample_rep")["treatment"]
     )
     #### Generate NMDS plot
-    plot_nmds = sns.scatterplot(data=mds_coords_df, x="MDS1", y="MDS2", hue="treatment",
-                                palette=treatment_palette)
+    plot_nmds = sns.scatterplot(
+        data=mds_coords_df,
+        x="MDS1",
+        y="MDS2",
+        hue="treatment",
+        palette=treatment_palette,
+    )
     add_group_ellipses_and_centroids(
         plt.gca(),
         mds_coords_df,
         x_col="MDS1",
         y_col="MDS2",
         group_col="treatment",
-        palette=treatment_palette
+        palette=treatment_palette,
     )
     ## seaborn returns an axis-object rather than a figure, so you can still alter features of it. E.g. axes names:
     plot_nmds.set(xlabel="MDS 1", ylabel="MDS 2")
@@ -288,12 +288,12 @@ def generate_MDS(
                 s=mds_coords_df.index[i],
                 fontsize=9,
                 ha="center",
-                va="bottom"
+                va="bottom",
             )
         )
 
     # Adjust the labels to avoid overlap, with optional arrows
-    adjust_text(texts, arrowprops=dict(arrowstyle='-', color='grey', lw=0.5))
+    adjust_text(texts, arrowprops=dict(arrowstyle="-", color="grey", lw=0.5))
     # Set labels and title
     plt.title(plot_title)
     plt.tight_layout()
@@ -308,8 +308,9 @@ def generate_MDS(
     return mds_coords_df
 
 
-def generate_heatmap(df: pd.DataFrame, output_dir: str,
-                     metadata: pd.DataFrame = None) -> pd.DataFrame:
+def generate_heatmap(
+    df: pd.DataFrame, output_dir: str, metadata: pd.DataFrame = None
+) -> pd.DataFrame:
     """
     Creates a clustered heatmap of protein abundance data using Euclidean distance.
 
@@ -342,7 +343,7 @@ def generate_heatmap(df: pd.DataFrame, output_dir: str,
         col_colors=col_colors,
         xticklabels=True,
         yticklabels=False,
-        #cbar_pos=None
+        # cbar_pos=None
     )
 
     # 3) Tidy up the x-axis labels to appear on top, matching the clustered order

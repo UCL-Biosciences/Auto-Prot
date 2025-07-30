@@ -1,32 +1,40 @@
-import numpy as np
-import pandas as pd
-import tempfile
 import os
 import subprocess
+import tempfile
 
-from src.processing.data_preprocess import process_prot_data, view_prot_distributions, filter_proteins_by_group_missingness, impute_pimms_cf, impute_prot_data_histgradboost, normalise_vsn
-from tests.test_all_samples import gen_spiked_data
-
+import numpy as np
+import pandas as pd
 import pytest
+
+from src.processing.data_preprocess import (
+    filter_proteins_by_group_missingness,
+    impute_pimms_cf,
+    impute_prot_data_histgradboost,
+    normalise_vsn,
+    process_prot_data,
+    view_prot_distributions,
+)
+from tests.test_all_samples import gen_spiked_data
 
 ## generate a small dataset for testing
 df, metadata, spiked_proteins = gen_spiked_data(n_prots=1000)
 
-df = df.T # Transpose to have proteins as rows, samples as columns
+df = df.T  # Transpose to have proteins as rows, samples as columns
+
 
 # ######### test for filtering based on missingness
-def test_filter_proteins_by_group_missingness_with_spike(df = df,
-                                                         metadata = metadata, 
-                                                         spiked_proteins = spiked_proteins):
-    """ Test filtering proteins based on missingness across groups.
+def test_filter_proteins_by_group_missingness_with_spike(
+    df=df, metadata=metadata, spiked_proteins=spiked_proteins
+):
+    """Test filtering proteins based on missingness across groups.
     This checks that proteins with high missingness in a group are removed,
     while ensuring that spiked proteins (which should be complete) are retained.
     """
-    
+
     # Simulate missingness: remove values randomly in some proteins
     # Prot90–99 will have high missingness in 'ctrl' group
     for prot in [f"Prot{i}" for i in range(90, 100)]:
-        df.loc[ prot, ["S0", "S1", "S2"] ] = np.nan
+        df.loc[prot, ["S0", "S1", "S2"]] = np.nan
 
     # Run filter at 0.6 threshold (must be present in ≥60% of samples per group)
     filtered_df = filter_proteins_by_group_missingness(df, metadata, threshold=0.6)
@@ -40,7 +48,7 @@ def test_filter_proteins_by_group_missingness_with_spike(df = df,
 
 
 def test_normalise_vsn_runs():
-    """ Test that the VSN normalisation runs without errors and produces expected outputs.
+    """Test that the VSN normalisation runs without errors and produces expected outputs.
     This requires an R environment with the VSN package installed.
     """
     # Generate a small dataset with spikes
@@ -77,10 +85,9 @@ def test_normalise_vsn_runs():
         assert df_norm.shape == df.shape
 
 
-
 @pytest.mark.parametrize("method", ["hist_grad_boost", "pimms_collabfilter"])
 def test_imputation_methods_run(method):
-    """ Test that the specified imputation methods run without errors and produce expected outputs.
+    """Test that the specified imputation methods run without errors and produce expected outputs.
     This tests both histogram gradient boosting and collaborative filtering methods.
     """
     # Generate a small dataset with spikes
@@ -120,7 +127,7 @@ def test_imputation_methods_run(method):
 
 
 def test_process_prot_data_runs():
-    """ Test the full processing pipeline for proteomics data.
+    """Test the full processing pipeline for proteomics data.
     This includes filtering, log2 transformation, normalisation, and imputation.
     It checks that the outputs are as expected and that no NaNs remain after imputation.
     """
@@ -132,8 +139,8 @@ def test_process_prot_data_runs():
     # Note: this requires the VSN R package to be installed in the r-limma-env conda environment
     config = {
         "missing_threshold": 0.6,
-        "normalise_method": "vsn",          # test VSN dependency
-        "imputation_method": "hist_grad_boost",       # faster and local
+        "normalise_method": "vsn",  # test VSN dependency
+        "imputation_method": "hist_grad_boost",  # faster and local
     }
 
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -161,9 +168,8 @@ def test_process_prot_data_runs():
         assert (np.log2(df).sort_index() == outputs["df_log2"].sort_index()).all().all()
 
 
-
 def test_view_prot_distributions_creates_plots():
-    """ Test that the distribution viewing function creates the expected plots.
+    """Test that the distribution viewing function creates the expected plots.
     This checks that boxplots and KDE plots are generated for processed data stages.
     """
     # Generate a small dataset with 4 sample replicates
@@ -173,7 +179,7 @@ def test_view_prot_distributions_creates_plots():
         df = pd.DataFrame(
             np.random.rand(10, len(sample_reps)) * 100,
             columns=sample_reps,
-            index=[f"Gene{i}" for i in range(10)]
+            index=[f"Gene{i}" for i in range(10)],
         )
         dfs.append(df)
 
@@ -181,11 +187,10 @@ def test_view_prot_distributions_creates_plots():
     # Assuming these are the stages of processing
     titles = ["Raw", "Log2", "Norm", "Imputed"]
 
-    #  Create metadata for the samples 
-    metadata = pd.DataFrame({
-        "sample_rep": sample_reps,
-        "treatment": ["A", "A", "B", "B"]
-    })
+    #  Create metadata for the samples
+    metadata = pd.DataFrame(
+        {"sample_rep": sample_reps, "treatment": ["A", "A", "B", "B"]}
+    )
 
     # tempfile is used to create a temporary directory for plots
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -198,8 +203,12 @@ def test_view_prot_distributions_creates_plots():
         view_prot_distributions(dfs, titles, metadata, tmpdir)
 
         # Check that the plots were created
-        boxplot_path = os.path.join(plots_dir, "boxplots_preProcessing_all_samples_plot.png")
-        kdeplot_path = os.path.join(plots_dir, "KDE_preProcessing_all_treatments_plot.png")
+        boxplot_path = os.path.join(
+            plots_dir, "boxplots_preProcessing_all_samples_plot.png"
+        )
+        kdeplot_path = os.path.join(
+            plots_dir, "KDE_preProcessing_all_treatments_plot.png"
+        )
 
         assert os.path.exists(boxplot_path), "Boxplot not generated"
         assert os.path.exists(kdeplot_path), "KDE plot not generated"

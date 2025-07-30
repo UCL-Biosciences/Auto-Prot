@@ -1,10 +1,14 @@
 import base64
 import re
 from pathlib import Path
+
 from PIL import Image
 
+
 def inline_base64_images(html: str, base_dir=".") -> str:
-    pattern = re.compile(r'<img\s+src="([^"]+)"(?:\s+width="(\d+)")?(?:\s+height="(\d+)")?\s*>')
+    pattern = re.compile(
+        r'<img\s+src="([^"]+)"(?:\s+width="(\d+)")?(?:\s+height="(\d+)")?\s*>'
+    )
 
     def repl(match):
         src, width_attr, height_attr = match.groups()
@@ -13,8 +17,8 @@ def inline_base64_images(html: str, base_dir=".") -> str:
             print(f"Warning: Could not find image {image_path}")
             return match.group(0)
 
-        ext = image_path.suffix.lower().lstrip('.')
-        mime = "image/jpeg" if ext in ['jpg', 'jpeg'] else f"image/{ext}"
+        ext = image_path.suffix.lower().lstrip(".")
+        mime = "image/jpeg" if ext in ["jpg", "jpeg"] else f"image/{ext}"
 
         with open(image_path, "rb") as f:
             encoded = base64.b64encode(f.read()).decode("utf-8")
@@ -36,4 +40,3 @@ def inline_base64_images(html: str, base_dir=".") -> str:
         return f'<img src="data:{mime};base64,{encoded}"{style_attr}>'
 
     return pattern.sub(repl, html)
-

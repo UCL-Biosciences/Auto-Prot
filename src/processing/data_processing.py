@@ -1,20 +1,20 @@
 ### Read in and pre-process data ###
 import json
-import yaml
 import logging
 import os
 
 import numpy as np
 import pandas as pd
 import seaborn as sns
+import yaml
 
 import src.processing.data_preprocess as dpp
 from src.utils.data_io import load_data
 from src.utils.data_utils import (
     normalise_column_names,
     validate_metadata,
-    validate_proteindata
-    )
+    validate_proteindata,
+)
 
 # specify location of errors to standard output
 logging.basicConfig(
@@ -99,7 +99,7 @@ def clean_prot(df, metadata):
     # filter df to keep prot abundance columns
     df = df.loc[:, df.columns.isin(valid_columns)]
     # At this point, remove rows fully duplicated including the index
-    df = df[~df.reset_index().duplicated(keep='first').values]
+    df = df[~df.reset_index().duplicated(keep="first").values]
     # protein columns should have only numeric data
     # convert non-numeric values to NaN and print warning message
     if not df.equals(df.select_dtypes(include=[np.number])):
@@ -241,18 +241,20 @@ def process_data(file_path, metadata=None, json_out=None, outPath=None, config=N
     """
     df_in = load_data(file_path)
     if df_in is not None:
-        df_renamed = normalise_column_names(df = df_in, file_path=file_path, config=config)
+        df_renamed = normalise_column_names(
+            df=df_in, file_path=file_path, config=config
+        )
     if "metadata" in file_path:
         ### clean metadata
         df = clean_data(
-            df = df_renamed, file_path=file_path, config=config, json_out=json_out
+            df=df_renamed, file_path=file_path, config=config, json_out=json_out
         )
         ### run function to validate metadata
         validate_metadata(df)
 
     if "protein" in file_path:
         df = clean_data(
-            df = df_renamed,
+            df=df_renamed,
             file_path=file_path,
             metadata=metadata,
             outPath=outPath,

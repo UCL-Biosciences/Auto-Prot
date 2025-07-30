@@ -4,9 +4,11 @@
 ## Inputs must be protein abundance file and metadata, as specified below and in the github README.
 
 ## Import libraries
-import yaml
 import os
 import subprocess
+
+import yaml
+
 import src.analysis.analysis as an
 import src.processing.data_processing as dp
 
@@ -40,7 +42,7 @@ def main():
     proteinDataPath = os.path.join(REPO_ROOT, config["protPath"])
     metadataPath = os.path.join(REPO_ROOT, config["metaPath"])
     outPath = os.path.join(REPO_ROOT, config["outPath"])
-    json_out = os.path.join(REPO_ROOT, config["json_outPath"] )
+    json_out = os.path.join(REPO_ROOT, config["json_outPath"])
     full_formula = config["DE_full_formula"]
     subset_formula = config["DE_subset_formula"]
     # Create the output directory
@@ -49,7 +51,7 @@ def main():
     print("Loading and processing data...")
     # metadata
     metadata = dp.process_data(
-        file_path=metadataPath, json_out=json_out, outPath=outPath, config = config
+        file_path=metadataPath, json_out=json_out, outPath=outPath, config=config
     )
     # protein abundance data
     df_protAbundance = dp.process_data(
@@ -76,7 +78,7 @@ def main():
             json_out=json_out,
             output_dir=full_outPath,
             config=config,
-            formula = full_formula,
+            formula=full_formula,
         )
         print("Full analysis complete.")
     if config["analyse_subsets"] is True:
@@ -90,15 +92,23 @@ def main():
             print(f"Processing subset: {subset}")
             subset_variable = config["subset_variable"]
             ### find the rows in metadata that match the subset term
-            subset_metadata = metadata.loc[metadata[subset_variable].astype(str) == str(subset),]
+            subset_metadata = metadata.loc[
+                metadata[subset_variable].astype(str) == str(subset),
+            ]
             # Subset data based on index search term
-            subset_df = get_subset(df = df_protAbundance, subset_term = subset,
-                                   metadata = subset_metadata, subset_variable = subset_variable)
+            subset_df = get_subset(
+                df=df_protAbundance,
+                subset_term=subset,
+                metadata=subset_metadata,
+                subset_variable=subset_variable,
+            )
             # Create a new output directory for the subset
             # if subset has a space in it, replace with _
             if " " in str(subset):
-                subset = str(subset).replace(" ", "_")    
-            subset_outPath = os.path.join(outPath, "subsets", subset_variable + "_" + str(subset))
+                subset = str(subset).replace(" ", "_")
+            subset_outPath = os.path.join(
+                outPath, "subsets", subset_variable + "_" + str(subset)
+            )
             make_outdir(subset_outPath, make_subdirs=True)
             # Run analysis for the subset
             print(f"Running analysis for {subset}...")
@@ -108,7 +118,7 @@ def main():
                 json_out=json_out,
                 output_dir=subset_outPath,
                 config=config,
-                formula = subset_formula
+                formula=subset_formula,
             )
         print("All subsets processed successfully.")
 
@@ -117,11 +127,8 @@ def main():
 if __name__ == "__main__":
     main()
 
-print( "generating html report...")
+print("generating html report...")
 subprocess.run(
-        [
-            "conda", "run", "-n", "markdown", "python",
-            "src/reporting/generate_report.py"
-        ],
-        check=True
-    )
+    ["conda", "run", "-n", "markdown", "python", "src/reporting/generate_report.py"],
+    check=True,
+)

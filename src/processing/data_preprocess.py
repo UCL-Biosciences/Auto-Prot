@@ -3,17 +3,17 @@
 
 import glob
 import os
-import time
 import subprocess
+import time
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
 import sklearn.ensemble
+from pimmslearn.sklearn.cf_transformer import CollaborativeFilteringTransformer
 from sklearn.experimental import enable_iterative_imputer  # noqa: F401
 from sklearn.impute import IterativeImputer  # noqa: F401
-from pimmslearn.sklearn.cf_transformer import CollaborativeFilteringTransformer
 
 
 ## impute function
@@ -50,7 +50,9 @@ def impute_prot_data_histgradboost(df_filtered, df_norm_t):
     print(f"Imputation took {end - start:.2f} seconds")
     # convert back to df
     df_imp = pd.DataFrame(
-        imputation_array.transpose(), index=df_filtered.index, columns=df_filtered.columns
+        imputation_array.transpose(),
+        index=df_filtered.index,
+        columns=df_filtered.columns,
     )
     # After creating df_imp, check whether any sample has undergone large change in mean value
     # Means per sample BEFORE (in transposed matrix → axis=1 = sample axis)
@@ -71,19 +73,20 @@ def impute_prot_data_histgradboost(df_filtered, df_norm_t):
             )
     return df_imp
 
+
 def normalise_vsn(file_path_in, file_path_normalised_out, meanSdPlot_path):
     """
-    Normalises proteomics data using Variance Stabilising Normalisation (VSN) 
+    Normalises proteomics data using Variance Stabilising Normalisation (VSN)
     via an R script, and generates a mean–SD diagnostic plot.
 
     Parameters
     ----------
     file_path_in : str
         Path to the input CSV/TSV file containing raw protein abundance data.
-        
+
     file_path_normalised_out : str
         Path where the normalised output file should be saved.
-        
+
     meanSdPlot_path : str
         Path where the mean–SD diagnostic plot (e.g. PNG or PDF) will be saved.
 
@@ -91,17 +94,21 @@ def normalise_vsn(file_path_in, file_path_normalised_out, meanSdPlot_path):
     ------
     subprocess.CalledProcessError
         If the R script fails or returns a non-zero exit code.
-    
+
     Notes
     -----
-    - This function runs an R script (`normalise-vsn.R`) that must accept 
+    - This function runs an R script (`normalise-vsn.R`) that must accept
       three arguments (input file, output file, and plot path).
     - The script is executed within a Conda environment called `r-limma-env`.
     - `check=True` ensures Python raises an error if the R script fails.
     """
     subprocess.run(
         [
-            "conda", "run", "-n", "r-limma-env", "Rscript",
+            "conda",
+            "run",
+            "-n",
+            "r-limma-env",
+            "Rscript",
             "src/r_scripts/normalise-vsn.R",
             file_path_in,
             file_path_normalised_out,
@@ -111,9 +118,9 @@ def normalise_vsn(file_path_in, file_path_normalised_out, meanSdPlot_path):
     )
 
 
-def filter_proteins_by_group_missingness(df, metadata, 
-                                         sample_col='sample_rep', group_col='treatment',
-                                         threshold=0.75):
+def filter_proteins_by_group_missingness(
+    df, metadata, sample_col="sample_rep", group_col="treatment", threshold=0.75
+):
     """
     Filter proteins based on missingness within each group.
 
@@ -134,8 +141,15 @@ def filter_proteins_by_group_missingness(df, metadata,
         valid = sub_df.notna().mean(axis=1) > threshold
         valid_sets.append(set(df.index[valid]))
     keep_proteins = set.intersection(*valid_sets)
-    print("found ", len(keep_proteins), " proteins in ", (100 * threshold), "% of each treatment group")
+    print(
+        "found ",
+        len(keep_proteins),
+        " proteins in ",
+        (100 * threshold),
+        "% of each treatment group",
+    )
     return df.loc[list(keep_proteins)]
+
 
 def impute_pimms_cf(
     df: pd.DataFrame,
@@ -143,7 +157,7 @@ def impute_pimms_cf(
     batch_size: int = 4096,
     epochs_max: int = 20,
     cuda: bool = False,
-    target_column: str = "intensity"
+    target_column: str = "intensity",
 ) -> pd.DataFrame:
     """
     Impute missing values in a proteomics intensity matrix using PIMMS's collaborative-filtering.
@@ -181,7 +195,7 @@ def impute_pimms_cf(
     df.columns.name = "protein_id"
     series = df.stack()
     series.name = target_column
-    #series.index.names = ["sample_id", "protein_id"]
+    # series.index.names = ["sample_id", "protein_id"]
     # 2. Initialize transformer
     # controlling batch size
     cf = CollaborativeFilteringTransformer(
@@ -189,7 +203,7 @@ def impute_pimms_cf(
         sample_column="sample_id",
         item_column="protein_id",
         n_factors=n_factors,
-        batch_size = ( int(len(series)/10 ) )
+        batch_size=(int(len(series) / 10)),
     )
     # 3. Fit and transform
     start_time = time.time()
@@ -197,17 +211,17 @@ def impute_pimms_cf(
     imputed_long = cf.transform(series)
     elapsed = time.time() - start_time
     print(f"[PIMMS CF] Imputation completed in {elapsed:.1f} seconds.")
-    plt.close('all')
+    plt.close("all")
     ## clean up files produced by pimms cf
     for file in glob.glob("collab_training*"):
         os.remove(file)
     for file in glob.glob("model_params*"):
         os.remove(file)
     # 4. Unstack back to wide form
-    df_imputed = pd.DataFrame(imputed_long.unstack(level="protein_id").transpose()) 
+    df_imputed = pd.DataFrame(imputed_long.unstack(level="protein_id").transpose())
     return df_imputed
 
-    
+
 def process_prot_data(df, config, outPath, metadata):
     """
     Preprocess protein abundance data by filtering, transforming, normalising, and imputing.
@@ -231,8 +245,9 @@ def process_prot_data(df, config, outPath, metadata):
     df = df.replace(0, np.nan)
     # filter for proteins found in XX% per treatment group
     threshold = config["missing_threshold"]
-    df_filtered = filter_proteins_by_group_missingness(df, metadata,
-                                                       threshold = threshold)
+    df_filtered = filter_proteins_by_group_missingness(
+        df, metadata, threshold=threshold
+    )
     # df = df[df.isnull().mean(axis=1) <= 0.2]
     ### log2 all vals
     df_log2 = np.log2(df_filtered)
@@ -244,13 +259,21 @@ def process_prot_data(df, config, outPath, metadata):
     ## vsn requires raw positive intensities, sample median works on log2-transformed data
     normalise_method = config["normalise_method"]
     if normalise_method == "vsn":
-        prot_path = os.path.join(outPath, "data/prots_no_zero_values.csv").replace("\\", "/")
-        normalised_path = os.path.join(outPath, "data/prots_vsn_normalised.csv").replace("\\", "/")
-        meanSdPlot_path = os.path.join(outPath, "plots/vsn_meanSDplot.png").replace("\\", "/")
+        prot_path = os.path.join(outPath, "data/prots_no_zero_values.csv").replace(
+            "\\", "/"
+        )
+        normalised_path = os.path.join(
+            outPath, "data/prots_vsn_normalised.csv"
+        ).replace("\\", "/")
+        meanSdPlot_path = os.path.join(outPath, "plots/vsn_meanSDplot.png").replace(
+            "\\", "/"
+        )
         df_filtered.to_csv(prot_path, index=True)
-        normalise_vsn(file_path_in = prot_path,
-                      file_path_normalised_out = normalised_path,
-                      meanSdPlot_path = meanSdPlot_path)
+        normalise_vsn(
+            file_path_in=prot_path,
+            file_path_normalised_out=normalised_path,
+            meanSdPlot_path=meanSdPlot_path,
+        )
         df_norm = pd.read_csv(normalised_path, index_col=0)
     ### for normalise by sample median, normalise log2 transformed data
     if normalise_method == "sample-median":
@@ -265,7 +288,7 @@ def process_prot_data(df, config, outPath, metadata):
         df_imp = impute_prot_data_histgradboost(df_filtered, df_norm_t)
     elif config["imputation_method"] == "pimms_collabfilter":
         print("imputing with pimms: collaborative filtering")
-        df_imp = impute_pimms_cf(df = df_log2.T)
+        df_imp = impute_pimms_cf(df=df_log2.T)
     return {
         "df": df,
         "df_log2": df_log2,
@@ -306,14 +329,14 @@ def view_prot_distributions(dfs_values, plot_titles, metadata, outPath):
         )
         # Sort samples by treatment, then sample_id, then sample_rep
         sample_order = (
-            long_df.sort_values(["treatment", "sample_rep"])
-            ["sample_rep"]
+            long_df.sort_values(["treatment", "sample_rep"])["sample_rep"]
             .drop_duplicates()
             .tolist()
         )
         # Set plot_label as a categorical with the desired order
-        long_df["sample_rep"] = pd.Categorical(long_df["sample_rep"],
-                                               categories=sample_order, ordered=True)
+        long_df["sample_rep"] = pd.Categorical(
+            long_df["sample_rep"], categories=sample_order, ordered=True
+        )
         # Plot boxplots: each sample's distribution is shown on the x-axis.
         # The boxes are colored by treatment.
         sns.boxplot(x="sample_rep", y="intensity", data=long_df, hue="treatment", ax=ax)

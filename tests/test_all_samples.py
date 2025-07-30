@@ -1,9 +1,12 @@
-import pandas as pd
-import numpy as np
-import tempfile
 import os
+import tempfile
 from pathlib import Path
-from src.analysis.all_samples import generate_pca, generate_MDS, generate_heatmap
+
+import numpy as np
+import pandas as pd
+
+from src.analysis.all_samples import generate_heatmap, generate_MDS, generate_pca
+
 
 def gen_spiked_data(effect_size=2.0, n_prots=100, n_samples=10):
     """
@@ -27,13 +30,16 @@ def gen_spiked_data(effect_size=2.0, n_prots=100, n_samples=10):
     df = pd.DataFrame(
         np.random.rand(n_samples, n_prots),
         index=[f"S{i}" for i in range(n_samples)],
-        columns=[f"Prot{i}" for i in range(n_prots)]
+        columns=[f"Prot{i}" for i in range(n_prots)],
     )
-    metadata = pd.DataFrame({
-        "sample_rep": [f"S{i}" for i in range(n_samples)],
-        "treatment": ["ctrl"] * int(n_samples / 2) + ["treated"] * int(n_samples / 2),
-        "colours": ["#1f77b4"] * 5 + ["#ff7f0e"] * 5
-    })
+    metadata = pd.DataFrame(
+        {
+            "sample_rep": [f"S{i}" for i in range(n_samples)],
+            "treatment": ["ctrl"] * int(n_samples / 2)
+            + ["treated"] * int(n_samples / 2),
+            "colours": ["#1f77b4"] * 5 + ["#ff7f0e"] * 5,
+        }
+    )
 
     # Spike signal in the first 25 proteins for treated samples
     treated_samples = metadata[metadata["treatment"] == "treated"]["sample_rep"]
@@ -118,7 +124,9 @@ def test_generate_mds_basic(df=df, metadata=metadata):
         control = df_mds[df_mds["treatment"] == "ctrl"]
         mean_treated = treated.iloc[:, :2].mean().mean()
         mean_control = control.iloc[:, :2].mean().mean()
-        assert abs(mean_treated - mean_control) > 1.0, "MDS failed to separate spiked groups"
+        assert (
+            abs(mean_treated - mean_control) > 1.0
+        ), "MDS failed to separate spiked groups"
 
 
 def test_generate_heatmap_basic(df=df.T, metadata=metadata):
