@@ -141,9 +141,9 @@ def prot_summary(df, nrow_original, json_out):
         "NUM_PROTS_OG": nrow_original,
         "NUM_PROTS_REMOVED": NUM_PROTS_REMOVED,
         "NUM_PROTS": f"{NUM_PROTS:,.0f}",
-        "MIN_AVERAGE_ABUNDANCE": f"{mean_abundance.min():,.0f}",
-        "MAX_AVERAGE_ABUNDANCE": f"{mean_abundance.max():,.0f}",
-        "MEDIAN_AVERAGE_ABUNDANCE": f"{mean_abundance.median():,.0f}",
+        "MIN_AVERAGE_ABUNDANCE": f"{mean_abundance.min():,.2f}",
+        "MAX_AVERAGE_ABUNDANCE": f"{mean_abundance.max():,.2f}",
+        "MEDIAN_AVERAGE_ABUNDANCE": f"{mean_abundance.median():,.2f}",
     }
 
     # read data from json file

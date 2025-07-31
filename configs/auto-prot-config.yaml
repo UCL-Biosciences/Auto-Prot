@@ -25,7 +25,7 @@ df_to_use: df_imp              # Which dataset to analyse:
                                 #   "df" (raw, not recommended)
                                 #   "df_log2" (log2 transformed)
                                 #   "df_norm" (normalised)
-                                #   "df_imp" (normalised + imputed, recommended)
+                                #   "df_imp" (normalised + imputed)
 
 # ---- SPECIES & ANNOTATION ----
 species: hsapiens              # Species for pathway enrichment: e.g. hsapiens, mmusculus, etc.

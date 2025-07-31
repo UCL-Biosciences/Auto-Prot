@@ -82,23 +82,24 @@ def generate_report_html(
 
     # read data from json file
     with open(json_out) as f:
-        existing_data = yaml.safe_load(f)
+        values = json.load(f)
 
     script_meta = {
         "GENERATE_REPORT_VERSION": generate_version,
         "TEMPLATE_VERSION": template_version,
+        "PERCENT_MISSING" : round( 100 * config.get("missing_threshold") ),
+        "DF_USED" : config.get("df_to_use"),
+        "NORM_METHOD": config.get("normalise_method"),
+        "IMP_METHOD" : config.get("imputation_method"),
+        "FDR_THRESHOLD" : config.get("FDR_threshold"),
     }
 
     # Append new data
-    existing_data.update(script_meta)
+    values.update(script_meta)
 
     # Write back to JSON file
     with open(json_out, "w") as f:
-        json.dump(existing_data, f, indent=4)
-
-    # Load metadata values
-    with open(json_out) as f:
-        values = yaml.safe_load(f)
+        json.dump(values, f, indent=4)
 
     # Load data from csv
     # read straight to html so it can slot into the template
