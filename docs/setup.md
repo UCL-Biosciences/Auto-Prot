@@ -7,7 +7,7 @@ Users do not need to install separately the many packages used by the pipeline. 
 
 For more information on conda environments, see links in the [conda homepage](https://docs.conda.io/en/latest).
  
-This project includes an automatic Conda environment check before running the report generator. It ensures the active environment matches the environments/auto-prot-env.yml file. The check function is saved in `src/utils/check_env.py`.
+This project includes an automatic Conda environment check before running the report generator. It ensures the active environment matches the environments/auto-prot-env.yml file. The check function is saved in `autoprot/utils/check_env.py`.
 
 If the environments differ, you will receive a warning before continuing. Note this doesn't happen in notebooks in VSC.
 
@@ -84,7 +84,7 @@ Additional columns can be included in the metadata. They will mostly be ignored 
 
 ## Example Files
 
-To generate example input data, `python src/utils/gen_random_data.py` will populate /input/data with valid `proteindata.csv` and `metadata.csv` files.
+To generate example input data, `python autoprot/utils/gen_random_data.py` will populate /input/data with valid `proteindata.csv` and `metadata.csv` files.
 
 An example of the report generated is available in `docs/example-report-out.html`.
 
