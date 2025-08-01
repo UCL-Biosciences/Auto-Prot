@@ -137,21 +137,5 @@ def run_analysis(
         ),
     )
 
-    ### write to file the version of this script
-    REPO_ROOT = get_repo_root()
-
-    # read data from json file
-    with open(json_out) as f:
-        existing_data = yaml.safe_load(f)
-
-    analysis_meta = {"ANALYSIS_VERSION": analysis_version}
-
-    # Append new data
-    existing_data.update(analysis_meta)
-
-    # Write back to JSON file
-    with open(json_out, "w") as f:
-        json.dump(existing_data, f, indent=4)
-
     print("Analysis pipeline completed.")
     return results
