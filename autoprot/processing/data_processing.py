@@ -8,9 +8,9 @@ import pandas as pd
 import seaborn as sns
 import yaml
 
-import src.processing.data_preprocess as dpp
-from src.utils.data_io import load_data
-from src.utils.data_utils import (
+import autoprot.processing.data_preprocess as dpp
+from autoprot.utils.data_io import load_data
+from autoprot.utils.data_utils import (
     normalise_column_names,
     validate_metadata,
     validate_proteindata,

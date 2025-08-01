@@ -1,7 +1,7 @@
 import sys
 from pathlib import Path
 
-# Add parent of `src/` to sys.path to import code.utils.check_env
+# Add parent of `autoprot/` to sys.path to import code.utils.check_env
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 import json
@@ -12,8 +12,8 @@ import markdown2  # conda env info in configs/auto-prot-env-markdown-macOS.yml
 import pandas as pd
 import yaml
 
-from src.reporting.image_conversion import inline_base64_images
-from src.utils.check_env import get_repo_root
+from autoprot.reporting.image_conversion import inline_base64_images
+from autoprot.utils.check_env import get_repo_root
 
 
 def generate_report_html(

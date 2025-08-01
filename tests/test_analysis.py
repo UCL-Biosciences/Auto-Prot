@@ -6,7 +6,7 @@ from pathlib import Path
 import pandas as pd
 import yaml
 
-from src.analysis.analysis import run_analysis
+from autoprot.analysis.analysis import run_analysis
 
 
 def minimal_input():

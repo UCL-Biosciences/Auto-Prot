@@ -8,7 +8,7 @@ import os
 import subprocess
 
 # Import the function we want to test
-from src.utils.check_env import get_repo_root
+from autoprot.utils.check_env import get_repo_root
 
 
 def test_get_repo_root_when_git_succeeds(tmp_path, monkeypatch):

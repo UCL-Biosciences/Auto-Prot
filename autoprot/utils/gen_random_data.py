@@ -1,7 +1,7 @@
 import sys
 from pathlib import Path
 
-# Add parent of `src/` to sys.path to import code.utils.check_env
+# Add parent of `autoprot/` to sys.path to import code.utils.check_env
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 import os
@@ -10,7 +10,7 @@ import random
 import numpy as np
 import pandas as pd
 
-from src.utils.check_env import get_repo_root
+from autoprot.utils.check_env import get_repo_root
 
 
 def generate_protein_data(

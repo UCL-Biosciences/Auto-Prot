@@ -10,10 +10,10 @@ import warnings
 import pandas as pd
 import yaml
 
-from src.analysis.all_samples import generate_heatmap, generate_MDS, generate_pca
-from src.analysis.pairwise import enrichment_analysis, make_volcano
-from src.utils.check_env import get_repo_root
-from src.utils.data_utils import combine_csv_files, combine_plots
+from autoprot.analysis.all_samples import generate_heatmap, generate_MDS, generate_pca
+from autoprot.analysis.pairwise import enrichment_analysis, make_volcano
+from autoprot.utils.check_env import get_repo_root
+from autoprot.utils.data_utils import combine_csv_files, combine_plots
 
 ##### there is a warning to suppress when fitting models
 warnings.filterwarnings(

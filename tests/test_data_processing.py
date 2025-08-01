@@ -12,15 +12,15 @@ import numpy as np
 import pandas as pd
 import pytest
 
-import src.processing.data_preprocess as dpp
-from src.processing.data_processing import (
+import autoprot.processing.data_preprocess as dpp
+from autoprot.processing.data_processing import (
     clean_data,
     clean_meta,
     clean_prot,
     process_data,
     prot_summary,
 )
-from src.utils.data_utils import normalise_column_names
+from autoprot.utils.data_utils import normalise_column_names
 
 
 # ————————————————————————————————————————————

@@ -109,7 +109,7 @@ def normalise_vsn(file_path_in, file_path_normalised_out, meanSdPlot_path):
             "-n",
             "r-limma-env",
             "Rscript",
-            "src/r_scripts/normalise-vsn.R",
+            "autoprot/r_scripts/normalise-vsn.R",
             file_path_in,
             file_path_normalised_out,
             meanSdPlot_path,

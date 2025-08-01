@@ -3,7 +3,7 @@ import tempfile
 
 import pandas as pd
 
-from src.utils.gen_random_data import generate_protein_data  # update path if needed
+from autoprot.utils.gen_random_data import generate_protein_data  # update path if needed
 
 
 def test_generate_protein_data_creates_files():
