@@ -139,21 +139,6 @@ def run_analysis(
 
     ### write to file the version of this script
     REPO_ROOT = get_repo_root()
-    analysis_version = (
-        subprocess.check_output(
-            [
-                "git",
-                "log",
-                "-n",
-                "1",
-                "--format=%H",
-                "--",
-                os.path.join(REPO_ROOT, "utils/analysis.py"),
-            ]
-        )
-        .strip()
-        .decode("utf-8")
-    )
 
     # read data from json file
     with open(json_out) as f:

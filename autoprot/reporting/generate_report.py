@@ -16,15 +16,7 @@ from autoprot.reporting.image_conversion import inline_base64_images
 from autoprot.utils.check_env import get_repo_root
 
 
-def generate_report_html(
-    report_MD: str,
-    report_html: str,
-    top_LFC_prots_path: str,
-    enrichment_path: str,
-    enrichment_plot_path: str,
-    json_out: str,
-    config: dict,
-):
+def generate_report_html():
     """
     Generate an HTML report by populating a markdown template with outputs from the analysis.
 
@@ -47,46 +39,35 @@ def generate_report_html(
     Returns:
         None. Writes HTML report to file and updates metadata JSON.
     """
-    ### write to file the version of this script
+        ### find repo root
     REPO_ROOT = get_repo_root()
-    generate_version = (
-        subprocess.check_output(
-            [
-                "git",
-                "log",
-                "-n",
-                "1",
-                "--format=%H",
-                "--",
-                os.path.join(REPO_ROOT, "utils/generate_report.py"),
-            ]
-        )
-        .strip()
-        .decode("utf-8")
+    ### path to config file containing key info - must be present!
+    config_path = os.path.join(REPO_ROOT, "configs/auto-prot-config.yaml")
+    ### Read in configuration data, stored in a json
+    with open(config_path) as f:
+        config = yaml.safe_load(f)
+
+    #### set location of report template and where html will be stored
+    report_MD = os.path.join(REPO_ROOT, "./report/report-template.md")
+    report_html = os.path.join(REPO_ROOT, config["outPath"] + "/report-out.html")
+    top_LFC_prots_path = os.path.join(
+        REPO_ROOT, config["outPath"] + "/full_dataset/data/combined_topLFC.csv"
     )
-    template_version = (
-        subprocess.check_output(
-            [
-                "git",
-                "log",
-                "-n",
-                "1",
-                "--format=%H",
-                "--",
-                os.path.join(REPO_ROOT, "report/report-template.md"),
-            ]
-        )
-        .strip()
-        .decode("utf-8")
+    enrichment_path = os.path.join(
+        REPO_ROOT,
+        config["outPath"] + "/full_dataset/data/combined_top_pathway_enrichment.csv",
     )
+    enrichment_plot_path = os.path.join(
+        REPO_ROOT,
+        config["outPath"] + "/full_dataset/plots/combined_pathway_enrichment_plot.png",
+    )
+    json_out = os.path.join(REPO_ROOT, config["json_outPath"])
 
     # read data from json file
     with open(json_out) as f:
         values = json.load(f)
 
     script_meta = {
-        "GENERATE_REPORT_VERSION": generate_version,
-        "TEMPLATE_VERSION": template_version,
         "PERCENT_MISSING" : round( 100 * config.get("missing_threshold") ),
         "DF_USED" : config.get("df_to_use"),
         "NORM_METHOD": config.get("normalise_method"),
@@ -174,36 +155,4 @@ def generate_report_html(
 
 
 if __name__ == "__main__":
-    ### find repo root
-    REPO_ROOT = get_repo_root()
-    ### path to config file containing key info - must be present!
-    config_path = os.path.join(REPO_ROOT, "configs/auto-prot-config.yaml")
-    ### Read in configuration data, stored in a json
-    with open(config_path) as f:
-        config = yaml.safe_load(f)
-
-    #### set location of report template and where html will be stored
-    report_MD = os.path.join(REPO_ROOT, "./report/report-template.md")
-    report_html = os.path.join(REPO_ROOT, config["outPath"] + "/report-out.html")
-    top_LFC_prots_path = os.path.join(
-        REPO_ROOT, config["outPath"] + "/full_dataset/data/combined_topLFC.csv"
-    )
-    enrichment_path = os.path.join(
-        REPO_ROOT,
-        config["outPath"] + "/full_dataset/data/combined_top_pathway_enrichment.csv",
-    )
-    enrichment_plot_path = os.path.join(
-        REPO_ROOT,
-        config["outPath"] + "/full_dataset/plots/combined_pathway_enrichment_plot.png",
-    )
-    json_out = os.path.join(REPO_ROOT, config["json_outPath"])
-
-    generate_report_html(
-        report_MD,
-        report_html,
-        top_LFC_prots_path,
-        enrichment_path,
-        enrichment_plot_path,
-        json_out,
-        config,
-    )
+    generate_report_html()
