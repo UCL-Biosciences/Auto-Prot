@@ -48,7 +48,7 @@ Activate the environment with: `conda activate auto-proteomics`
 If you don't add your files to the `data` folder, you can generate an example dataset by running `python autoprot/utils/gen_random_data.py`. This will give a quick picture of how the input data should be formatted. Make sure your data are in `data/proteindata.csv` and `data/metadata.csv` (requirements given in /docs/Workflow.md). 
 
 #### Generate output
-To generate the output, you can run `python -m main`.
+To generate the output, you can run `python main.py`.
 
 #### Outputs
 Running `python -m main` will generate:
