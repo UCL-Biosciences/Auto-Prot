@@ -54,4 +54,3 @@ dependencies:
   - zstd=1.5.7
   - pip:
       - markdown==3.7
-prefix: /Users/Chimz/miniforge3/envs/markdown

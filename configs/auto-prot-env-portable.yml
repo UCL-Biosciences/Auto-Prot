@@ -209,4 +209,3 @@ dependencies:
   - pdf2image
   - anaconda::openpyxl
   - anaconda::markdown2
-prefix: C:\Users\ucsagil\OneDrive - University College London\Development\auto-proteomics
