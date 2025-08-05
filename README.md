@@ -43,9 +43,6 @@ Activate the environment with: `conda activate auto-proteomics`
 
 *Optional* After creating the conda environment, run: `pre-commit install`. This sets up automatic code formatting and linting before each commit.
 
-#### Install the package locally
-Install the Auto-Prot package with `pip install .` from inside the `Auto-Prot` folder.
-
 ### 4. Generate outputs
 #### Input
 If you don't add your files to the `data` folder, you can generate an example dataset by running `python autoprot/utils/gen_random_data.py`. This will give a quick picture of how the input data should be formatted. Make sure your data are in `data/proteindata.csv` and `data/metadata.csv` (requirements given in /docs/Workflow.md). 
