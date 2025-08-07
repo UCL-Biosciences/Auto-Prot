@@ -31,6 +31,8 @@ This tool has been tested on Windows and macOS.
 ### 2. Navigate into the project
 `cd Auto-Prot`
 
+**Optional** switch to staging branch: `git checkout staging`.
+
 ### 3. Install dependencies for your operating system
 Create the environment and download dependencies using the information in configuration files: `conda env create -f configs/auto-prot-env-YOUR-OS-HERE.yml`. Which version you use will depend on whether you are using a Windows machine or a Mac. You will need to create environments for the general pipeline and the R functions:
 
