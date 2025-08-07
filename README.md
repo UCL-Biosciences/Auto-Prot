@@ -51,7 +51,7 @@ If you don't add your files to the `data` folder, you can generate an example da
 To generate the output, you can run `python main.py`.
 
 #### Outputs
-Running `python -m main` will generate:
+Running `python main.py` will generate:
 - Normalised protein abundance tables
 - Summary statistics
 - PCA and clustering plots
