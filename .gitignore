@@ -7,6 +7,9 @@ output*/
 configs/auto-prot-config.yaml
 __pycache__/
 *.pyc
+.Rprofile
+renv*
+renv/*
 
 # Bytecode
 __pycache__/
