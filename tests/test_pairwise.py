@@ -4,7 +4,7 @@ import tempfile
 import numpy as np
 import pandas as pd
 
-from src.analysis.pairwise import enrichment_analysis, make_volcano
+from autoprot.analysis.pairwise import enrichment_analysis, make_volcano
 
 
 def test_make_volcano_integration_with_spikes():

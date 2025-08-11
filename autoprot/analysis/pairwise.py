@@ -58,7 +58,7 @@ def make_volcano(
             "-n",
             "r-limma-env",
             "Rscript",
-            "src/r_scripts/DE-limma.R",
+            "autoprot/r_scripts/DE-limma.R",
             pair_data_path.replace("\\", "/"),
             pair_metadata_path.replace("\\", "/"),
             pair_result_path.replace("\\", "/"),

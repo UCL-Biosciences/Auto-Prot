@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from src.processing.data_preprocess import (
+from autoprot.processing.data_preprocess import (
     filter_proteins_by_group_missingness,
     impute_pimms_cf,
     impute_prot_data_histgradboost,

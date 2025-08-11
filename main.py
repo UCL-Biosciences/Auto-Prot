@@ -9,16 +9,17 @@ import subprocess
 
 import yaml
 
-import src.analysis.analysis as an
-import src.processing.data_processing as dp
+import autoprot.analysis.analysis as an
+import autoprot.processing.data_processing as dp
 
 ## Import functions
 # Functions are saved in separate files and imported here
 # Separated by module
 # More detail in relevant files and on github.
-import src.utils.check_env as env
-from src.utils.data_io import make_outdir
-from src.utils.data_utils import get_subset
+import autoprot.utils.check_env as env
+from autoprot.utils.data_io import make_outdir
+from autoprot.utils.data_utils import get_subset
+from autoprot.reporting.generate_report import generate_report_html
 
 
 ##### Define main function for creating outputs
@@ -122,13 +123,10 @@ def main():
             )
         print("All subsets processed successfully.")
 
+    print("generating html report...")
+    generate_report_html()
+
 
 #### If executed in main script, run the function to produce the output
 if __name__ == "__main__":
     main()
-
-print("generating html report...")
-subprocess.run(
-    ["conda", "run", "-n", "markdown", "python", "src/reporting/generate_report.py"],
-    check=True,
-)

@@ -5,7 +5,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from src.analysis.all_samples import generate_heatmap, generate_MDS, generate_pca
+from autoprot.analysis.all_samples import generate_heatmap, generate_MDS, generate_pca
 
 
 def gen_spiked_data(effect_size=2.0, n_prots=100, n_samples=10):

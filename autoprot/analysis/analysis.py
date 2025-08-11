@@ -10,10 +10,10 @@ import warnings
 import pandas as pd
 import yaml
 
-from src.analysis.all_samples import generate_heatmap, generate_MDS, generate_pca
-from src.analysis.pairwise import enrichment_analysis, make_volcano
-from src.utils.check_env import get_repo_root
-from src.utils.data_utils import combine_csv_files, combine_plots
+from autoprot.analysis.all_samples import generate_heatmap, generate_MDS, generate_pca
+from autoprot.analysis.pairwise import enrichment_analysis, make_volcano
+from autoprot.utils.check_env import get_repo_root
+from autoprot.utils.data_utils import combine_csv_files, combine_plots
 
 ##### there is a warning to suppress when fitting models
 warnings.filterwarnings(
@@ -136,37 +136,6 @@ def run_analysis(
             output_dir, "data/combined_top_pathway_enrichment.csv"
         ),
     )
-
-    ### write to file the version of this script
-    REPO_ROOT = get_repo_root()
-    analysis_version = (
-        subprocess.check_output(
-            [
-                "git",
-                "log",
-                "-n",
-                "1",
-                "--format=%H",
-                "--",
-                os.path.join(REPO_ROOT, "utils/analysis.py"),
-            ]
-        )
-        .strip()
-        .decode("utf-8")
-    )
-
-    # read data from json file
-    with open(json_out) as f:
-        existing_data = yaml.safe_load(f)
-
-    analysis_meta = {"ANALYSIS_VERSION": analysis_version}
-
-    # Append new data
-    existing_data.update(analysis_meta)
-
-    # Write back to JSON file
-    with open(json_out, "w") as f:
-        json.dump(existing_data, f, indent=4)
 
     print("Analysis pipeline completed.")
     return results

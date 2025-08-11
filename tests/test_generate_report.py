@@ -5,7 +5,7 @@ import tempfile
 import pandas as pd
 import pytest
 
-from src.reporting.generate_report import generate_report_html
+from autoprot.reporting.generate_report import generate_report_html
 
 
 @pytest.fixture
@@ -101,7 +101,7 @@ def test_generate_report_html_generates_file(mock_report_setup):
 #     sys.modules["markdown"] = types.SimpleNamespace(markdown=lambda x: f"<p>{x}</p>")
 
 #     # Now you can import safely
-#     from src.reporting.generate_report import generate_report_html
+#     from autoprot.reporting.generate_report import generate_report_html
 
 #     # Set up dummy paths
 #     report_md_path = tmp_path / "template.md"

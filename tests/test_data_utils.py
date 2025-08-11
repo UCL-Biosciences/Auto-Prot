@@ -10,7 +10,7 @@ import pytest
 from PIL import Image
 
 # Import functions to test
-from src.utils.data_utils import (
+from autoprot.utils.data_utils import (
     apply_row_id_config,
     combine_csv_files,
     combine_plots,
