@@ -11,7 +11,24 @@ file.exists(output_file)
 print(meanSdPlot_path)
 file.exists(meanSdPlot_path)
 
+library(renv)
+
+### some package management ###
+# not available via conda, so we use renv to install packages
+renv::init(bare = TRUE)   # Creates an isolated library inside the project dir
+
+if (!requireNamespace("vsn", quietly = TRUE)) {
+    if (!requireNamespace("BiocManager", quietly = TRUE)) {
+    install.packages("BiocManager", repos = "https://cloud.r-project.org", ask = FALSE)
+    }
+    options(repos = BiocManager::repositories())
+
+    renv::install("vsn", update = FALSE, ask = FALSE)
+    renv::snapshot(prompt = FALSE)  # Records vsn version in renv.lock
+}
+
 library(vsn)
+
 library(tibble)
 
 # Read input

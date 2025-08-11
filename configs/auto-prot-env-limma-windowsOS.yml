@@ -1,7 +1,7 @@
 name: r-limma-env
 channels:
-  - conda-forge
   - bioconda
+  - conda-forge
   - defaults
   - https://repo.anaconda.com/pkgs/main
   - https://repo.anaconda.com/pkgs/r
@@ -12,7 +12,7 @@ dependencies:
   - binutils_impl_win-64=2.43
   - bwidget=1.10.1
   - bzip2=1.0.8
-  - ca-certificates=2025.1.31
+  - ca-certificates=2025.8.3
   - cairo=1.18.4
   - curl=8.13.0
   - font-ttf-dejavu-sans-mono=2.37
@@ -38,6 +38,8 @@ dependencies:
   - libdeflate=1.22
   - libexpat=2.7.0
   - libffi=3.4.6
+  - libfreetype=2.13.3
+  - libfreetype6=2.13.3
   - libgcc=14.2.0
   - libgcc-devel_win-64=14.2.0
   - libgfortran=14.2.0
@@ -69,6 +71,7 @@ dependencies:
   - pcre2=10.44
   - pixman=0.44.2
   - r-base=4.4.1
+  - r-renv=1.1.5
   - tbb=2021.13.0
   - tk=8.6.13
   - tktable=2.10
