@@ -60,7 +60,7 @@ The pipeline can be used with phosphoproteomic data. There are a few things to b
         "missing_value": "NA"   
     },
 ```
-
+2. Phoshoproteomic data can include different types of post-translational modifications and we may not want to include them all in the analysis. It is up to the user to remove the unwanted modifications before running the pipeline (i.e. no filtering takes place within the pipeline).
 ---
 
 ### 2. Metadata (`metadata.csv`)
