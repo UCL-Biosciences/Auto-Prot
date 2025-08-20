@@ -144,8 +144,7 @@ def generate_report_html():
 
     # Inline images as base64 so HTML is portable
     tempHtml = inline_base64_images(
-        html=tempHtml, base_dir=os.path.dirname(config["outPath"])
-    )
+        html=tempHtml )
 
     # If necessary, could print or edit the results at this point.
     # Open the HTML file and write the output.

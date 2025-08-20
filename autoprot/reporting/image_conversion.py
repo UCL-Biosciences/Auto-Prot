@@ -5,14 +5,14 @@ from pathlib import Path
 from PIL import Image
 
 
-def inline_base64_images(html: str, base_dir=".") -> str:
+def inline_base64_images(html: str) -> str:
     pattern = re.compile(
         r'<img\s+src="([^"]+)"(?:\s+width="(\d+)")?(?:\s+height="(\d+)")?\s*>'
     )
 
     def repl(match):
         src, width_attr, height_attr = match.groups()
-        image_path = Path(base_dir) / src
+        image_path = Path(src)
         if not image_path.exists():
             print(f"Warning: Could not find image {image_path}")
             return match.group(0)
