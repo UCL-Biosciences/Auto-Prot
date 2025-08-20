@@ -27,7 +27,8 @@ def main():
     """
     Main script to run the complete data analysis pipeline.
     """
-    # Check environment - needs fixing
+    # Check environment
+    # Check if running in VSCode, if not, compare environments
     if "VSCODE_PID" not in os.environ:
         env.compare_envs()
     # File paths

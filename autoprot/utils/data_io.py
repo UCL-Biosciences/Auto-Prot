@@ -32,6 +32,11 @@ def load_data(file_path):
     else:
         raise ValueError("Unsupported file format. Please use CSV or TSV.")
 
+    # Drop rows where all values are NA or empty string
+    # We replace empty strings with NA first, then drop rows that are all NA
+    df = df.replace(r'^\s*$', pd.NA, regex=True)  # treat empty strings as NA
+    df = df.dropna(how="all")
+
     # Strip whitespace from column names
     df.columns = df.columns.str.strip()
 
