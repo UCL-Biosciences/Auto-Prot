@@ -124,6 +124,8 @@ def generate_report_html():
 
     # Replace placeholders
     for key, val in values.items():
+        # first escape underscores so they are not interpreted as italics by markdown
+        val = str(val).replace("_", r"\_")
         tempMd = tempMd.replace(f"${key}", str(val))
 
     # Replace placeholders with tables
