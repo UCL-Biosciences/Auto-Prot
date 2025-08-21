@@ -11,8 +11,6 @@ file.exists(output_file)
 print(meanSdPlot_path)
 file.exists(meanSdPlot_path)
 
-library(renv)
-
 #### vsn is not available through conda
 #### needs to be installed by BiocManager
 #### but don't want to install system wide for every user
