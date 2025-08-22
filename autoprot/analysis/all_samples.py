@@ -230,6 +230,7 @@ def generate_MDS(
         .to_dict()
     )
     # Perform MDS
+    df = df.dropna(axis="columns")  # note MDS can't handle missing
     # pdist(x) computes the Euclidean distances between each pair of points in an array
     dissimilarity_array = pdist(df, metric="euclidean")
     n_prot = df.shape[1]
@@ -336,6 +337,8 @@ def generate_heatmap(
     #    - cmap: the heat-map palette
     #    - col_colors: tells Seaborn to draw a full-width strip under the dendrogram
     #    - cbar_pos=None: suppress the tiny default legend in the corner
+    
+    df = df.dropna(axis="rows")  # note clustermap can't handle missing
     cg = sns.clustermap(
         df,
         fmt=".2f",

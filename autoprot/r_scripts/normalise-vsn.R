@@ -11,24 +11,27 @@ file.exists(output_file)
 print(meanSdPlot_path)
 file.exists(meanSdPlot_path)
 
-library(renv)
+#### vsn is not available through conda
+#### needs to be installed by BiocManager
+#### but don't want to install system wide for every user
 
-### some package management ###
-# not available via conda, so we use renv to install packages
-renv::init(bare = TRUE)   # Creates an isolated library inside the project dir
+#### instead, we will create a project specific library manually
+#### and install vsn there
 
+# Define project-local library
+proj_lib <- file.path(getwd(), "output/r_libs")
+if (!dir.exists(proj_lib)) dir.create(proj_lib, recursive = TRUE)
+
+# Prepend to library search path
+.libPaths(c(proj_lib, .libPaths()))
+
+# Ensure vsn is available in that local path
 if (!requireNamespace("vsn", quietly = TRUE)) {
-    if (!requireNamespace("BiocManager", quietly = TRUE)) {
-    install.packages("BiocManager", repos = "https://cloud.r-project.org", ask = FALSE)
-    }
-    options(repos = BiocManager::repositories())
-
-    renv::install("vsn", update = FALSE, ask = FALSE)
-    renv::snapshot(prompt = FALSE)  # Records vsn version in renv.lock
+    BiocManager::install("vsn", version = '3.74.0',
+    lib = proj_lib, ask = FALSE, update = FALSE)
 }
 
 library(vsn)
-
 library(tibble)
 
 # Read input
