@@ -211,22 +211,6 @@ def clean_data(
             df_to_use = config["df_to_use"]
             df = dfs[df_to_use]
 
-            #### Duplicates ####
-            # sometimes there are identical values for multiple rows (proteins or PTMs)
-            # We can't say for all cases what the cause is
-            # most likely the same peptide or PTM in a different context i.e. has been cleaved at different sites.
-            # But generally we think better to keep only one of them
-            # count rows before dropping
-            n_before = len(df)
-
-            # drop duplicates
-            df = df.drop_duplicates()
-
-            # count rows after
-            n_after = len(df)
-
-            print("Rows removed:", n_before - n_after)
-
     return df
 
 

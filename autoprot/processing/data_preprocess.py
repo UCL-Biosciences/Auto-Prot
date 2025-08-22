@@ -135,7 +135,7 @@ def filter_proteins_by_group_missingness(
     Returns:
         pd.DataFrame: Filtered protein DataFrame.
     """
-    threshold = config.get("missing_threshold", threshold)
+    threshold = config.get("missing_threshold")
     # create empty list to store valid protein sets for each group
     valid_sets = []
     # .groupby groups the metadata by the specified group column
@@ -255,10 +255,26 @@ def process_prot_data(df, config, outPath, metadata):
             - 'df_imp': Final imputed data
     """
     df = df.replace(0, np.nan)
+    #### Duplicates ####
+    # sometimes there are identical values for multiple rows (proteins or PTMs)
+    # We can't say for all cases what the cause is
+    # most likely the same peptide or PTM in a different context i.e. peptide has been cleaved at different sites.
+    # which means the same protein or PTMP is represented by multiple peptides
+    # generally we think better to keep only one of them
+    # count rows before dropping
+    n_before = len(df)
+    #
+    # drop duplicates
+    df = df.drop_duplicates()
+    #
+    # count rows after
+    n_after = len(df)
+    #
+    print("Rows with duplicated values removed:", n_before - n_after)
     # filter for proteins found in XX% per treatment group
     threshold = config["missing_threshold"]
     df_filtered = filter_proteins_by_group_missingness(
-        df, metadata, threshold=threshold
+        df, metadata, threshold=threshold, config = config
     )
     # df = df[df.isnull().mean(axis=1) <= 0.2]
     ### log2 all vals
