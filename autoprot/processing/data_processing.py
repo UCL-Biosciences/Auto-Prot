@@ -210,10 +210,27 @@ def clean_data(
             dpp.view_prot_distributions(dfs.values(), plot_titles, metadata, outPath)
             ## which df to use?
             df_to_use = config["df_to_use"]
-            df = dfs[df_to_use].dropna()
+            df = dfs[df_to_use]
+
+            #### Duplicates ####
+            # sometimes there are identical values for multiple rows (proteins or PTMs)
+            # We can't say for all cases what the cause is
+            # most likely the same peptide or PTM in a different context i.e. has been cleaved at different sites.
+            # But generally we think better to keep only one of them
+            # count rows before dropping
+            n_before = len(df)
+
+            # drop duplicates
+            df = df.drop_duplicates()
+
+            # count rows after
+            n_after = len(df)
+
+            print("Rows removed:", n_before - n_after)
+
             ### save some summary info to file for report
             prot_summary(df, nrow_original, json_out)
-    df = df.drop_duplicates()
+
     return df
 
 
