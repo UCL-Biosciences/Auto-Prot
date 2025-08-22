@@ -4,16 +4,14 @@
 # This file controls how the pipeline runs. Update paths and parameters as needed.
 
 # ---- DATA SETTINGS ----
-data_type: prot                 # Type of data: "prot" for proteomics (default), "phospho" for phosphoproteomics
+data_type: phospho                 # Type of data: "prot" for proteomics (default), "phospho" for phosphoproteomics
 
-phospho_row_id: ""             # For phosphoproteomics: specify how to create unique IDs when genes repeat.
+# phospho_row_id: ""             # For phosphoproteomics: specify how to create unique IDs when genes repeat.
 # Example format:
-# phospho_row_id:
-#   fields:                    # Columns used to create unique row IDs (e.g. PTM info)
-#     - "Amino acid"
-#     - "Position"
-#     - "Multiplicity"
-#   missing_value: "NA"        # Value to use if any field is missing
+phospho_row_id:
+  fields:                    # Columns used to create unique row IDs (e.g. PTM info)
+    - "PTM.CollapseKey"
+  missing_value: "NA"        # Value to use if any field is missing
 
 missing_threshold: 0.75        # Proportion threshold for missingness per group (0–1).
                                 # e.g. 0.75 means proteins must appear in ≥75% of samples per group.
@@ -32,9 +30,9 @@ species: hsapiens              # Species for pathway enrichment: e.g. hsapiens, 
 
 # ---- FILE PATHS ----
 protPath: input/data/proteindata.csv    # Path to protein data file
-metaPath: input/data/metadata.csv       # Path to metadata file
-outPath: output                         # Directory for all outputs
-json_outPath: output/data/data_for_report.json  # JSON file for storing report-related info
+metaPath: input/data/metadata_quantity.csv       # Path to metadata file
+outPath: output/quantity_normalised                         # Directory for all outputs
+json_outPath: output/quantity_normalised/data/data_for_report.json  # JSON file for storing report-related info
 
 # ---- SUBSETTING OPTIONS ----
 analyse_full_dataset: true     # Analyse full dataset without filtering (true/false)

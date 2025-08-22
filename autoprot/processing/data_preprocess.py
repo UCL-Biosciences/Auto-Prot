@@ -119,7 +119,7 @@ def normalise_vsn(file_path_in, file_path_normalised_out, meanSdPlot_path):
 
 
 def filter_proteins_by_group_missingness(
-    df, metadata, sample_col="sample_rep", group_col="treatment", threshold=0.75
+    df, metadata, sample_col="sample_rep", group_col="treatment", threshold=None, config=None
 ):
     """
     Filter proteins based on missingness within each group.
@@ -129,17 +129,29 @@ def filter_proteins_by_group_missingness(
         metadata (pd.DataFrame): Metadata with sample and group columns.
         sample_col (str): Column name in metadata with sample names matching df columns.
         group_col (str): Column name in metadata to group by (e.g., treatment).
-        threshold (float): Minimum fraction of non-missing values required per group.
+        config (dict): Configuration dict, must include 'missing_threshold'.
+
 
     Returns:
         pd.DataFrame: Filtered protein DataFrame.
     """
+    threshold = config.get("missing_threshold", threshold)
+    # create empty list to store valid protein sets for each group
     valid_sets = []
+    # .groupby groups the metadata by the specified group column
+    # outputs group name and DataFrame for each group
     for group, group_df in metadata.groupby(group_col):
+        # get the sample names for this group
         samples = group_df[sample_col]
+        # filter the original DataFrame to only include these samples
         sub_df = df[samples]
+        # calculate the proportion of non-missing values for each protein
+        # and keep those that are present in at least `threshold` proportion of samples
         valid = sub_df.notna().mean(axis=1) >= threshold
+        # add the indices of valid proteins to the list
+        # this will be a set of protein indices that are valid for this group
         valid_sets.append(set(df.index[valid]))
+    # find intersection of all valid sets to get proteins present > threshold in all groups
     keep_proteins = set.intersection(*valid_sets)
     print(
         "found ",

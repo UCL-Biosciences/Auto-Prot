@@ -114,8 +114,7 @@ def clean_prot(df, metadata):
     )
     # Rename columns in data_in based on the mapping
     df = df.rename(columns=rename_mapping)
-    nrow_original = len(df.index)
-    return df, nrow_original
+    return df
 
 
 def prot_summary(df, nrow_original, json_out):
@@ -194,10 +193,10 @@ def clean_data(
                 "Error: 'protein_abundance_name' column is missing in the metadata."
             )
         else:
-            df, nrow_original = clean_prot(df, metadata)
+            df = clean_prot(df, metadata)
             ### pre process protein abundance data
             ## replace 0 with NA, remove prots with lots of missing data
-            ## log2 transform, normalise using each sample's median, and impute using random forest
+            ## log2 transform, normalise, and/or impute - see docs for details
             dfs = dpp.process_prot_data(df, config, metadata=metadata, outPath=outPath)
             ## to be shown when plotting distributions
             plot_titles = [
@@ -227,9 +226,6 @@ def clean_data(
             n_after = len(df)
 
             print("Rows removed:", n_before - n_after)
-
-            ### save some summary info to file for report
-            prot_summary(df, nrow_original, json_out)
 
     return df
 
@@ -285,5 +281,9 @@ def process_data(file_path, metadata=None, json_out=None, outPath=None, config=N
         # write to file for easy access
         os.makedirs(os.path.join(outPath, "data"), exist_ok=True)
         df.to_csv(os.path.join(outPath, "data/proteinAbundance.csv"), index=True)
+
+        ### save some summary info to file for report
+        nrow_original = len(df_in.index)
+        prot_summary(df, nrow_original, json_out)
 
     return df

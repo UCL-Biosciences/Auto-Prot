@@ -17,7 +17,6 @@ def load_data(file_path):
 
     Args:
         file_path (str): Path to the input file. Must end with `.csv` or `.tsv`.
-        config (dict): Configuration parameters for data type - if phospho, filter for only phosporylated PTMs. See docs for details.
 
     Returns:
         pd.DataFrame: Loaded data with whitespace stripped from column names and cells.
