@@ -13,13 +13,13 @@ phospho_row_id:
     - "PTM.CollapseKey"
   missing_value: "NA"        # Value to use if any field is missing
 
-missing_threshold: 0.75        # Proportion threshold for missingness per group (0–1).
+missing_threshold: 0.66        # Proportion threshold for missingness per group (0–1).
                                 # e.g. 0.75 means proteins must appear in ≥75% of samples per group.
 
 # ---- NORMALISATION & IMPUTATION ----
 normalise_method: vsn          # Normalisation: "vsn" (variance stabilisation, recommended) or "sample-median"
 imputation_method: pimms_collabfilter   # Imputation: "pimms_collabfilter" or "hist_grad_boost"
-df_to_use: df_norm              # Which dataset to analyse:
+df_to_use: df_imp              # Which dataset to analyse:
                                 #   "df" (raw, not recommended)
                                 #   "df_log2" (log2 transformed)
                                 #   "df_norm" (normalised)
@@ -30,9 +30,9 @@ species: hsapiens              # Species for pathway enrichment: e.g. hsapiens, 
 
 # ---- FILE PATHS ----
 protPath: input/data/proteindata.csv    # Path to protein data file
-metaPath: input/data/metadata_quantity.csv       # Path to metadata file
-outPath: output/quantity_normalised                         # Directory for all outputs
-json_outPath: output/quantity_normalised/data/data_for_report.json  # JSON file for storing report-related info
+metaPath: input/data/metadata.csv       # Path to metadata file
+outPath: output                         # Directory for all outputs
+json_outPath: output/data/data_for_report.json  # JSON file for storing report-related info
 
 # ---- SUBSETTING OPTIONS ----
 analyse_full_dataset: true     # Analyse full dataset without filtering (true/false)
