@@ -19,7 +19,7 @@ Read on to see some common proteomics outputs,  including:
 
 ## Exprimental and Data Summary
 ### Proteins
-From an initial $NUM_PROTS_OG proteins, $NUM_PROTS_REMOVED were removed due to having duplicate intensity values or not being present in >=$PERCENT_MISSING% for all treatment groups. $NUM_PROTS proteins were used in the analysis.
+From an initial $NUM_PROTS_OG proteins, $NUM_PROTS_REMOVED were removed due to having duplicate intensity values or not being present in >=$PERCENT_MISSING% for all treatment groups. $NUM_PROTS proteins were used in the analysis, although prots with any missing values for PCA/MDS/heatmaps are removed.
 
  The median abundance per protein after processing was $MEDIAN_AVERAGE_ABUNDANCE (range: $MIN_AVERAGE_ABUNDANCE - $MAX_AVERAGE_ABUNDANCE).
 

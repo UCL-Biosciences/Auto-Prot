@@ -337,6 +337,8 @@ def generate_heatmap(
     #    - cmap: the heat-map palette
     #    - col_colors: tells Seaborn to draw a full-width strip under the dendrogram
     #    - cbar_pos=None: suppress the tiny default legend in the corner
+    
+    df = df.dropna(axis="rows")  # note clustermap can't handle missing
     cg = sns.clustermap(
         df,
         fmt=".2f",
