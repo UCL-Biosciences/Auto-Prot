@@ -230,6 +230,7 @@ def generate_MDS(
         .to_dict()
     )
     # Perform MDS
+    df = df.dropna(axis="columns")  # note MDS can't handle missing
     # pdist(x) computes the Euclidean distances between each pair of points in an array
     dissimilarity_array = pdist(df, metric="euclidean")
     n_prot = df.shape[1]
