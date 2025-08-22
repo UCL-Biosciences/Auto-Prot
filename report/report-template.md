@@ -19,7 +19,9 @@ Read on to see some common proteomics outputs,  including:
 
 ## Exprimental and Data Summary
 ### Proteins
-From an initial $NUM_PROTS_OG proteins, $NUM_PROTS_REMOVED that were not present in at least $PERCENT_MISSING% for all treatment groups were removed, leaving $NUM_PROTS proteins in the dataset. The median abundance per protein after processing was $MEDIAN_AVERAGE_ABUNDANCE (range: $MIN_AVERAGE_ABUNDANCE - $MAX_AVERAGE_ABUNDANCE).
+From an initial $NUM_PROTS_OG proteins, $NUM_PROTS_REMOVED were removed due to having duplicate intensity values or not being present in >=$PERCENT_MISSING% for all treatment groups. $NUM_PROTS proteins were used in the analysis.
+
+ The median abundance per protein after processing was $MEDIAN_AVERAGE_ABUNDANCE (range: $MIN_AVERAGE_ABUNDANCE - $MAX_AVERAGE_ABUNDANCE).
 
 During data processing, we log2-transform, normalise and/or impute the data (see docs for description of stats). The normalisation method used was $NORM_METHOD. The imputation method used was $IMP_METHOD. The dataset used in the analysis here and in all output was $DF_USED.
 
