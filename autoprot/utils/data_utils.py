@@ -233,24 +233,16 @@ def validate_proteindata(data, metadata):
         )
 
 
-def combine_plots(
-    search_term,
-    search_path,
-    output_dir,
-    output_filename=None,
-    max_cols=3,
-):
+def combine_plots(search_path, search_term, output_dir):
     """
-    Finds all images matching the search_term in subdirectories of search_path,
-    arranges them in a grid with up to max_cols columns using their original size,
-    and saves a single PNG.
+    Combines plots matching a search term into a single image.
 
-    Parameters:
-    - search_term (str): The filename pattern to search for (e.g., "volcano_plot.png").
-    - search_path (str): The base directory where images are stored.
-    - output_dir (str): Base output directory for saving the combined image.
-    - output_filename (str): The filename for the combined image (auto-generated if None).
-    - max_cols (int): Maximum number of columns in the output grid.
+    Args:
+    - search_path (str): Path to search for images.
+    - search_term (str): Term to search for in image filenames.
+    - max_cols (int): Maximum number of columns in the grid.
+    - max_combined_width (int): Maximum width of the combined image.
+    - max_combined_height (int): Maximum height of the combined image.
 
     Returns:
     - str: Path to the saved combined image, or None if no images found.
@@ -262,9 +254,13 @@ def combine_plots(
 
     # Find matching image paths
     image_paths = []
+    # Use os.walk to find all files matching the search term
+    # extract the root directory and file names
     for root, _, files in os.walk(search_path):
         for file in files:
+            # Check if the file matches the search term and is not a combined plot (don't want combined volcano plot inception)
             if search_term in file and not fnmatch.fnmatch(file, "combined_*_plot.png"):
+                # add the path to the image_paths list
                 image_paths.append(os.path.join(root, file))
 
     if not image_paths:
@@ -280,51 +276,25 @@ def combine_plots(
             img = Image.open(path)
         images.append(img)
 
-    # Grid layout
-    num_images = len(images)
-    cols = min(max_cols, num_images)
-    rows = math.ceil(num_images / cols)
+    # Width is the widest image 
+    total_width = max(img.width for img in images)
+    # Height is the sum of heights
+    total_height = sum(img.height for img in images)
 
-    # Determine max width per column and max height per row
-    col_widths = [0] * cols
-    row_heights = [0] * rows
-    for idx, img in enumerate(images):
-        col = idx % cols
-        row = idx // cols
-        w, h = img.size
-        col_widths[col] = max(col_widths[col], w)
-        row_heights[row] = max(row_heights[row], h)
+    # Determine grid layout
+    combined_image = Image.new("RGB", (total_width, total_height), (255, 255, 255))
 
-    # Total size of combined image
-    total_width = sum(col_widths)
-    total_height = sum(row_heights)
-    combined_image = Image.new("RGB", (total_width, total_height), (255, 255, 255))  # white background
-
-    # Paste images into grid
     y_offset = 0
-    for row in range(rows):
-        x_offset = 0
-        for col in range(cols):
-            idx = row * cols + col
-            if idx >= num_images:
-                break
-            img = images[idx]
-            combined_image.paste(img, (x_offset, y_offset))
-            x_offset += col_widths[col]
-        y_offset += row_heights[row]
+    for img in images:
+        combined_image.paste(img, (0, y_offset))
+        y_offset += img.height
 
-    # Generate output filename if not provided
-    if output_filename is None:
-        output_filename = os.path.join(
-            output_dir, f"plots/combined_{search_term.replace('.png', '')}.png"
-        )
-        if os.name == "nt":
-            output_filename = "\\\\?\\" + os.path.abspath(output_filename)
 
-    os.makedirs(os.path.dirname(output_filename), exist_ok=True)
-    combined_image.save(output_filename)
-    print(f"Combined plot saved to: {output_filename}")
-    return output_filename
+    # Save the combined image
+    combined_image_path = os.path.join(output_dir, f"plots/combined_{search_term}_plot.png")
+    combined_image.save(combined_image_path)
+    print(f"Combined image saved to {combined_image_path}")
+    return combined_image_path
 
 
 

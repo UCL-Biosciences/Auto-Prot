@@ -128,7 +128,7 @@ def make_volcano(
                 row["logFC"],
                 row[Volcano_y_axis],
                 row.name,  # Assumes protein names are in the index
-                fontsize=8,
+                fontsize=12,
             )
         )
 

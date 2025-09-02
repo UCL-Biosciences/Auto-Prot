@@ -111,12 +111,12 @@ def run_analysis(
 
     # combine plots from different pairs
     combine_plots(
-        search_path=output_dir, search_term="volcano_plot.png", output_dir=output_dir
+        search_path=output_dir, search_term="volcano", output_dir=output_dir
     )
 
     combine_plots(
         search_path=output_dir,
-        search_term="pathway_enrichment_plot.png",
+        search_term="pathway_enrichment",
         output_dir=output_dir,
     )
 
