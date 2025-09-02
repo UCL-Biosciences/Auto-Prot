@@ -16,8 +16,8 @@ from autoprot.utils.check_env import get_repo_root
 def generate_protein_data(
     repo_root,
     human_genes_file="input/data/human_genes.txt",
-    n_treatments=2,
-    n_genes=100,
+    n_treatments=3,
+    n_genes=1000,
     samples=None,
     n_replicates=5,
     n_timepoints=2,
@@ -43,9 +43,11 @@ def generate_protein_data(
     n_total_samp_rep = len(samples) * n_replicates
     n_samples_per_treatment = int(n_total_samp_rep / n_treatments)
 
-    treatments = ["positive"] * n_samples_per_treatment + [
-        "negative"
-    ] * n_samples_per_treatment
+    # prepare unique treatment levels
+    treatment_levels = [f"treatment_{i}" for i in range(1, n_treatments + 1)]
+
+    # create a string of treatments for each sample
+    treatments = [ treatment for treatment in treatment_levels for _ in range(n_samples_per_treatment) ]
 
     # Read and sample genes
     genes = (
@@ -103,8 +105,7 @@ def generate_protein_data(
             "sample_id": [s for s in samples for _ in range(n_replicates)],
             "replicate": list(range(1, n_replicates + 1)) * len(samples),
             "timepoint": (
-                list(range(1, n_timepoints + 1))
-                * ((n_total_samp_rep // n_timepoints) + 1)
+                list(range(1, n_timepoints + 1)) * ((n_total_samp_rep // n_timepoints) + 1)
             )[:n_total_samp_rep],
             "treatment": treatments,
             "protein_abundance_name": col_names,
