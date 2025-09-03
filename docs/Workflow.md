@@ -2,6 +2,15 @@
 Here we discuss the workflow in more detail, describing the scripts, their roles and some important details.
 
 ## Data Processing
+### Filtering
+#### Filtering proteins with missing values
+We may want to remove proteins that have too many missing values. The number of missing values is determined by the `missingness_threshold` config field. 
+
+#### Normalised Data
+The normalised dataset contains missing values. The PCA, MDS and heatmap functions don't accept missing data, so for these analyses we use only proteins with no missing values. The differential expression calculation accepts missing values so we use the whole normalised dataset. This will lead to different numbers of proteins in the respective analyses, which are shown in plot titles. This is expected behaviour and not a bug.
+
+#### PTM duplications
+In phosphoproteomic data, some software may output multiple rows for the same modified residue if it is observed in different peptide contexts (e.g. due to alternative cleavage sites). These rows often carry identical quantitative values because the same MS evidence underlies them. Since the biological information is redundant, one row is retained and the others are removed to avoid double-counting.
 
 ### Subsets
 You might wish to re-run the analysis on specific subsets of samples. For example, you might wish to select on samples from a given timepoint. You can choose whether to analyse any subsets by setting the config field `analyse_subsets` to `true`. You can define which subsets to analyse using the `subset_variable` (which variable to apply the subset too) and `subsets` fields. `subsets` needs a list of values to analyse e.g. ["1", "2"] if you want to analyse separately time points 1 and 2. By default, this will run the whole analysis for each subset. There is no default option to filter based on >1 variable.
