@@ -3,6 +3,9 @@ Here we discuss the workflow in more detail, describing the scripts, their roles
 
 ## Data Processing
 ### Filtering
+#### Pre-filtering
+Some filtering may be required before starting the pipeline. E.g. you may wish to focus on certain proteins or groups of proteins. There may also be contaminants or proteins from different species that you want to remove. This should be done before running the pipeline.
+
 #### Filtering proteins with missing values
 We may want to remove proteins that have too many missing values. The number of missing values is determined by the `missingness_threshold` config field. 
 
