@@ -16,7 +16,7 @@ library(tidyr)
 
 DIR = "C:/Projects/inProgress/OneDrive_Exile/Auto-prot-validation/MSstats/Auto-Prot"
 
-out_dir = file.path(DIR, "output/compare-msstats"); dir.create(out_dir, recursive = T)
+out_dir = file.path(DIR, "output/compare-msstats"); dir.create(out_dir, recursive = T, showWarnings = F)
 
 # Load the example
 # MSstats DIA data are too small - only 2 samples:
@@ -161,7 +161,7 @@ lfq <- pg_full[, lfq_cols]
 rownames(lfq) <- pg_full$Protein.IDs
 lfq[lfq == 0] <- NA
 
-#--- log2 transform ---
+# log2 transform
 lfq_log <- log2(lfq)
 
 #--- limma model ---
@@ -178,10 +178,10 @@ head(res)
 write.csv(res, file.path(out_dir, "Rstudio-limma-out-log2.csv"))
 
 ### Now with normalisation and imputation
-
 #--- normalise ---
 # Convert to matrix
-expr <- as.matrix(lfq_log)
+## note vsn requires raw positive values, i.e. no log transformation
+expr <- as.matrix(lfq)
 
 # VSN
 lfq_vsn <- vsn2(expr)
@@ -190,7 +190,8 @@ lfq_vsn <- vsn2(expr)
 lfq_ms <- MSnSet(exprs = as.matrix(lfq_vsn))
 
 # imputation
-lfq_imp <- MSnbase::impute(lfq_ms, method = "bpca")
+lfq_imp <- MSnbase::impute(lfq_ms, method = "QRILC")
+exprs_imp = exprs(lfq_imp)
 
 ### refit the model
 fit <- lmFit(lfq_imp, design)
@@ -199,5 +200,5 @@ fit2 <- contrasts.fit(fit, cont.matrix)
 fit2 <- eBayes(fit2)
 
 res2 <- topTable(fit2, adjust="BH", number=Inf)
-head(res2)
+res2[order(rownames(res2)), ] %>% head
 write.csv(res2, file.path(out_dir, "Rstudio-limma-out-imputed.csv"))
