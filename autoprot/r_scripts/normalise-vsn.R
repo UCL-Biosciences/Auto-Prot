@@ -19,7 +19,18 @@ file.exists(meanSdPlot_path)
 #### and install vsn there
 
 # Define project-local library
-proj_lib <- file.path(getwd(), "output/r_libs")
+find_repo_root <- function(start = getwd()) {
+  cur <- normalizePath(start, winslash = "/", mustWork = TRUE)
+  repeat {
+    if (file.exists(file.path(cur, ".git"))) return(cur)
+    parent <- dirname(cur)
+    if (parent == cur) stop("No git repository found above ", start)
+    cur <- parent
+  }
+}
+
+repo_root <- find_repo_root()
+proj_lib <- file.path(repo_root, "output/r_libs")
 if (!dir.exists(proj_lib)) dir.create(proj_lib, recursive = TRUE)
 
 # Prepend to library search path
@@ -27,7 +38,7 @@ if (!dir.exists(proj_lib)) dir.create(proj_lib, recursive = TRUE)
 
 # Ensure vsn is available in that local path
 if (!requireNamespace("vsn", quietly = TRUE)) {
-    BiocManager::install("vsn", version = '3.74.0',
+    BiocManager::install("vsn",
     lib = proj_lib, ask = FALSE, update = FALSE)
 }
 

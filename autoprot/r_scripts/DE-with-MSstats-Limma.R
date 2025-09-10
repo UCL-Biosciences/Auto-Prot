@@ -1,104 +1,178 @@
-### MSstats ###
+#!/usr/bin/env Rscript
+#
+# Proteomics analysis to compare with Auto-Prot
+#
+# This script downloads and processes proteomic data,
+# then performs differential expression analysis using
+# MSstats and limma.
+#
+# It uses `renv` to ensure reproducible environments:
+# - project-local library only (no system packages)
+# - packages recorded in renv.lock
+# - reproducible installation from CRAN/Bioconductor/GitHub
+#
 
-library(renv)
+## -------------------------------
+## Environment setup
+## -------------------------------
+#### don't want to install system wide for every user
+#### instead, we will create a project specific library manually
+#### and install there
 
-# Initialise once per project if not already done
-#renv::init()
+## -------------------------------
+## Locate repo root
+## -------------------------------
+find_repo_root <- function(start = getwd()) {
+  cur <- normalizePath(start, winslash = "/", mustWork = TRUE)
+  repeat {
+    if (file.exists(file.path(cur, ".git"))) return(cur)
+    parent <- dirname(cur)
+    if (parent == cur) stop("No git repository found above ", start)
+    cur <- parent
+  }
+}
 
-# Install MSstats (dependencies auto-installed into project library)
-# renv::install("bioc::MSstats", "dplyr", "tidyr")
+repo_root <- find_repo_root()
 
-library(MSstats)
+# Define project-local library
+proj_lib <- file.path(repo_root, "output/r_libs")
+if (!dir.exists(proj_lib)) dir.create(proj_lib, recursive = TRUE)
+
+# Prepend to library search path
+.libPaths(c(proj_lib, .libPaths()))
+
+# Ensure vsn is available in that local path
+packages = c("BiocManager", "dplyr", "tidyr", "renv",
+             "vsn", "MSstats", "limma", "MSnbase", "imputeLCMD", "KernSmooth")
+
+for (pkg in packages) {
+  if (!requireNamespace(pkg, quietly = TRUE)) {
+      BiocManager::install(pkg,
+      lib = proj_lib, ask = FALSE, update = FALSE)
+  }
+}
+
+## -------------------------------
+## Load packages
+## -------------------------------
 library(dplyr)
 library(tidyr)
+library(vsn)
+library(MSstats)
+library(limma)
+library(MSnbase)
+library(imputeLCMD)
 
-## tutorial https://www.bioconductor.org/packages/release/bioc/vignettes/MSstats/inst/doc/MSstats.html
+## -------------------------------
+## Set dirs
+## -------------------------------
+out_dir = file.path(repo_root, "output/compare-msstats"); dir.create(out_dir, recursive = T, showWarnings = F)
 
-DIR = "C:/Projects/inProgress/OneDrive_Exile/Auto-prot-validation/MSstats/Auto-Prot"
+## -------------------------------
+## Analysis pipeline
+## -------------------------------
 
-out_dir = file.path(DIR, "output/compare-msstats"); dir.create(out_dir, recursive = T, showWarnings = F)
+### Download and prepare data ###
 
-# Load the example
-# MSstats DIA data are too small - only 2 samples:
-# data("DIARawData", package = "MSstats")
+#
+# Example dataset from Galaxy training material:
+# https://training.galaxyproject.org/training-material/topics/proteomics/tutorials/maxquant-msstats-dda-lfq/tutorial.html
+#
 
-# so we use an example from galaxy training: https://training.galaxyproject.org/training-material/topics/proteomics/tutorials/maxquant-msstats-dda-lfq/tutorial.html?utm_source=chatgpt.com
-# Download
+## -------------------------------
+## Download data
+## -------------------------------
 evidence_url <- "https://zenodo.org/record/4896554/files/MaxQuant_Evidence.tabular"
 pg_url       <- "https://zenodo.org/record/4896554/files/MaxQuant_proteingroups.tabular"
 
-# Read into R
+options(timeout = 300)  # set to 5 minutes
 evi_full <- read.delim(evidence_url, stringsAsFactors = FALSE)
-pg_full  <- read.delim(pg_url, stringsAsFactors = FALSE) %>%
-  filter( Potential.contaminant != "+",
-          Reverse != "+",
-          Only.identified.by.site != "+")
+pg_full  <- read.delim(pg_url, stringsAsFactors = FALSE)
 
-# convert 0 to NA
-pg_full[pg_full == 0] <- NA
-
-#--- Metadata ---
-samples <- data.frame(
-  sample = colnames(pg_full %>% select(starts_with("LFQ")) )
-) %>% 
-  mutate(
-    group = gsub("LFQ\\.intensity\\.", "", sample) %>% sub("_.*$", "", .) %>% as.factor()
+## -------------------------------
+## Basic filtering
+## -------------------------------
+pg_full <- pg_full %>%
+  filter(
+    Potential.contaminant != "+",
+    Reverse != "+",
+    Only.identified.by.site != "+"
   )
 
-#--- Filter: keep proteins with >=75% non-missing values per group ---
-# indices per group
-group_idx <- split(seq_len(ncol(pg_full %>% select(starts_with("LFQ")))), samples$group)
+# Replace zeros with NA (MaxQuant LFQ often encodes missing as 0)
+pg_full[pg_full == 0] <- NA
 
-# keep if every group has ≥XX% non-missing
-missing_threshold = 0.75
-# to the columns of each group, apply a function
-keep <- apply(pg_full %>% select(starts_with("LFQ")), 1, function(x) {
-  
-  # for each group in group_idx
-  all(sapply(group_idx, function(idx) {
-    
-    mean(!is.na(x[idx])) >= missing_threshold
-    
-  }))
-  
+## -------------------------------
+## Metadata: sample groups
+## -------------------------------
+lfq_cols <- grep("^LFQ\\.intensity", colnames(pg_full), value = TRUE)
+
+samples <- data.frame(
+  sample = lfq_cols
+) %>%
+  mutate(
+    group = gsub("^LFQ\\.intensity\\.", "", sample) %>%
+      sub("_.*$", "", .) %>%
+      factor()
+  )
+
+## -------------------------------
+## Filtering by missing values
+## -------------------------------
+# Threshold: require ≥75% non-missing values in *every* group
+missing_threshold <- 0.75
+
+# Indices of LFQ columns per group
+group_idx <- split(seq_along(lfq_cols), samples$group)
+
+# Row-wise filter function
+keep <- apply(pg_full[lfq_cols], 1, function(x) {
+  all(sapply(group_idx, function(idx) mean(!is.na(x[idx])) >= missing_threshold))
 })
-
 
 pg_full <- pg_full[keep, ]
 
-pg_full %>% select(starts_with("LFQ"))
-
-# evi = read.delim("https://raw.githubusercontent.com/MannLabs/alphapeptstats/main/testfiles/maxquant_go/evidence.txt", 
-#                  stringsAsFactors = F)
-# 
-# pg = read.delim("https://raw.githubusercontent.com/MannLabs/alphapeptstats/main/testfiles/maxquant_go/proteinGroups.txt", 
-#                  stringsAsFactors = F)
+### write protein groups to file so they can be used with auto-prot
+write.csv(pg_full,
+          file.path(repo_root, "input/data/proteindata.csv"),
+          row.names = F)
 
 
-# 2) Build annotation: Raw.file must match evi$Raw.file exactly
+## -------------------------------
+## Output check
+## -------------------------------
+head(pg_full[lfq_cols])
+
+
+## -------------------------------
+## MS stats analysis
+## -------------------------------
+
+# Build annotation: Raw.file must match evi$Raw.file exactly
 # Columns required: Raw.file, Condition, BioReplicate, Run
 msstats_meta <- evi_full %>%
-  distinct(Raw.file) %>%
-  arrange(Raw.file) %>%
+  distinct(Raw.file) %>% # one row per file
+  arrange(Raw.file) %>% # sort by name
   mutate(
-    Condition = sub("_.*$", "", Raw.file),
-    BioReplicate = ave(seq_along(Raw.file), Condition, FUN = seq_along),
-    Run = 1
+    Condition = sub("_.*$", "", Raw.file), # e.g. "metast" from "metast_1.raw"
+    BioReplicate = ave(seq_along(Raw.file), Condition, FUN = seq_along), # 1, 2, ... per condition
+    Run = 1 # dummy column (not used in this design)
   )
 
-# 3) Convert to MSstats format
+# Convert to MSstats format
 quant <- MaxQtoMSstatsFormat(
-  evidence = evi_full,
+  evidence = evi_full, 
   annotation = msstats_meta,
   proteinGroups = pg_full,
-  useUniquePeptide = TRUE,
-  removeFewMeasure = TRUE,
-  removeProtein_with1Feature = TRUE,
-  summaryforMultipleRows = max)
+  useUniquePeptide = TRUE, # only unique peptides 
+  removeFewMeasure = TRUE, # filter proteins with few measurements
+  removeProtein_with1Feature = TRUE, # filter proteins with only 1 peptide
+  summaryforMultipleRows = max) # summarise multiple intensity values per peptide
 
-# 4) Process to protein level
+# Process to protein level
+# dataProcess normalises, imputes, and performs QC
+# see ?dataProcess for options
 processed <- dataProcess(quant)
-
 
 ### DE analysis ###
 levels(processed$ProteinLevelData$GROUP)
@@ -113,11 +187,9 @@ testResultOneComparison <- groupComparison(contrast.matrix=comparison, data=proc
 write.csv( file = file.path(out_dir, "MSstats-out.csv"),
            testResultOneComparison$ComparisonResult )
 
-
-### write protein groups to file so they can be used with auto-prot
-write.csv(pg_full,
-          file.path(DIR, "input/data/proteindata.csv"),
-          row.names = F)
+## -------------------------------
+## Get missingness info
+## -------------------------------
 
 ### print number missing per protein
 # Select LFQ columns
@@ -142,48 +214,42 @@ metadata = data.frame(
   )
 
 write.csv(metadata,
-          file.path(DIR, "input/data/metadata.csv"),
+          file.path(repo_root, "input/data/metadata.csv"),
           row.names = F)
 
-
-###########
-## Limma ##
-###########
-# following : https://www.bioconductor.org/packages/devel/bioc/vignettes/proDA/inst/doc/data-import.html
-
-# renv::install("bioc::limma", "bioc::MSnbase", "bioc::imputeLCMD")
-library(limma)
-library(MSnbase )
-library(vsn)
-
-lfq_cols <- grep("^LFQ\\.intensity\\.", colnames(pg_full))
+## -------------------------------
+## Limma analysis
+## -------------------------------
+# Select LFQ columns
 lfq <- pg_full[, lfq_cols]
 rownames(lfq) <- pg_full$Protein.IDs
-lfq[lfq == 0] <- NA
 
 # log2 transform
 lfq_log <- log2(lfq)
 
-#--- limma model ---
+# design matrix
+# requires treatment groups and samples to be in same order as lfq columns
 design <- model.matrix(~0 + samples$group)
 colnames(design) <- levels(samples$group)
 
-fit <- lmFit(lfq_log, design)
-cont.matrix <- makeContrasts(metast - RDEB, levels=design)
-fit2 <- contrasts.fit(fit, cont.matrix)
-fit2 <- eBayes(fit2)
+### fit the model without normalisation or imputation
+## we will first compare Auto-Prot and this "raw" limma resulton log2 data
+fit <- lmFit(lfq_log, design) # fit the model
+cont.matrix <- makeContrasts(metast - RDEB, levels=design) # define contrast matrix
+fit2 <- contrasts.fit(fit, cont.matrix) # 
+fit2 <- eBayes(fit2) # apply ebayes shrinkage
 
-res <- topTable(fit2, adjust="BH", number=Inf)
+res <- topTable(fit2, adjust="BH", number=Inf) # get all results including BH FDR adjustment
 head(res)
 write.csv(res, file.path(out_dir, "Rstudio-limma-out-log2.csv"))
 
 ### Now with normalisation and imputation
-#--- normalise ---
+# normalise
 # Convert to matrix
 ## note vsn requires raw positive values, i.e. no log transformation
 expr <- as.matrix(lfq)
 
-# VSN
+# apply VSN
 lfq_vsn <- vsn2(expr)
 
 #--- Simple imputation ---
@@ -193,7 +259,7 @@ lfq_ms <- MSnSet(exprs = as.matrix(lfq_vsn))
 lfq_imp <- MSnbase::impute(lfq_ms, method = "QRILC")
 exprs_imp = exprs(lfq_imp)
 
-### refit the model
+### refit the model as above but with imputed data
 fit <- lmFit(lfq_imp, design)
 cont.matrix <- makeContrasts(metast - RDEB, levels=design)
 fit2 <- contrasts.fit(fit, cont.matrix)
