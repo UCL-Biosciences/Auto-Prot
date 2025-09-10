@@ -46,7 +46,7 @@ make sure you have `imputation_method: hist_grad_boost`.
 Note these must be correct as they specify the outpath paths used by the jupyter notebook that compares the results.
 
 ### Compare the results
-Open the jupyter notebook `autoprot/reporting/compare-autoprot-msstats.ipynb` (you will need something that runs jupyter notebooks). This is where the fun starts, if it works.
+Open the jupyter notebook `autoprot/reporting/compare-autoprot-msstats.ipynb` (you will need something that runs jupyter notebooks). Use the `auto-proteomics` kernel. This is where the fun starts, if it works :'D
 
 First the **log2-transformed** data. At this point, both analyses have received the same data and applied log2-transformation, and both use Limma to calculate DE. The results should be the same.
 
