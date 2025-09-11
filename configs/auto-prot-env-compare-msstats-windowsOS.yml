@@ -1,4 +1,4 @@
-name: base
+name: r-env-compare-msstats
 channels:
   - bioconda
   - conda-forge
@@ -75,4 +75,4 @@ dependencies:
   - zlib=1.2.13
   - zstandard=0.23.0
   - zstd=1.5.6
-prefix: C:\ProgramData\miniconda3
+prefix: C:\Users\ucsagil\OneDrive - University College London\Development\compare-msstats
