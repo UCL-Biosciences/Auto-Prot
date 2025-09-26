@@ -1,6 +1,7 @@
 import os
 import platform
 import subprocess
+import sys
 
 import yaml
 
@@ -39,8 +40,6 @@ elif Active_OS == "Darwin":  # MAC is detected as Darwin
 
 
 # Path to the environment file (relative to repo root)
-
-
 def get_active_env():
     """
     Get the name of the currently active conda environment.
@@ -121,6 +120,34 @@ def compare_envs():
         print(
             "⚠️ WARNING: The active environment differs from the YAML file! Consider updating the YAML"
         )
+
+import platform
+import sys
+
+def check_pimms_support(config: dict) -> None:
+    """
+    Validate whether the selected imputation method is supported on the current OS.
+
+    Parameters
+    ----------
+    config : dict
+        Configuration dictionary. Must contain the key "imputation_method".
+
+    Behaviour
+    ---------
+    - If `config["imputation_method"]` is "pimms_collabfilter" and the operating
+      system is macOS ("Darwin"), the function terminates the program immediately
+      with a clear error message.
+    - For all other cases, the function does nothing.
+    - On Linux and Windows, pimms is expected to be available if installed in the
+      appropriate environment.
+    """
+    if config.get("imputation_method") == "pimms_collabfilter":
+        if platform.system() == "Darwin":
+            sys.exit(
+                "ERROR: pimms collaborative filtering is not supported on macOS.\n"
+                "Please use 'hist_grad_boost' or run the pipeline on Linux/Windows."
+            )
 
 
 if __name__ == "__main__":

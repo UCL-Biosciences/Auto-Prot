@@ -40,6 +40,10 @@ def main():
     ### Read in configuration data, stored in a json
     with open(config_path) as f:
         config = yaml.safe_load(f)
+
+    # make sure imputation method is not pimms if running on a mac - see docs
+    env.check_pimms_support(config)
+
     # File paths for input and output, defined in config file
     proteinDataPath = os.path.join(REPO_ROOT, config["protPath"])
     metadataPath = os.path.join(REPO_ROOT, config["metaPath"])

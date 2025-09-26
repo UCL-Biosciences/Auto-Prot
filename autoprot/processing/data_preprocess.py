@@ -11,7 +11,6 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 import sklearn.ensemble
-from pimmslearn.sklearn.cf_transformer import CollaborativeFilteringTransformer
 from sklearn.experimental import enable_iterative_imputer  # noqa: F401
 from sklearn.impute import IterativeImputer  # noqa: F401
 
@@ -202,6 +201,8 @@ def impute_pimms_cf(
     -------
     >>> df_imputed = impute_pimms_cf(raw_df, n_factors=50, epochs_max=30, cuda=True)
     """
+    # have to import here because pimms not available on mac OS
+    from pimmslearn.sklearn.cf_transformer import CollaborativeFilteringTransformer
     # 1. Stack to long form
     df.index.name = "sample_id"
     df.columns.name = "protein_id"
