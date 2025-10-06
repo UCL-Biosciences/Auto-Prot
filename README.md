@@ -20,6 +20,7 @@ If you think the results look reasonable and you want to make use of them, pleas
 
 ### Prerequisites
 - [conda](https://conda-forge.org/)
+- [git](https://github.com/git-guides/install-git)
 - Somewhere to run command line commands (e.g. VS Code).
 
 This tool has been tested on Windows and macOS.
