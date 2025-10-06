@@ -43,7 +43,7 @@ Create the environment and download dependencies using the information in config
 - For R-based differential expression:  
   `conda env create -f configs/auto-prot-env-limma-windowsOS.yml`
 
-Activate the environment with: `conda activate auto-proteomics`
+Activate the environment with: `conda activate auto-proteomics`. If you keep getting a message about running `git init`, try running `source activate`. You might have to do that at the start of every session.
 
 *Optional* After creating the conda environment, run: `pre-commit install`. This sets up automatic code formatting and linting before each commit.
 
