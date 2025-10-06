@@ -19,8 +19,7 @@ If you think the results look reasonable and you want to make use of them, pleas
 `stable` branch is the most tested and should work reliably. If not, please let me know! It would be best to quick start using that branch. `staging` has new features that haven't been fully tested. Other branches are for developing new features.
 
 ### Prerequisites
-- [Python 3.8+](https://www.python.org/downloads/)
-- [conda](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html)
+- [conda](https://conda-forge.org/)
 - Somewhere to run command line commands (e.g. VS Code).
 
 This tool has been tested on Windows and macOS.
