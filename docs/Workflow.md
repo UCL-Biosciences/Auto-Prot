@@ -2,6 +2,9 @@
 Here we discuss the workflow in more detail, describing the scripts, their roles and some important details.
 
 ## Data Processing
+### Gene names
+The pipeline uses any column with "genes" in the name as an index. The pipeline requires unique index values. If any values in this column are blank, they will be renamed "Unknown-gene-X", where X is replaced by a unique number for each gene without a name. If you want to check which row in the original data corresponds to an "Unknown-gene", check `output/data/prots_name_mapping.csv`. This file contains the gene name used throughout the pipeline in the first column `pg.genes`, the original gene name in `pg.genes_original` and the rest of the input data in other columns. You could use e.g. `pg.proteingroups` to find other info that will allow you to identify the protein, even if there is no value in `pg.genes`.
+
 ### Filtering
 #### Pre-filtering
 Some filtering may be required before starting the pipeline. E.g. you may wish to focus on certain proteins or groups of proteins. There may also be contaminants or proteins from different species that you want to remove. This should be done before running the pipeline.
