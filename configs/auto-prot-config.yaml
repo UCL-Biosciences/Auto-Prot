@@ -24,6 +24,7 @@ df_to_use: df_imp              # Which dataset to analyse:
                                 #   "df_log2" (log2 transformed)
                                 #   "df_norm" (normalised)
                                 #   "df_imp" (normalised + imputed)
+z_score_for_clustering: true    # Whether to z-score data for PCA, MDS and heatmap clustering (true/false)
 
 # ---- SPECIES & ANNOTATION ----
 species: hsapiens              # Species for pathway enrichment: e.g. hsapiens, mmusculus, etc.

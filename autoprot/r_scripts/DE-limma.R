@@ -5,6 +5,9 @@
 ## calculates the DE, and saves to a file
 ## which can be read again by the main pipeline.
 
+# Set seed for reproducibility
+set.seed(123)
+
 # Define project-local library
 find_repo_root <- function(start = getwd()) {
   cur <- normalizePath(start, winslash = "/", mustWork = TRUE)

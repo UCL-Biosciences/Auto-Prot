@@ -365,3 +365,33 @@ def generate_heatmap(
 
     # Return the original DataFrame (in case the caller wants to chain further operations)
     return df
+
+def run_clustering_analysis( df: pd.DataFrame, metadata: pd.DataFrame, output_dir: str) -> dict:
+    """
+    Runs clustering analyses (PCA, MDS, heatmap) on the full dataset and saves results.
+    Args:
+        df (pd.DataFrame): Protein abundance data (columns = samples, rows = proteins or features).
+        metadata (pd.DataFrame): Sample metadata, including 'sample_rep' and 'treatment' columns.
+        output_dir (str): Path to directory where outputs (plots, data files) will be written.
+    Returns:
+        dict: Dictionary containing result DataFrames from PCA, MDS, and heatmap.
+              Keys include "pca", "mds", and "heatmap".
+    """
+    results = {}
+
+    # Perform PCA and save results
+    print("Performing PCA...")
+    pca_results = generate_pca(df.T, output_dir, metadata=metadata)
+    results["pca"] = pca_results
+
+    # Perform MDS and save results
+    print("Performing MDS...")
+    mds_coords_df = generate_MDS(df.T, output_dir, metadata=metadata)
+    results["mds"] = mds_coords_df
+
+    # Generate and save heatmap
+    print("Generating heatmap...")
+    df_heatmap = generate_heatmap(df, output_dir, metadata=metadata)
+    results["heatmap"] = df_heatmap
+
+    return results
