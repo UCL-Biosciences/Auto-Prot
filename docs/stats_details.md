@@ -6,6 +6,9 @@ You are of course welcome (and encouraged) to adjust the code to work best for y
 As always, we appreciate feedback and suggestions. Please create issues or get in touch - details on main README file.
 
 ## Pre Processing
+### Zero Values and Missing Data
+Important note: mass spectrometry instruments record the intensities of proteins that are detected above a certain threshold. Below that threshold, it is not clear whether a protein is completely absent or whether it just wasn't detected in the sample. In this pipeline, we assume all zeros are missing values and convert them to NA before further processing.
+
 ### Log Transformation
 If sample-median normalisation is used, values are log2-transformed. vsn normalisation requires raw values.
 
@@ -16,14 +19,14 @@ The default normalisation is variance stablisiation normalisation, as recommende
 
 "sample-median" will normalise simply by subtracting all values from the median value for each protein. We saw considerable variability in mean and total abundance among samples and treatments. This can look like lots of proteins are overexpressed in a given treatment group, but reflects overall sample abundance (i.e. a sampling artefact) rather than genuine differences per protein. Subtracting the median can help with this but is not as effective as other methods.
 
-### Imputation
-Important note: mass spectrometry instruments record the intensities of proteins that are detected above a certain threshold. Below that threshold, it is not clear whether a protein is completely absent or whether it just wasn't detected in the sample. We therefore assume all zeros are missing values and convert them to NA before further processing.
+There is also an option to scale values before doing clustering analyses (PCA, MDS, and heatmap) using scikit-learn's [`StandardScaler`](https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.StandardScaler.html#sklearn.preprocessing.StandardScaler). By default, this is set to true.
 
+### Imputation
 In MS proteomics, it is common to have a lot of missing values. Some analyses (e.g. PCA, some machine learning techniques) can't handle missing values. That means you must either remove all proteins with any missing values or impute the missing values. Whether to do that is an important decision and requires consideration from researchers.
 
 Different imputation methods vary in speed, scalability, and how well they preserve biological structure. Gradient boosting offers high accuracy but can be slow on large datasets, while PIMMS is faster and scales better, especially with thousands of proteins, though it may be slightly less precise in capturing fine-grained patterns. PIMMS' collaborative filtering model is tested on a dataset with ~ 50 samples and may not perform well with smaller datasets. Imputation options are controlled in the `config` file. See `docs/setup.md` for details.
 
-Note, gradient boosting normalisation requires normalised values, while PIMMS works with the raw or log-transformed values.
+Note, gradient boosting normalisation requires normalised values, while PIMMS works with the raw or log-transformed values. I tried normalising after PIMMS imputing and the LFCs were all tiny - it removed too much natural variation. I removed it and now the PIMMS pipeline includes no normalisation. It isn't clear from the PIMMS paper whether they normalise afterwards or not.
 
 #### Gradient Boosting Imputation
 Previous studies have found Random Forest imputation methods perform best (see below for refs). The pipeline can use python functions `HistGradientBoostingRegressor` and `IterativeImputer` but with more than 1,000 proteins, it becomes slow with default parameters. You can see the parameters we used to improve performance in `autoprot/processing/data_preprocess.py` (see `impute_prot_data_histgradboost` function).
