@@ -259,7 +259,7 @@ def combine_plots(search_path, search_term, output_dir):
     for root, _, files in os.walk(search_path):
         for file in files:
             # Check if the file matches the search term and is not a combined plot (don't want combined volcano plot inception)
-            if search_term in file and not fnmatch.fnmatch(file, "combined_*_plot.png"):
+            if search_term in file and not fnmatch.fnmatch(file, "combined_*_plot.png") and not fnmatch.fnmatch(file, "*.csv"):
                 # add the path to the image_paths list
                 image_paths.append(os.path.join(root, file))
 
