@@ -5,6 +5,7 @@ import fnmatch
 import os
 import warnings
 
+import numpy as np
 import pandas as pd
 from pdf2image import convert_from_path
 from PIL import Image
@@ -77,8 +78,14 @@ def normalise_column_names(df, file_path=None, outPath = None, config=None):
         if genes_columns:  # If any column contains 'genes'
                
             # Set initial index
-            base_index = df[genes_columns[0]].str.split(";").str[0] # if there are multiple genes, take the first one only
-            
+            ## genes can have multiple names separated by ; - we take the first non-empty one (sometimes the first is empty)
+            # Keep NaN as NaN, only split for valid strings
+            base_index = (
+                df[genes_columns[0]]
+                .apply(lambda x: next((v.strip() for v in str(x).split(";") if v.strip()), None)
+                                if pd.notna(x) else np.nan)
+            )
+
             # Count how many times each base value appears
             counts = base_index.value_counts()
             
@@ -97,8 +104,6 @@ def normalise_column_names(df, file_path=None, outPath = None, config=None):
             # Set the new index
             df.index = new_index
            
-        print(df.head())
-
         ### Genes with no name in original data ###
         ## if there is no gene name, we need to replace the NaN with Unknown-Gene-X, where X is a unique number for each unknown gene.
 
@@ -117,14 +122,16 @@ def normalise_column_names(df, file_path=None, outPath = None, config=None):
         # Set updated index
         df.index = index_series
 
-        print(df.head() )
-
         ### mapping original index to new index ###
         # we want to keep track of which original index maps to which new index
         # this is useful for debugging and for tracking proteins through the analysis
         # at this point in the pipeline, the old names are in the column with genes in the name (this will soon be removed)
         # and the new names are the index. so it is a good time to save
-        df.loc[ df.index != df[genes_columns[0]], ].to_csv(os.path.join(outPath, "data/prots_name_mapping.csv"))
+        (df.loc[ df.index != df[genes_columns[0]], ]
+         .rename(columns={'pg.genes': 'pg.genes_original'})
+         .to_csv(os.path.join(outPath, "data/prots_name_mapping.csv"),
+                                                           index = True)
+        )
 
         ### For phosphoproteomic data, there are abundances for phosphorylated proteins
         ### Each protein can be present multiple times - once per phosphorylation state
