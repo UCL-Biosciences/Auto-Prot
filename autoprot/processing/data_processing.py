@@ -239,7 +239,7 @@ def process_data(file_path, metadata=None, json_out=None, outPath=None, config=N
     df_in = load_data(file_path)
     if df_in is not None:
         df_renamed = normalise_column_names(
-            df=df_in, file_path=file_path, config=config
+            df=df_in, file_path=file_path, outPath=outPath, config=config
         )
     if "metadata" in file_path:
         ### clean metadata

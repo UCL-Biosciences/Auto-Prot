@@ -48,7 +48,7 @@ def apply_row_id_config(df, config):
     return df
 
 
-def normalise_column_names(df, file_path=None, config=None):
+def normalise_column_names(df, file_path=None, outPath = None, config=None):
     """
     Standardise column names and optionally combine phosphorylation information.
 
@@ -58,46 +58,74 @@ def normalise_column_names(df, file_path=None, config=None):
 
     Args:
         df (pd.DataFrame): Input dataframe to clean.
-        file_path (str, optional): Path used to detect 'proteindata' context.
+        file_path (str): Path used to detect 'proteindata' context.
+        outPath (str): Output path for saving intermediate files.
+        config (dict): Configuration dictionary with data type and row ID settings.
 
     Returns:
         pd.DataFrame: DataFrame with cleaned column names and possibly updated index.
     """
-    df.columns = [col.lower().replace(" ", "_") for col in df.columns]
-    df.columns = df.columns.astype(str)
+    ### standardise column names
+    df.columns = [col.lower().replace(" ", "_") for col in df.columns] ## convert to lowercase and replace spaces with underscores
+    df.columns = df.columns.astype(str) # ensure all columns are strings
+
     # If 'protein' is in the file path, set a column containing 'gene' as the index
     if "protein" in file_path:
+
         genes_columns = [col for col in df.columns if "gene" in col.lower()]
+        
         if genes_columns:  # If any column contains 'genes'
+               
             # Set initial index
-            base_index = df[genes_columns[0]].str.split(";").str[0]
+            base_index = df[genes_columns[0]].str.split(";").str[0] # if there are multiple genes, take the first one only
+            
             # Count how many times each base value appears
             counts = base_index.value_counts()
+            
             # Identify which ones are duplicated
             duplicated = base_index.isin(counts[counts > 1].index)
+            
             # Create a suffix only for duplicates
             suffixes = (
                 base_index[duplicated].groupby(base_index[duplicated]).cumcount() + 1
             ).astype(str)
+            
             # Create the final index
-            new_index = base_index.copy()
-            new_index[duplicated] = new_index[duplicated] + "-" + suffixes
+            new_index = base_index.copy() # start with base index
+            new_index[duplicated] = new_index[duplicated] + "-" + suffixes # then add suffixes to duplicates
+
             # Set the new index
             df.index = new_index
-        # some proteins do not produce any associated genes. these values are left blank in the index
-        # we replace the NaNs with Unknown-Gene-X, where X is a unique number for each unknown gene.
+           
+        print(df.head())
+
+        ### Genes with no name in original data ###
+        ## if there is no gene name, we need to replace the NaN with Unknown-Gene-X, where X is a unique number for each unknown gene.
+
         # Convert index to a Series to manipulate NaNs
-        index_series = df.index.to_series().astype(
-            "object"
-        )  ## 'object' allows strings and NAs
+        index_series_original = df.index.to_series().astype("object")  ## 'object' allows strings and NAs
+
         # Strip whitespace and handle empty strings
-        index_series = index_series.str.strip()
+        index_series = index_series_original.str.strip()
+
         # Find NaN values in index
         nan_mask = index_series.isna() | (index_series == "")
+
         # Replace NaNs with "Unknown-gene-N"
         index_series[nan_mask] = [f"Unknown-gene-{i+1}" for i in range(nan_mask.sum())]
+
         # Set updated index
         df.index = index_series
+
+        print(df.head() )
+
+        ### mapping original index to new index ###
+        # we want to keep track of which original index maps to which new index
+        # this is useful for debugging and for tracking proteins through the analysis
+        # at this point in the pipeline, the old names are in the column with genes in the name (this will soon be removed)
+        # and the new names are the index. so it is a good time to save
+        df.loc[ df.index != df[genes_columns[0]], ].to_csv(os.path.join(outPath, "data/prots_name_mapping.csv"))
+
         ### For phosphoproteomic data, there are abundances for phosphorylated proteins
         ### Each protein can be present multiple times - once per phosphorylation state
         ### For the analysis to proceed, we need a unique ID for the protein-phosphorylation state combination
@@ -107,6 +135,7 @@ def normalise_column_names(df, file_path=None, config=None):
                 "Gene names and phosphorylation state present. Combining to make unique gene names"
             )
             df = apply_row_id_config(df, config)
+
     return df
 
 
