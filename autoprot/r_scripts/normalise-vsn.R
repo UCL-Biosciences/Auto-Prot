@@ -57,7 +57,7 @@ expr <- as.matrix(data)
 
 # VSN
 print( "fitting vsn" )
-vsn_fit <- vsn2(expr, minDataPointsPerStratum= 10)
+vsn_fit <- vsn2(expr, minDataPointsPerStratum = 10)
 # Save mean-SD plot to PNG
 ### ### mean and sd shouldn't be correlated! ### ###
 png(meanSdPlot_path, width = 800, height = 600)
