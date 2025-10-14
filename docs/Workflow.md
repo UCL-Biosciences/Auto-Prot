@@ -21,6 +21,15 @@ In phosphoproteomic data, some software may output multiple rows for the same mo
 ### Subsets
 You might wish to re-run the analysis on specific subsets of samples. For example, you might wish to select on samples from a given timepoint. You can choose whether to analyse any subsets by setting the config field `analyse_subsets` to `true`. You can define which subsets to analyse using the `subset_variable` (which variable to apply the subset too) and `subsets` fields. `subsets` needs a list of values to analyse e.g. ["1", "2"] if you want to analyse separately time points 1 and 2. By default, this will run the whole analysis for each subset. There is no default option to filter based on >1 variable.
 
+### Phosphoproteomic data
+Phosphoproteomic data are generated using similar mass spec workflows. The data have a different structure to proteomic data, but "Once the data has been collapsed to phospho-sites, the user can continue the analysis as with any other kind of quantitative data." ([Martinez-Val et al., 2021](https://link.springer.com/protocol/10.1007/978-1-0716-1641-3_6)). **It is essential that the user confirms the prerequesite steps have been required to collapse the data to phospho-sites!** This includes but is not limited to:
+
+- high-confidence localisation (commonly >0.75 - 0.9)
+- remove contaminats and decoys
+- map each peptide to a single parent protein sequence
+
+If you are unsure, discuss with a colleague who has experience processing mass spec phosphoproteomic data.
+
 ## Analysis
 
 ## 📝 Generating the HTML Report
@@ -56,6 +65,8 @@ Output
 You will find the report at: `<repo-root>/<outPath>/report-out.html`. All embedded content (tables, images, version hashes) is included in the single HTML file for easy sharing.
 
 ## Refs
+Martinez-Val, A., Bekker-Jensen, D.B., Hogrebe, A., Olsen, J.V. (2021). Data Processing and Analysis for DIA-Based Phosphoproteomics Using Spectronaut. In: Cecconi, D. (eds) Proteomics Data Analysis. Methods in Molecular Biology, vol 2361. Humana, New York, NY. https://doi.org/10.1007/978-1-0716-1641-3_6
+
 Välikangas, Tommi, Tomi Suomi, and Laura L. Elo. "A systematic evaluation of normalization methods in quantitative label-free proteomics." Briefings in bioinformatics 19.1 (2018): 1-11.
 
 
