@@ -113,6 +113,8 @@ To make the code work, you must enter the correct parameters and combination of 
 
 **df_to_use.** Which dataset to analyse. Options: "df" → Raw (not recommended), "df_log2" → Log2 transformed, "df_norm" → Normalised, "df_imp" → Normalised + imputed. Default: df_imp
 
+**z_score_for_clustering.** Whether to z-score data for PCA, MDS and heatmap clustering (true/false). Uses scikit-learn's [StandardScaler](https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.StandardScaler.html#sklearn.preprocessing.StandardScaler). 
+
 ### Annotation
 
 **species.** Species for pathway enrichment. Examples: "hsapiens", "mmusculus". Default: "hsapiens"
