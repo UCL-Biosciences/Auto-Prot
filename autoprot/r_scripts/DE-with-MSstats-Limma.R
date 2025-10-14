@@ -22,6 +22,7 @@
 ## -------------------------------
 ## Locate repo root
 ## -------------------------------
+### if this doesn't work, set your wd (setwd()) to the Auto-Prot dir
 find_repo_root <- function(start = getwd()) {
   cur <- normalizePath(start, winslash = "/", mustWork = TRUE)
   repeat {
@@ -35,7 +36,7 @@ find_repo_root <- function(start = getwd()) {
 repo_root <- find_repo_root()
 
 # Define project-local library
-proj_lib <- file.path(repo_root, "output/r_libs")
+proj_lib <- file.path(repo_root, "r_libs")
 if (!dir.exists(proj_lib)) dir.create(proj_lib, recursive = TRUE)
 
 # Prepend to library search path

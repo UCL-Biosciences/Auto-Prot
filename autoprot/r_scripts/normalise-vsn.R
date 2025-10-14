@@ -30,7 +30,7 @@ find_repo_root <- function(start = getwd()) {
 }
 
 repo_root <- find_repo_root()
-proj_lib <- file.path(repo_root, "output/r_libs")
+proj_lib <- file.path(repo_root, "r_libs")
 if (!dir.exists(proj_lib)) dir.create(proj_lib, recursive = TRUE)
 
 # Prepend to library search path
