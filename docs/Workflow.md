@@ -25,7 +25,7 @@ You might wish to re-run the analysis on specific subsets of samples. For exampl
 Phosphoproteomic data are generated using similar mass spec workflows. The data have a different structure to proteomic data, but "Once the data has been collapsed to phospho-sites, the user can continue the analysis as with any other kind of quantitative data." ([Martinez-Val et al., 2021](https://link.springer.com/protocol/10.1007/978-1-0716-1641-3_6)). **It is essential that the user confirms the prerequesite steps have been required to collapse the data to phospho-sites!** This includes but is not limited to:
 
 - high-confidence localisation (commonly >0.75 - 0.9)
-- remove contaminats and decoys
+- remove contaminants and decoys
 - map each peptide to a single parent protein sequence
 
 If you are unsure, discuss with a colleague who has experience processing mass spec phosphoproteomic data.
