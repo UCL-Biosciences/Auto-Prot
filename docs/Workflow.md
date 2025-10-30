@@ -1,15 +1,72 @@
 # Workflow Overview
 Here we discuss the workflow in more detail, describing the scripts, their roles and some important details.
 
+## Data Processing
+### Gene names
+The pipeline uses any column with "genes" in the name as an index. The pipeline requires unique index values. If any values in this column are blank, they will be renamed "Unknown-gene-X", where X is replaced by a unique number for each gene without a name. If you want to check which row in the original data corresponds to an "Unknown-gene", check `output/data/prots_name_mapping.csv`. This file contains the gene name used throughout the pipeline in the first column `pg.genes`, the original gene name in `pg.genes_original` and the rest of the input data in other columns. You could use e.g. `pg.proteingroups` to find other info that will allow you to identify the protein, even if there is no value in `pg.genes`.
 
-### Testing
-Note the awkward code below is needed at the top of testing scripts. It allows testing scripts to find files in all dirs of the project.
+### Filtering
+#### Pre-filtering
+Some filtering may be required before starting the pipeline. E.g. you may wish to focus on certain proteins or groups of proteins. There may also be contaminants or proteins from different species that you want to remove. This should be done before running the pipeline.
 
-'''import sys
-from pathlib import Path
+#### Filtering proteins with missing values
+We may want to remove proteins that have too many missing values. The number of missing values is determined by the `missingness_threshold` config field. 
 
-# Add project root to sys.path
-sys.path.append(str(Path(__file__).resolve().parents[1]))'''
+#### Normalised Data
+The normalised dataset contains missing values. The PCA, MDS and heatmap functions don't accept missing data, so for these analyses we use only proteins with no missing values. The differential expression calculation accepts missing values so we use the whole normalised dataset. This will lead to different numbers of proteins in the respective analyses, which are shown in plot titles. This is expected behaviour and not a bug.
 
+#### PTM duplications
+In phosphoproteomic data, some software may output multiple rows for the same modified residue if it is observed in different peptide contexts (e.g. due to alternative cleavage sites). These rows often carry identical quantitative values because the same MS evidence underlies them. Since the biological information is redundant, one row is retained and the others are removed to avoid double-counting.
+
+### Subsets
+You might wish to re-run the analysis on specific subsets of samples. For example, you might wish to select on samples from a given timepoint. You can choose whether to analyse any subsets by setting the config field `analyse_subsets` to `true`. You can define which subsets to analyse using the `subset_variable` (which variable to apply the subset too) and `subsets` fields. `subsets` needs a list of values to analyse e.g. ["1", "2"] if you want to analyse separately time points 1 and 2. By default, this will run the whole analysis for each subset. There is no default option to filter based on >1 variable.
+
+### Phosphoproteomic data
+Phosphoproteomic data are generated using similar mass spec workflows. The data have a different structure to proteomic data, but "Once the data has been collapsed to phospho-sites, the user can continue the analysis as with any other kind of quantitative data." ([Martinez-Val et al., 2021](https://link.springer.com/protocol/10.1007/978-1-0716-1641-3_6)). **It is essential that the user confirms the prerequesite steps have been required to collapse the data to phospho-sites!** This includes but is not limited to:
+
+- high-confidence localisation (commonly >0.75 - 0.9)
+- remove contaminants and decoys
+- map each peptide to a single parent protein sequence
+
+If you are unsure, discuss with a colleague who has experience processing mass spec phosphoproteomic data.
+
+## Analysis
+
+## 📝 Generating the HTML Report
+After running your analysis, you can generate a summary report in HTML format using the generate_report.py file.
+
+This report compiles:
+- Metadata from your configuration and version control
+- A table of top proteins ranked by fold change
+- A table of pathway enrichment results (if available)
+- A bubble plot visualisation of enriched pathways
+
+### Usage
+To generate the report:
+
+1. Ensure the following files are available (all default outputs of the main pipeline). By default, it will look in the `outPath` defined in the config and use the full dataset files (i.e. not subsets).
+- report-template.md: A markdown template with placeholders for metadata and results.
+- combined_topLFC.csv: Contains proteins ranked by log2 fold change (used for the "Top proteins" section).
+- combined_top_pathway_enrichment.csv: Contains pathway enrichment results (can be empty or missing).
+- combined_pathway_enrichment_plot.png: A visualisation of enriched pathways.
+- auto-prot-config.json: Contains key configuration values, including outPath and species information.
+- A JSON metadata file defined by json_outPath in the config (auto-updated by the script).
+
+The report is generated by the main pipeline. For more info, see `autoprot/reporting/generate_report.py`
+
+This script:
+- Loads configuration from configs/auto-prot-config.json
+- Substitutes values into the markdown template
+- Converts it to HTML
+- Converts image file paths to actual images so you can share the report
+- Writes the final report to <outPath>/report-out.html
+
+Output
+You will find the report at: `<repo-root>/<outPath>/report-out.html`. All embedded content (tables, images, version hashes) is included in the single HTML file for easy sharing.
+
+## Refs
+Martinez-Val, A., Bekker-Jensen, D.B., Hogrebe, A., Olsen, J.V. (2021). Data Processing and Analysis for DIA-Based Phosphoproteomics Using Spectronaut. In: Cecconi, D. (eds) Proteomics Data Analysis. Methods in Molecular Biology, vol 2361. Humana, New York, NY. https://doi.org/10.1007/978-1-0716-1641-3_6
+
+Välikangas, Tommi, Tomi Suomi, and Laura L. Elo. "A systematic evaluation of normalization methods in quantitative label-free proteomics." Briefings in bioinformatics 19.1 (2018): 1-11.
 
 
