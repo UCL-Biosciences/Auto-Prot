@@ -43,7 +43,11 @@ Create the environment and download dependencies using the information in config
 - For R-based differential expression:  
   `conda env create -f configs/auto-prot-env-limma-windowsOS.yml`
 
-Activate the environment with: `conda activate auto-proteomics`. If you keep getting a message about running `git init`, try running `source activate`. You might have to do that at the start of every session.
+Activate the environment with: `conda activate auto-proteomics`. If you keep getting a message about running `conda init`, try running `source activate`. You might have to do that at the start of every session. If you get a `command not found` error, you will need to run the following code, replacing the path with the [path to conda on your machine](https://stackoverflow.com/questions/37117571/where-does-anaconda-python-install-on-windows):
+```
+source ~/miniconda3/etc/profile.d/conda.sh # Or path to where your conda is
+conda activate some-conda-environment
+```
 
 *Optional* After creating the conda environment, run: `pre-commit install`. This sets up automatic code formatting and linting before each commit.
 
