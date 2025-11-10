@@ -21,7 +21,7 @@ If you think the results look reasonable and you want to make use of them, pleas
 ### Prerequisites
 - a [conda](https://github.com/conda-forge/miniforge) distribution.
 - [git for mac](https://git-scm.com/install/mac) or [Git bash for windows](https://git-scm.com/install/windows).
-- Somewhere to run command line commands (e.g. [VS Code](https://code.visualstudio.com/)).
+- Somewhere to run command line commands. We recommend [VS Code](https://code.visualstudio.com/)) and can't advise on other platforms e.g. conda prompt.
 
 This tool has been tested on Windows and macOS.
 
