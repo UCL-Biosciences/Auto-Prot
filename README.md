@@ -62,7 +62,7 @@ Running `python main.py` will generate:
 - Differential expression tables
 - An html report summarising the results. An example generated from simulated data is available in `../docs/`
 
-These are saved in `/output`. An example of the report generated is in [`report/example-report-out.html`](https://github.com/UCL-Biosciences/Auto-Prot/blob/staging/report/example-report-out.html)
+These are saved in `/output`. An example of the report generated is in [`report/example-report-out.html`](https://github.com/UCL-Biosciences/Auto-Prot/blob/staging/report/example-report-out.html) - if it doesn't show properly in the repo, try downloading and opening locally.
 
 ## 📂 Project Structure
 ```
