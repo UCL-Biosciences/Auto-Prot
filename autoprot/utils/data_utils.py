@@ -324,11 +324,13 @@ def combine_plots(search_path, search_term, output_dir):
     for img in images:
         combined_image.paste(img, (0, y_offset))
         y_offset += img.height
-
+    
+    # reduce colour depth to reduce file size
+    combined_image = combined_image.convert("P", palette=Image.ADAPTIVE)
 
     # Save the combined image
     combined_image_path = os.path.join(output_dir, f"plots/combined_{search_term}_plot.png")
-    combined_image.save(combined_image_path)
+    combined_image.save(combined_image_path, optimize = True)
     print(f"Combined image saved to {combined_image_path}")
     return combined_image_path
 
@@ -409,3 +411,22 @@ def combine_csv_files(
 
     combined_df.to_csv(output_filename, index=False)
     print(f"Combined file saved at: {output_filename}")
+
+
+def tidy_up_files(outPath = outPath):
+    """
+    Remove temporary files created during processing.
+
+    Specifically removes:
+    - 'prots_name_mapping.csv' from the 'data' directory.
+    """
+    files_to_remove = [
+        os.path.join(outPath, ""),
+        os.path.join(outPath, ""),
+        os.path.join(outPath, ""),
+        os.path.join(outPath, ""),
+        os.path.join(outPath, ""),
+        os.path.join(outPath, ""),
+        os.path.join(outPath, ""),
+    ]
+        
