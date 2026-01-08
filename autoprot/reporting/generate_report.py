@@ -16,7 +16,7 @@ from autoprot.reporting.image_conversion import inline_base64_images
 from autoprot.utils.check_env import get_repo_root
 
 
-def generate_report_html():
+def generate_report_html(config = None):
     """
     Generate an HTML report by populating a markdown template with outputs from the analysis.
 
@@ -27,25 +27,14 @@ def generate_report_html():
     Git commit hashes of the template and report-generation script are also recorded in a JSON metadata file.
 
     Args:
-        report_MD (str): Path to the markdown template file.
-        report_html (str): Path where the final HTML report will be written.
-        top_LFC_prots_path (str): Path to CSV containing top proteins by log fold change.
-        enrichment_path (str): Path to CSV containing pathway enrichment results.
-        enrichment_plot_path (str): Path to image file of the enrichment plot (e.g., PNG).
-        json_out (str): Path to a JSON file where report metadata and script/template versions are saved.
         config (dict): Configuration dictionary with keys including:
             - "outPath" (str): Path to output directory used for resolving image paths.
 
     Returns:
         None. Writes HTML report to file and updates metadata JSON.
     """
-        ### find repo root
+    ### find repo root
     REPO_ROOT = get_repo_root()
-    ### path to config file containing key info - must be present!
-    config_path = os.path.join(REPO_ROOT, "configs/auto-prot-config.yaml")
-    ### Read in configuration data, stored in a json
-    with open(config_path) as f:
-        config = yaml.safe_load(f)
 
     #### set location of report template and where html will be stored
     report_MD = os.path.join(REPO_ROOT, "./report/report-template.md")
@@ -156,4 +145,9 @@ def generate_report_html():
 
 
 if __name__ == "__main__":
-    generate_report_html()
+    REPO_ROOT = get_repo_root()
+    config_path = os.path.join(REPO_ROOT, "configs/auto-prot-config.yaml")
+    ### Read in configuration data, stored in a json
+    with open(config_path) as f:
+        config = yaml.safe_load(f)
+    generate_report_html(config)
