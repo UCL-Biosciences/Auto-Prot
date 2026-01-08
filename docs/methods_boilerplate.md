@@ -8,7 +8,7 @@ General summary
 _We used auto-prot version X (REF to auto-prot) to process the protein abundances and estimate differences between groups. Full details are given at https://github.com/UCL-Biosciences/Auto-Prot._ 
 
 Processing
-_After converting zero values to missing, we removed proteins not observed in at least XX% in all groups, leaving XX proteins. We then log2-transformed, normalised the data using the R package vsn (version XX) and imputed with the CollaborativeFilteringTransformer function from python package pimms (version XX)/HistGradientBoostingRegressor from the python package scikit-learn (version XX)._
+_After converting zero values to missing, we removed proteins not observed in at least XX% of samples in all groups, leaving XX proteins. We then log2-transformed, normalised the data using the R package vsn (version XX) and imputed with the CollaborativeFilteringTransformer function from python package pimms (version XX)/HistGradientBoostingRegressor from the python package scikit-learn (version XX)._
 
 Clustering
 _To understand relationships among samples, we generated PCA and MDS plots using scikit-learn (version XX) and scipy (vXX). We made a heatmap showing relationships among samples and proteins using the clustermap function from sseaborn (vXX). Proteins with missing data were not included in making these plots._
