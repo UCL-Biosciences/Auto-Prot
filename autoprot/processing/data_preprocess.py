@@ -11,7 +11,6 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 import sklearn.ensemble
-from pimmslearn.sklearn.cf_transformer import CollaborativeFilteringTransformer
 from sklearn.experimental import enable_iterative_imputer  # noqa: F401
 from sklearn.impute import IterativeImputer  # noqa: F401
 
@@ -202,6 +201,8 @@ def impute_pimms_cf(
     -------
     >>> df_imputed = impute_pimms_cf(raw_df, n_factors=50, epochs_max=30, cuda=True)
     """
+    # have to import here because pimms not available on mac OS
+    from pimmslearn.sklearn.cf_transformer import CollaborativeFilteringTransformer
     # 1. Stack to long form
     df.index.name = "sample_id"
     df.columns.name = "protein_id"
@@ -312,11 +313,15 @@ def process_prot_data(df, config, outPath, metadata):
     df_norm_t.columns = df_norm_t.columns.astype(str)
     #### impute ####
     if config["imputation_method"] == "hist_grad_boost":
+        
         print("imputing with histogram gradient booster")
         df_imp = impute_prot_data_histgradboost(df_filtered, df_norm_t)
+
     elif config["imputation_method"] == "pimms_collabfilter":
+        
         print("imputing with pimms: collaborative filtering")
         df_imp = impute_pimms_cf(df=df_log2.T)
+        
     return {
         "df": df,
         "df_log2": df_log2,

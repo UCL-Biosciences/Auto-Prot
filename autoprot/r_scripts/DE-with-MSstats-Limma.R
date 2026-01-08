@@ -22,6 +22,7 @@
 ## -------------------------------
 ## Locate repo root
 ## -------------------------------
+### if this doesn't work, set your wd (setwd()) to the Auto-Prot dir
 find_repo_root <- function(start = getwd()) {
   cur <- normalizePath(start, winslash = "/", mustWork = TRUE)
   repeat {
@@ -156,7 +157,7 @@ keep <- apply(pg_full[lfq_cols], 1, function(x) {
 pg_full <- pg_full[keep, ]
 
 ### write protein groups to file so they can be used with auto-prot
-write.csv(pg_full,
+write.csv(pg_full %>% dplyr::rename(Genes = Protein.IDs),
           file.path(repo_root, "input/data/proteindata.csv"),
           row.names = F)
 

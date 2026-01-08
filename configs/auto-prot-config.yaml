@@ -24,6 +24,7 @@ df_to_use: df_imp              # Which dataset to analyse:
                                 #   "df_log2" (log2 transformed)
                                 #   "df_norm" (normalised)
                                 #   "df_imp" (normalised + imputed)
+z_score_for_clustering: true    # Whether to z-score data for PCA, MDS and heatmap clustering (true/false)
 
 # ---- SPECIES & ANNOTATION ----
 species: hsapiens              # Species for pathway enrichment: e.g. hsapiens, mmusculus, etc.
@@ -45,7 +46,7 @@ DE_full_formula: "~ treatment" # Formula for DE on full dataset (R-style model f
 DE_subset_formula: "~ treatment" # Formula for DE on subsets
 
 # ---- VISUALISATION CUT-OFFS ----
-LFC_plot_p_or_FDRp: Log10_FDR_P_Value # Which p-value metric to use on volcano plot: "Log10_P_Value" or "Log10_FDR_P_Value"
+LFC_plot_p_or_FDRp: Log10_FDR_P_Value # Which p-value metric to use on volcano plot: "Log10_unadjusted_p_Value" or "Log10_FDR_P_Value"
 LFC_threshold: 1               # Log2 fold-change threshold for highlighting points in volcano plot
 FDR_threshold: 0.05            # FDR cut-off for colouring points
 

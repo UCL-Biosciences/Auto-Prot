@@ -25,9 +25,9 @@ def load_data(file_path):
         ValueError: If the file extension is not `.csv` or `.tsv`.
     """
     if file_path.endswith(".csv"):
-        df = pd.read_csv(file_path)
+        df = pd.read_csv(file_path, index_col=None)
     elif file_path.endswith(".tsv"):
-        df = pd.read_csv(file_path, sep="\t")
+        df = pd.read_csv(file_path, sep="\t", index_col=None)
     else:
         raise ValueError("Unsupported file format. Please use CSV or TSV.")
 
@@ -42,9 +42,9 @@ def load_data(file_path):
     # Strip whitespace from string entries (cell values)
     df = df.map(lambda x: x.strip() if isinstance(x, str) else x)
 
-    if "proteindata" in file_path:
-        # Set the first column as the index
-        df.set_index(df.columns[0], inplace=True)
+    # if "proteindata" in file_path:
+    #     # Set the first column as the index
+    #     df.set_index(df.columns[0], inplace=True)
 
     return df
 
@@ -61,6 +61,13 @@ def make_outdir(out_path, make_subdirs=True):
     Side effects:
         Creates directories on the file system. Prints status messages.
     """
+    ### some previous outputs are brought into the report unintentionally
+    ### remove output dir if it exists
+    if os.path.exists(out_path):
+        
+        import shutil
+        shutil.rmtree(out_path) # remove directory and all its contents
+
     if not os.path.exists(out_path):
 
         try:

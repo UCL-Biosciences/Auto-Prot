@@ -10,7 +10,9 @@ import warnings
 import pandas as pd
 import yaml
 
-from autoprot.analysis.all_samples import generate_heatmap, generate_MDS, generate_pca
+from sklearn.preprocessing import StandardScaler
+
+from autoprot.analysis.all_samples import generate_heatmap, generate_MDS, generate_pca, run_clustering_analysis
 from autoprot.analysis.pairwise import enrichment_analysis, make_volcano
 from autoprot.utils.check_env import get_repo_root
 from autoprot.utils.data_utils import combine_csv_files, combine_plots
@@ -38,13 +40,14 @@ def run_analysis(
     sample-level visualisations and pairwise comparisons (differential abundance, volcano plot, pathway enrichment).
 
     The pipeline includes:
+        - Optionally z-score transforming the data for clustering
         - PCA, MDS, and heatmap generation for all samples
         - Pairwise differential abundance analysis using limma (via an R script)
         - Optional functional enrichment analysis using g:Profiler. Default is GO
         - Aggregation of plots and results into summary files
 
     Args:
-        df (pd.DataFrame): Protein abundance data (columns = samples, rows = proteins or features).
+        df (pd.DataFrame): Protein abundance data (samples as rows, proteins as columns).
         metadata (pd.DataFrame): Sample metadata, including 'sample_rep' and 'treatment' columns.
         output_dir (str): Path to directory where outputs (plots, data files) will be written.
         config (dict): Configuration parameters for differential analysis and plotting, including:
@@ -62,22 +65,17 @@ def run_analysis(
     results = {}
 
     ##### Analyses for all treatment groups #####
+    print(df.head())
 
-    # Perform PCA and save results
-    print("Performing PCA...")
-    pca_results = generate_pca(df.T, output_dir, metadata=metadata)
-    results["pca"] = pca_results
+    # Perform clustering (PCA, MDS, heatmap) and save results
+    if config.get("z_score_for_clustering"):
+        scaler = StandardScaler().set_output(transform="pandas")
+        df_scaled = scaler.fit_transform(df)
+        results = run_clustering_analysis(df = df_scaled, metadata = metadata, output_dir = output_dir)
+    else:
+        results = run_clustering_analysis(df = df, metadata = metadata, output_dir = output_dir)
 
-    # Perform MDS and save results
-    print("Performing MDS...")
-    mds_coords_df = generate_MDS(df.T, output_dir, metadata=metadata)
-    results["mds"] = mds_coords_df
-
-    # Generate and save heatmap
-    print("Generating heatmap...")
-    df_heatmap = generate_heatmap(df, output_dir, metadata=metadata)
-    results["heatmap"] = df_heatmap
-
+    print(df.head())
     ###### Pairwise Analyses #####
     # if there are > 2 treatment groups, pairwise analyses will have to be run separately for each pair of treatments
     treatment_pairs = list(itertools.combinations(metadata["treatment"].unique(), 2))

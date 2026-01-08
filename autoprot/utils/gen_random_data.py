@@ -56,7 +56,13 @@ def generate_protein_data(
         .unique()
         .tolist()
     )
-    sampled_genes = random.sample(genes, n_genes)
+    # array so that it can be indexed using a list
+    sampled_genes = np.array(random.sample(genes, n_genes))
+
+    # convert some gene names to empty string
+    # simulating case where some genes are not annotated and don't have names
+    index_empty =  random.sample(range(n_genes), k = int(n_genes/20) )
+    sampled_genes[ index_empty] = ""
 
     # Generate data
     gene_means = np.random.uniform(3, 5, size=n_genes)

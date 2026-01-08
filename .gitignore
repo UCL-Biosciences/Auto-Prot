@@ -12,6 +12,8 @@ renv*
 renv/*
 r_libs/
 
+r_libs/*
+
 # Bytecode
 __pycache__/
 *.pyc

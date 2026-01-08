@@ -96,7 +96,7 @@ def make_volcano(
         ),
         axis=1,
     )
-    diffExpr_path = os.path.join(output_dir, "data", pair_name, "limma_output.csv")
+    diffExpr_path = os.path.join(output_dir, "data", pair_name, f"{pair_name}_limma_output.csv")
     diffExpr_df.to_csv(diffExpr_path, index=True)
     ### Create volcano plot
     plot_title = (
