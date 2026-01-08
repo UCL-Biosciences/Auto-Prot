@@ -28,6 +28,8 @@ Run the R script with `conda run -n r-env-compare-msstats Rscript autoprot/r_scr
 
 All of the outputs are saved to file.
 
+**Note** about running this. I have had some problems with installing r libraries for this. Might need some manual tweaking. I've uploaded the notebook to `.../autoprot/reporting/compare-autoprot-msstats.ipynb` if you want to look at the output. If you want to try it your self and it's not working, get in touch.
+
 ### Run Auto-Prot twice
 We want to compare Limma-in-R and Auto-Prot twice; once with just log-transformed data where we know the results should be the same, and once after applying normalisation (both VSN) and imputation (different in Limma-in-R and Auto-Prot). This allows us to see where differences arise. Therefore, we run Auto-Prot twice, once to calculate DE with log-transformed data and once with imputed data.
 

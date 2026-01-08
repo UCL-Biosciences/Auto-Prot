@@ -18,7 +18,7 @@ import autoprot.processing.data_processing as dp
 # More detail in relevant files and on github.
 import autoprot.utils.check_env as env
 from autoprot.utils.data_io import make_outdir
-from autoprot.utils.data_utils import get_subset
+from autoprot.utils.data_utils import get_subset, tidy_up_files
 from autoprot.reporting.generate_report import generate_report_html
 
 
@@ -129,9 +129,15 @@ def main():
         print("All subsets processed successfully.")
 
     print("generating html report...")
-    generate_report_html()
+    generate_report_html(config = config)
+
+    print("Analysis complete. Outputs saved to output directory. Tidying up intermediate files")
+    
+    # remove intermediate files
+    tidy_up_files(outPath)
 
 
+    
 #### If executed in main script, run the function to produce the output
 if __name__ == "__main__":
     main()

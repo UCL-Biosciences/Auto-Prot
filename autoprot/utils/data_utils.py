@@ -2,6 +2,7 @@
 ## general functions for data handling
 
 import fnmatch
+import glob
 import os
 import warnings
 
@@ -111,10 +112,10 @@ def normalise_column_names(df, file_path=None, outPath = None, config=None):
         index_series_original = df.index.to_series().astype("object")  ## 'object' allows strings and NAs
 
         # Strip whitespace and handle empty strings
-        index_series = index_series_original.str.strip()
+        index_series = index_series_original.astype(str).str.strip()
 
         # Find NaN values in index
-        nan_mask = index_series.isna() | (index_series == "")
+        nan_mask = index_series.isna() | (index_series == "") | (index_series == "nan")
 
         # Replace NaNs with "Unknown-gene-N"
         index_series[nan_mask] = [f"Unknown-gene-{i+1}" for i in range(nan_mask.sum())]
@@ -324,11 +325,13 @@ def combine_plots(search_path, search_term, output_dir):
     for img in images:
         combined_image.paste(img, (0, y_offset))
         y_offset += img.height
-
+    
+    # reduce colour depth to reduce file size
+    combined_image = combined_image.convert("P", palette=Image.ADAPTIVE)
 
     # Save the combined image
     combined_image_path = os.path.join(output_dir, f"plots/combined_{search_term}_plot.png")
-    combined_image.save(combined_image_path)
+    combined_image.save(combined_image_path, optimize = True)
     print(f"Combined image saved to {combined_image_path}")
     return combined_image_path
 
@@ -409,3 +412,31 @@ def combine_csv_files(
 
     combined_df.to_csv(output_filename, index=False)
     print(f"Combined file saved at: {output_filename}")
+
+
+def tidy_up_files(outPath):
+    """
+    Remove temporary files created during processing.
+
+    Specifically removes:
+    - 'prots_name_mapping.csv' from the 'data' directory.
+    """
+    files_to_remove = [
+        glob.glob(os.path.join(outPath, "full_dataset/data/*/limma_output.csv")),
+        glob.glob(os.path.join(outPath, "full_dataset/data/*/prots.csv")),
+        glob.glob(os.path.join(outPath, "full_dataset/data/*/top_20_by_LFC.csv")),
+    ]
+    
+    # glob returns a list of files so files_to_remove is currently a list of lists
+    # flatten the list of lists
+    flattened_files_to_remove = []
+    for sublist in files_to_remove: # loop through list of lists
+        for file in sublist: # take each file
+            flattened_files_to_remove.append(file)
+        
+    # remove each file if it exists
+    for file in flattened_files_to_remove:
+        if os.path.exists(file):
+            os.remove(file)
+
+    print("Temporary files removed.")

@@ -147,7 +147,7 @@ To make the code work, you must enter the correct parameters and combination of 
 
 #### Figures
 
-**LFC_plot_p_or_FDRp.** Which p-value metric to use on volcano plot. Options: "Log10_P_Value", "Log10_FDR_P_Value" (default). If there are no proteins meeting thresholds for LFC and FDR p-value, you might want to use an unadjsuted (i.e. less conservative) p-value. Be cautious.
+**LFC_plot_p_or_FDRp.** Which p-value metric to use to define differential expression, including as y-axis on volcano plot. Options: "Log10_unadjusted_p_Value", "Log10_FDR_P_Value" (default). If there are no proteins meeting thresholds for LFC and FDR p-value, you might want to use an unadjsuted (i.e. less conservative) p-value. Be cautious.
 
 **LFC_threshold.** Log2 fold-change threshold for highlighting points. Default: 1
 
