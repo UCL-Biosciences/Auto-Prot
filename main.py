@@ -129,7 +129,7 @@ def main():
         print("All subsets processed successfully.")
 
     print("generating html report...")
-    generate_report_html()
+    generate_report_html(config = config)
 
     print("Analysis complete. Outputs saved to output directory. Tidying up intermediate files")
     

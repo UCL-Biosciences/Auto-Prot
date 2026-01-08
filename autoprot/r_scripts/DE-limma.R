@@ -33,6 +33,25 @@ if (!requireNamespace("limma", quietly = TRUE)) {
 }
 
 ### load package
+find_repo_root <- function(start = getwd()) {
+  cur <- normalizePath(start, winslash = "/", mustWork = TRUE)
+  repeat {
+    if (file.exists(file.path(cur, ".git"))) return(cur)
+    parent <- dirname(cur)
+    if (parent == cur) stop("No git repository found above ", start)
+    cur <- parent
+  }
+}
+
+repo_root <- find_repo_root()
+
+# Define project-local library
+proj_lib <- file.path(repo_root, "r_libs")
+.libPaths(c(proj_lib, .libPaths()))
+
+if (!requireNamespace("limma", quietly = TRUE)) {
+  BiocManager::install("limma", lib = proj_lib, version = "3.20")
+}
 library(limma)
 
 # run_limma.R

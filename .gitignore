@@ -10,6 +10,7 @@ __pycache__/
 .Rprofile
 renv*
 renv/*
+r_libs/
 
 r_libs/*
 
