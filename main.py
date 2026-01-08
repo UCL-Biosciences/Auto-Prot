@@ -5,7 +5,7 @@
 
 ## Import libraries
 import os
-import subprocess
+import sys
 
 import yaml
 
@@ -20,6 +20,8 @@ import autoprot.utils.check_env as env
 from autoprot.utils.data_io import make_outdir
 from autoprot.utils.data_utils import get_subset, tidy_up_files
 from autoprot.reporting.generate_report import generate_report_html
+from autoprot.utils.metadata_recording import log_run_metadata, finalise_run_metadata
+
 
 
 ##### Define main function for creating outputs
@@ -135,6 +137,21 @@ def main():
     
     # remove intermediate files
     tidy_up_files(outPath)
+
+    ## Record run metadata
+    input_files = [proteinDataPath, metadataPath, config_path]
+
+    # Start logging
+    metadata_file, metadata = log_run_metadata(input_files, libs, sys.argv)
+
+    # ---- Your pipeline code here ----
+    print("Running pipeline...")
+    # Example: process data, generate HTML, etc.
+
+    # Finalize metadata
+    finalise_run_metadata(metadata_file, metadata)
+    print(f"Metadata logged to {metadata_file} and run_diff.patch (if dirty).")
+
 
 
     
