@@ -22,6 +22,7 @@
 ## -------------------------------
 ## Locate repo root
 ## -------------------------------
+### if this doesn't work, set your wd (setwd()) to the Auto-Prot dir
 find_repo_root <- function(start = getwd()) {
   cur <- normalizePath(start, winslash = "/", mustWork = TRUE)
   repeat {
@@ -35,22 +36,43 @@ find_repo_root <- function(start = getwd()) {
 repo_root <- find_repo_root()
 
 # Define project-local library
-proj_lib <- file.path(repo_root, "output/r_libs")
+proj_lib <- file.path(repo_root, "r_libs")
 if (!dir.exists(proj_lib)) dir.create(proj_lib, recursive = TRUE)
 
 # Prepend to library search path
 .libPaths(c(proj_lib, .libPaths()))
 
-# Ensure vsn is available in that local path
-packages = c("BiocManager", "dplyr", "tidyr", "renv",
-             "vsn", "MSstats", "limma", "MSnbase", "imputeLCMD", "KernSmooth")
+options(repos = BiocManager::repositories())
 
-for (pkg in packages) {
-  if (!requireNamespace(pkg, quietly = TRUE)) {
-      BiocManager::install(pkg,
-      lib = proj_lib, ask = FALSE, update = FALSE)
+## install required packages (if not available)
+print("installing packages")
+
+cran_pkgs <- c(
+  "dplyr", "tidyr", "ggplot2", "MASS", "Matrix", "KernSmooth",
+  "data.table", "plyr", "htmltools", "lme4", "statmod",
+  "survival", "plotly", "ggrepel", "gplots"
+)
+
+
+for (p in cran_pkgs) {
+    if (!requireNamespace(p, quietly = TRUE)) {
+      message(sprintf("Installing CRAN package '%s' into %s ...", p, proj_lib))
+      install.packages(p, lib = proj_lib, dependencies = TRUE)
+    }
   }
-}
+
+
+bioc_pkgs <- c(
+  "vsn", "MSstats", "limma", "MSnbase", "mzR",
+  "BiocGenerics", "S4Vectors", "Biobase", "IRanges", "preprocessCore"
+)
+
+for (p in bioc_pkgs) {
+    if (!requireNamespace(p, quietly = TRUE)) {
+      message(sprintf("Installing CRAN package '%s' into %s ...", p, proj_lib))
+      BiocManager::install(p, lib = proj_lib, ask = FALSE, update = FALSE, dependencies = TRUE)
+    }
+  }
 
 ## -------------------------------
 ## Load packages
@@ -82,6 +104,7 @@ out_dir = file.path(repo_root, "output/compare-msstats"); dir.create(out_dir, re
 ## -------------------------------
 ## Download data
 ## -------------------------------
+print("downloading data")
 evidence_url <- "https://zenodo.org/record/4896554/files/MaxQuant_Evidence.tabular"
 pg_url       <- "https://zenodo.org/record/4896554/files/MaxQuant_proteingroups.tabular"
 
@@ -92,6 +115,7 @@ pg_full  <- read.delim(pg_url, stringsAsFactors = FALSE)
 ## -------------------------------
 ## Basic filtering
 ## -------------------------------
+print("processing data")
 pg_full <- pg_full %>%
   filter(
     Potential.contaminant != "+",
@@ -133,7 +157,7 @@ keep <- apply(pg_full[lfq_cols], 1, function(x) {
 pg_full <- pg_full[keep, ]
 
 ### write protein groups to file so they can be used with auto-prot
-write.csv(pg_full,
+write.csv(pg_full %>% dplyr::rename(Genes = Protein.IDs),
           file.path(repo_root, "input/data/proteindata.csv"),
           row.names = F)
 
@@ -143,11 +167,10 @@ write.csv(pg_full,
 ## -------------------------------
 head(pg_full[lfq_cols])
 
-
 ## -------------------------------
 ## MS stats analysis
 ## -------------------------------
-
+print("run MS Stats")
 # Build annotation: Raw.file must match evi$Raw.file exactly
 # Columns required: Raw.file, Condition, BioReplicate, Run
 msstats_meta <- evi_full %>%
@@ -220,6 +243,7 @@ write.csv(metadata,
 ## -------------------------------
 ## Limma analysis
 ## -------------------------------
+print("running limma")
 # Select LFQ columns
 lfq <- pg_full[, lfq_cols]
 rownames(lfq) <- pg_full$Protein.IDs
@@ -268,3 +292,5 @@ fit2 <- eBayes(fit2)
 res2 <- topTable(fit2, adjust="BH", number=Inf)
 res2[order(rownames(res2)), ] %>% head
 write.csv(res2, file.path(out_dir, "Rstudio-limma-out-imputed.csv"))
+
+print("finished creating limma and MS Stats output")

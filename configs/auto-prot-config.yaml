@@ -46,7 +46,7 @@ DE_full_formula: "~ treatment" # Formula for DE on full dataset (R-style model f
 DE_subset_formula: "~ treatment" # Formula for DE on subsets
 
 # ---- VISUALISATION CUT-OFFS ----
-LFC_plot_p_or_FDRp: Log10_FDR_P_Value # Which p-value metric to use on volcano plot: "Log10_P_Value" or "Log10_FDR_P_Value"
+LFC_plot_p_or_FDRp: Log10_FDR_P_Value # Which p-value metric to use on volcano plot: "Log10_unadjusted_p_Value" or "Log10_FDR_P_Value"
 LFC_threshold: 1               # Log2 fold-change threshold for highlighting points in volcano plot
 FDR_threshold: 0.05            # FDR cut-off for colouring points
 

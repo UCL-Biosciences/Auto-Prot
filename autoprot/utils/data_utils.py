@@ -111,10 +111,10 @@ def normalise_column_names(df, file_path=None, outPath = None, config=None):
         index_series_original = df.index.to_series().astype("object")  ## 'object' allows strings and NAs
 
         # Strip whitespace and handle empty strings
-        index_series = index_series_original.str.strip()
+        index_series = index_series_original.astype(str).str.strip()
 
         # Find NaN values in index
-        nan_mask = index_series.isna() | (index_series == "")
+        nan_mask = index_series.isna() | (index_series == "") | (index_series == "nan")
 
         # Replace NaNs with "Unknown-gene-N"
         index_series[nan_mask] = [f"Unknown-gene-{i+1}" for i in range(nan_mask.sum())]

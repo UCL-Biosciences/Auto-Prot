@@ -1,5 +1,13 @@
 # Proteomics Report
-This repository contains the Auto-Proteomics analysis pipeline for generating standardised reports from protein abundance datasets.
+This repository contains the Auto-Proteomics analysis pipeline for generating standardised reports from protein intensity datasets. Welcome.
+
+The pipeline is still in testing. Staging is the best branch to use but there might still be some things to fix. Would only suggest trying this if you know python and/or proteomics reasonably well :') clone the repo using the instructions below, then run `git checkout staging` to change to the staging branch.
+
+This tool produces common outputs from MS proteomic and phosphoproteomic data. We want to make this possible for people with limited coding experience by requiring only some preparation steps and one line of code to run the pipeline. Parameters are determined in a "config" file so you don't need to look through the code to change things.
+
+By producing common exploratory outputs automatically, we hope you can spend more time thinking about your data and results. Note, this pipeline produces results automatically without thinking about the idiosyncracies of your beautiful, unique dataset. **This should never be used without a full evaluation and validation of the results.** Best practice would be to run a similar analysis with your favourite software or collaborator to confirm our results are sensible.
+
+If you think the results look reasonable and you want to make use of them, please review the tool carefully. We hope the docs give you an idea of what we are doing and why. We have tried to annotate the code so that you can also understand how the pipeline works. If you would like further info or to suggest an improvement to the pipeline, please get in touch. Contact details below.
 
 ## Features
 - Processes mass spec-generated protein abundance data.
@@ -11,125 +19,107 @@ This repository contains the Auto-Proteomics analysis pipeline for generating st
 `stable` branch is the most tested and should work reliably. If not, please let me know! It would be best to quick start using that branch. `staging` has new features that haven't been fully tested. Other branches are for developing new features.
 
 ### Prerequisites
-- [Python 3.8+](https://www.python.org/downloads/)
-- [conda](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html)
-- Somewhere to run command line commands (e.g. VS Code).
+- a [conda](https://github.com/conda-forge/miniforge) distribution.
+- [git for mac](https://git-scm.com/install/mac) or [Git bash for windows](https://git-scm.com/install/windows).
+- Somewhere to run command line commands. We recommend [VS Code](https://code.visualstudio.com/)) and can't advise on other platforms e.g. conda prompt.
+
+This tool has been tested on Windows and macOS.
 
 ### 1. Clone the repository
-`git clone https://github.com/jdgilbert245/05-Auto-Prot`
+`git clone https://github.com/UCL-Biosciences/Auto-Prot`
 
 ### 2. Navigate into the project
-`cd /path/to/where/you/downloaded/repo`
+`cd Auto-Prot`
+
+**Optional** switch to staging branch: `git checkout staging`.
+
+This is important - it allows you to make changes to the config file withour your setup being sent to the main repo: `git update-index --skip-worktree configs/auto-prot-config.yaml`
 
 ### 3. Install dependencies for your operating system
-Create the environment and download dependencies using the information in configuration files: `conda env create -f configs/auto-prot-env-YOUR-OS-HERE.yml`. Which version you use will depend on whether you are using a Windows machine or a Mac.
-Acivate the environment with: `conda activate auto-proteomics`
+Create the environment and download dependencies using the information in configuration files: `conda env create -f configs/auto-prot-env-YOUR-OS-HERE.yml`. Which version you use will depend on whether you are using a Windows machine or a Mac. You will need to create environments for the general pipeline and the R functions:
+
+- For general processing:  
+  `conda env create -f configs/auto-prot-env-windowsOS.yml`
+- For R-based differential expression:  
+  `conda env create -f configs/auto-prot-env-limma-windowsOS.yml`
+
+Activate the environment with: `conda activate auto-proteomics`. If you keep getting a message about running `conda init`, try running `source activate`. You might have to do that at the start of every session. If you get a `command not found` error, you will need to run the following code, replacing the path with the [path to conda on your machine](https://stackoverflow.com/questions/37117571/where-does-anaconda-python-install-on-windows):
+```
+source ~/miniconda3/etc/profile.d/conda.sh # Or path to where your conda is
+conda activate some-conda-environment
+```
 
 *Optional* After creating the conda environment, run: `pre-commit install`. This sets up automatic code formatting and linting before each commit.
 
 ### 4. Generate outputs
 #### Input
-Make sure your data are in `data/proteindata.csv` and `data/metadata.csv` (requirements below). If you don't add your files to the `data` folder, you can generate an example dataset by running `python utils/gen_random_data.py`
+If you don't add your files to the `data` folder, you can generate an example dataset by running `python autoprot/utils/gen_random_data.py`. This will give a quick picture of how the input data should be formatted. Make sure your data are in `data/proteindata.csv` and `data/metadata.csv` (requirements given in /docs/Workflow.md). 
 
 #### Generate output
 To generate the output, you can run `python main.py`.
 
-### 5. Generate the report
-To generate an html report, we need a new conda environment. First deactivate the active environment with `conda deactivate`. Then make the environment for converting the template to an html report: `conda env create -f configs/auto-prot-env-markdown-YOUR-OS-HERE.yml`. Activate it `conda activate markdown`.
+#### Outputs
+Running `python main.py` will generate:
+- Normalised protein abundance tables
+- Summary statistics
+- PCA and clustering plots
+- Differential expression tables
+- An html report summarising the results. An example generated from simulated data is available in `../docs/`
 
-Now we generate the report (from the main directory): `python utils/generate_report.py`. This will save the report in `output/report-out.html`. Note, the report contains all pairwise comparisons for volcano plots and pathway enrichment - if you have lots of treatments, it might get messy :').
-
+These are saved in `/output`. An example of the report generated is in [`report/example-report-out.html`](https://github.com/UCL-Biosciences/Auto-Prot/blob/staging/report/example-report-out.html) - if it doesn't show properly in the repo, try downloading and opening locally.
 
 ## 📂 Project Structure
+```
 /docs                 # Documentation files  
 /report            # report template
-/utils             # Processing & analysis scripts  
+/autoprot             # Processing & analysis scripts  
 /main.py           # Python script for generating outputs  
-utils/generate_report.py   # Script to generate HTML report  
-/input/data                # input data. By default: human_genes.txt. Optional: run utils/gen_random_data.py to generate additional proteindata.csv and metadata.csv in input/data
-/output              # plots and tables generated by main.ipynb. report saved as output/report-out.html
+/input/data                # input data. By default: `human_genes.txt`. Optional: `run autoprot/utils/gen_random_data.py` to generate additional proteindata.csv and metadata.csv in input/data
+/output              # plots and tables generated by `main.py`. report saved as output/report-out.html
+```
 
 ## 📝 Analysis Description
-For me details on the analysis and calculations, see `docs/Workflow.md`.
+For more details on the analysis and calculations, see `docs/Workflow.md` and `docs/stats_details.md`/
+
+## Contact and feedback
+We want this tool to be useful and accessible for as many people as possible - comments and feedback are very welcome. Please send to [james.d.gilbert@ucl.ac.uk](mailto:james.d.gilbert@ucl.ac.uk). 
+
+For help, please first open an issue and send an email if required.
 
 ## ⚙️ Configuration
-Set up config file for parameters used in the analysis pipeline.
-
-The template for the report can be edited: `report/report-template.md`
+There is a configuration (config) file that allows the user to control lots of parts of the analysis without editing any code. For instructions, see the workflow document. Changes to the config file are ignored (config file in .gitignore) so the default config doesn't get overwritten and continues to work when downloaded.
 
 ## 🤝 Contributing
-Set up contributions docs...
 
-## 📧 Feedback
-Suggestions and feedback are very welcome. Please send to james.d.gilbert@ucl.ac.uk
+Contributions are welcome!
+
+If you’d like to contribute a bug fix, feature, or improvement:
+1. Fork this repository and create a new branch from `staging`
+2. Make your changes
+3. Ensure code passes `pre-commit` checks (run `pre-commit run --all-files`)
+4. Open a pull request to the `staging` branch with a short description of your changes
+
+Please note:
+- All code should be commented and use informative function/variable names
+
+#### Project Structure and Packaging
+This project uses a standard Python package layout and is installable via `pip`. The core code lives in the `autoprot/` directory and is defined as a package using `pyproject.toml`. Note: The package is not published on PyPI. Users must clone the repository and install it locally. It can also be cloned and used via `python main.py` - pip installing is not required.
+
+#### Building for distribution
+If you update the package structure or plan to share the repo: `python -m build` will generate `.tar.gz` and `.whl` files in the `dist/` directory. These are needed for `pip install .`
+
+#### Testing
+The project uses pytest for testing. Test files are located in the tests/ directory and follow standard pytest conventions.
+
+To run all tests: `pytest`. If you’re developing new features or modifying existing functionality, please include corresponding tests to ensure the code remains correct and maintainable. Tests should cover both typical and edge cases where applicable.
+
+To see the test coverage, run `pytest --cov=autoprot --cov-report=term-missing` from the main folder. This will show coverage for the autoprot package and highlight any lines not exercised by tests.
 
 ## Further Analysis
-The outputs generated by this tool are exploratory only. We recommend a thourough examination of the data using the code in this repository or with other available tools. E.g.:
+The outputs generated by this tool are exploratory only. We recommend a thorough examination of the data using the code in this repository or with other available tools. E.g.:
 - [MS-DAP](https://pubs.acs.org/doi/10.1021/acs.jproteome.2c00513) R package
+- [proDA](https://github.com/const-ae/proDA?tab=readme-ov-file) seems a good option if you have a lot of missing values or want to explicitly include missingness in your calculations.
 - [AlphaPepStats](https://github.com/MannLabs/alphapept) Python package
-- 
+- [Perseus](https://maxquant.net/perseus/) platform has a GUI with lots of functionality and doesn't require any coding.
   
-********* The rest will go somewhere else **************
-## Usage
 
-### Input Data
-Both input files must be csv format and be named `metadata.csv` and `proteindata.csv`.
-
-Auto generated
-
-User data
-
-Treatments
-
-Subsetting
-
-
-
-#### Metadata
-Metadata must contain the following columns:
-1. **sample_id**: unique ID for each sample.
-2. **replicate**: replicates for sample IDs. If there are no replicates, these values will all be 1.
-3. **treatment**: treatment group for each sample.
-4. **protein_abundance_name**: The name in the protein data of the column that contains raw protein abundance for each sample. Important that these map correctly.
-
-#### Protein Data
-Needs only the raw protein abundance data for each sample, with column names matching the values in the `protein_abundance_name` in the metadata. If the genes associated with the proteins are available, include the gene names in a column with "gene" in the name, and this will be used throughout to label the proteins.
-
-If data are phosphoproteomic, proteins (and associated genes) appear in multiple rows, once for each phosphorylation state. This creates duplicate gene names which we use as the index for various data frames. To correct this, the programme looks up a column called 'ptm.collapskey', which should contain phosphorylation information that will be appended to the gene name in the format: Gene__PhosphorulationState. Note double underscore.
-
-#### Configuration File
-
-
-### Environments
-Required libraries are in `configs/auto-prot-env-windowsOS.yml`. Recreate with `conda env create --name --file=configs/auto-prot-env.yml` and activate with `conda activate auto-proteomics`. A corresponding file for mac OS is also in configs.
-
-This project includes an automatic Conda environment check before running the report generator. It ensures the active environment matches the environments/auto-prot-env.yml file. The check function is saved in `utils/check_env.py`.
-
-If the environments differ, you will receive a warning before continuing. Not this doesn't happen in notebooks in VSC.
-
-#### Conda Issues
-I ran into a few common issues with the environment worth noting. They mostly come down to making sure the `python myscript.py` command has access to the right locations. 
-* make sure the conda executable is in $PATH.
-* make sure the location where the environments are saved is in $PATH. It can be different to the location of conda installation
-* make sure the python version running in any script is the correct one i.e. it matches the version in the conda env.
-
-#### Omicverse
-Omicverse has dependency issues with packages in main env. Needs separate env.
-
-Install wasn't working on personal laptop (Mac). Install [instructions](https://omicverse.readthedocs.io/en/latest/Installation_guild/#using-conda) recommend using miniforge to configure. I removed conda and installed miniforge following miniforge instructions. Then followed all instructions and it worked, apart from a couple of dependency issues. I still needed to install scrubley, pydeseq2=0.4.0 (conda) and bioservices  (pip). This still didn't work! Parking for now. Going to try on Windows machine.
-
-Didn't work on Windows laptop either. Followed instructions (and all combinations I could think of!). Just didn't work :'( Calculated LFC and fitted regressions manually.
-
-#### OS Specific Environments
-Libraries installed to conda env auto-proteomics. To re-create the env, you need to have (a version of) conda installed, then run conda env create -f configs/env.yml. Note, there are OS specific files because some windows dependencies aren't available on mac. The name of the environment created is specified in the top line of the yaml. 
-
-I am testing the pipeline on Windows and Mac as often as possible. If you have any problems, please let me know: james.d.gilbert@ucl.ac.uk.
-
-## Rendering the html report
-The report is generated in two main of steps:
-1. `main.ipynb` creates the output
-2. `Main-run-report.sh` creates an html output file using the following:
-     * a template for the report `./report/report-template.md`
-     * outputs (tables, plots) from `main.ipynb`
-     * values in `report/data_for_report.json` that go directly into the markdown text
-     * `utils/generate_report.py` which converts the markdown template into an html file.
