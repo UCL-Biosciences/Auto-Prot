@@ -1,4 +1,3 @@
-import json
 import os
 import tempfile
 from pathlib import Path
@@ -55,21 +54,15 @@ def test_run_analysis_end_to_end():
 
     with tempfile.TemporaryDirectory() as tmpdir:
         tmpdir_path = Path(tmpdir)
-        json_out = tmpdir_path / "metadata.json"
 
         os.makedirs(tmpdir_path / "plots")
         os.makedirs(tmpdir_path / "data")
-
-        # Start with empty metadata file
-        with open(json_out, "w") as f:
-            json.dump({}, f)
 
         results = run_analysis(
             df=df,
             metadata=metadata,
             output_dir=str(tmpdir_path),
             config=config,
-            json_out=str(json_out),
             formula=config["formula"],
         )
 
