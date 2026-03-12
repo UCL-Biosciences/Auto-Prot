@@ -93,6 +93,10 @@ We want this tool to be accessible for people with limited coding experience. Th
 
 To make the code work, you must enter the correct parameters and combination of parameters. For example, if you change the input file but not the output file, it will overwrite any previous output in the output file.
 
+### Run Settings
+
+**resume.** Whether to resume a previous incomplete run. If `true`, the pipeline reads `<outPath>/run_metadata.json`, identifies steps already marked `success`, and skips them. `data_processing` always re-runs to reconstruct in-memory state. Can also be enabled at the command line with `--resume` (overrides this field). Default: `false`.
+
 ### Input Data
 
 **data_type.** Type of data. Options:
