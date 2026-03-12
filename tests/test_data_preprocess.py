@@ -36,8 +36,11 @@ def test_filter_proteins_by_group_missingness_with_spike(
     for prot in [f"Prot{i}" for i in range(90, 100)]:
         df.loc[prot, ["S0", "S1", "S2"]] = np.nan
 
+    # filter_proteins_by_group_missingness expects config file with field 'missing_threshold'
+    config = {"missing_threshold": 0.6}
+
     # Run filter at 0.6 threshold (must be present in ≥60% of samples per group)
-    filtered_df = filter_proteins_by_group_missingness(df, metadata, threshold=0.6)
+    filtered_df = filter_proteins_by_group_missingness(df, metadata, config = config)
 
     # Make sure spiked proteins are kept (they should be complete)
     assert all(p in filtered_df.index for p in spiked_proteins[:5])
