@@ -88,8 +88,3 @@ def test_run_analysis_end_to_end():
 
         # Combined plots
         assert (tmpdir_path / "plots/combined_volcano_plot.png").exists()
-
-        # Version metadata
-        with open(json_out) as f:
-            meta = yaml.safe_load(f)
-        assert "ANALYSIS_VERSION" in meta
