@@ -72,7 +72,7 @@ def normalise_column_names(df, file_path=None, outPath = None, config=None):
     df.columns = df.columns.astype(str) # ensure all columns are strings
 
     # If 'protein' is in the file path, set a column containing 'gene' as the index
-    if "protein" in file_path:
+    if "protein" in os.path.basename(file_path):
 
         genes_columns = [col for col in df.columns if "gene" in col.lower()]
         
@@ -414,29 +414,35 @@ def combine_csv_files(
     print(f"Combined file saved at: {output_filename}")
 
 
-def tidy_up_files(outPath):
+def tidy_up_files(outPath) -> list:
     """
     Remove temporary files created during processing.
 
     Specifically removes:
     - 'prots_name_mapping.csv' from the 'data' directory.
+
+    Returns:
+        List of relative paths (relative to outPath) of files that were deleted.
     """
     files_to_remove = [
         glob.glob(os.path.join(outPath, "full_dataset/data/*/limma_output.csv")),
         glob.glob(os.path.join(outPath, "full_dataset/data/*/prots.csv")),
         glob.glob(os.path.join(outPath, "full_dataset/data/*/top_20_by_LFC.csv")),
     ]
-    
+
     # glob returns a list of files so files_to_remove is currently a list of lists
     # flatten the list of lists
     flattened_files_to_remove = []
     for sublist in files_to_remove: # loop through list of lists
         for file in sublist: # take each file
             flattened_files_to_remove.append(file)
-        
-    # remove each file if it exists
+
+    # remove each file if it exists and track what was deleted
+    deleted = []
     for file in flattened_files_to_remove:
         if os.path.exists(file):
             os.remove(file)
+            deleted.append(os.path.relpath(file, outPath))
 
     print("Temporary files removed.")
+    return deleted

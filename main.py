@@ -4,9 +4,11 @@
 ## Inputs must be protein abundance file and metadata, as specified below and in the github README.
 
 ## Import libraries
+import json
 import os
 import sys
 
+import pandas as pd
 import yaml
 
 import autoprot.analysis.analysis as an
@@ -20,9 +22,7 @@ import autoprot.utils.check_env as env
 from autoprot.utils.data_io import make_outdir
 from autoprot.utils.data_utils import get_subset, tidy_up_files
 from autoprot.reporting.generate_report import generate_report_html
-from autoprot.utils.metadata_recording import log_run_metadata, finalise_run_metadata
-
-
+from autoprot.utils.metadata_recording import log_run_metadata, load_run_metadata, finalise_run_metadata, record_step_complete
 
 ##### Define main function for creating outputs
 def main():
@@ -55,106 +55,130 @@ def main():
     subset_formula = config["DE_subset_formula"]
     # Create the output directory
     make_outdir(outPath, make_subdirs=True)
-    # Data processing
-    print("Loading and processing data...")
-    # metadata
-    metadata = dp.process_data(
-        file_path=metadataPath, json_out=json_out, outPath=outPath, config=config
-    )
-    # protein abundance data
-    df_protAbundance = dp.process_data(
-        file_path=proteinDataPath,
-        metadata=metadata,
-        json_out=json_out,
-        outPath=outPath,
-        config=config,
-    )
-    # if you have already processed the data and want to read in a previously saved version
-    # import pandas as pd; df_protAbundance = pd.read_csv(os.path.join(outPath, "data/proteinAbundance.csv"))
-
-    print("Data loaded and processed...")
-    # Analysis
-    print("Running analysis...")
-
-    # if subsetting not required, go through with full datasets
-    if config["analyse_full_dataset"] is True:
-        full_outPath = os.path.join(outPath, "full_dataset")
-        make_outdir(full_outPath)
-        an.run_analysis(
-            df=df_protAbundance,
-            metadata=metadata,
-            json_out=json_out,
-            output_dir=full_outPath,
-            config=config,
-            formula=full_formula,
-        )
-        print("Full analysis complete.")
-    if config["analyse_subsets"] is True:
-        # Read subsets from config
-        if not config["subsets"]:
-            subset_terms = metadata[config["subset_variable"]].unique()
-        if config["subsets"]:
-            subset_terms = list(config["subsets"])
-        # Loop through subsets
-        for subset in subset_terms:
-            print(f"Processing subset: {subset}")
-            subset_variable = config["subset_variable"]
-            ### find the rows in metadata that match the subset term
-            subset_metadata = metadata.loc[
-                metadata[subset_variable].astype(str) == str(subset),
-            ]
-            # Subset data based on index search term
-            subset_df = get_subset(
-                df=df_protAbundance,
-                subset_term=subset,
-                metadata=subset_metadata,
-                subset_variable=subset_variable,
-            )
-            # Create a new output directory for the subset
-            # if subset has a space in it, replace with _
-            if " " in str(subset):
-                subset = str(subset).replace(" ", "_")
-            subset_outPath = os.path.join(
-                outPath, "subsets", subset_variable + "_" + str(subset)
-            )
-            make_outdir(subset_outPath, make_subdirs=True)
-            # Run analysis for the subset
-            print(f"Running analysis for {subset}...")
-            an.run_analysis(
-                df=subset_df,
-                metadata=subset_metadata,
-                json_out=json_out,
-                output_dir=subset_outPath,
-                config=config,
-                formula=subset_formula,
-            )
-        print("All subsets processed successfully.")
-
-    print("generating html report...")
-    generate_report_html(config = config)
-
-    print("Analysis complete. Outputs saved to output directory. Tidying up intermediate files")
-    
-    # remove intermediate files
-    tidy_up_files(outPath)
 
     ## Record run metadata
     input_files = [proteinDataPath, metadataPath, config_path]
+    run_metadata_file = os.path.join(outPath, 'run_metadata.json')
 
-    # Start logging
-    metadata_file, metadata = log_run_metadata(input_files, libs, sys.argv)
+    # Resume detection: opt in via --resume flag or config field
+    resume_requested = '--resume' in sys.argv or config.get('resume', False)
 
-    # ---- Your pipeline code here ----
-    print("Running pipeline...")
-    # Example: process data, generate HTML, etc.
+    if resume_requested and os.path.exists(run_metadata_file):
+        run_meta, completed_steps = load_run_metadata(run_metadata_file)
+        print(f"Resuming incomplete run. Already completed: {completed_steps}")
+    else:
+        completed_steps = set()
+        run_metadata_file, run_meta = log_run_metadata(
+            input_files=input_files, args=sys.argv, config=config,
+            out_path=outPath, run_metadata_file=run_metadata_file
+        )
 
-    # Finalize metadata
-    finalise_run_metadata(metadata_file, metadata)
-    print(f"Metadata logged to {metadata_file} and run_diff.patch (if dirty).")
+    try:
+        # Data processing
+        print("Loading and processing data...")
+        # metadata is always recomputed (fast, needed to reconstruct in-memory state)
+        metadata = dp.process_data(
+            file_path=metadataPath, json_out=json_out, outPath=outPath, config=config
+        )
+
+        if 'data_processing' not in completed_steps:
+            df_protAbundance = dp.process_data(
+                file_path=proteinDataPath,
+                metadata=metadata,
+                json_out=json_out,
+                outPath=outPath,
+                config=config,
+            )
+            print("Data loaded and processed...")
+            record_step_complete("data_processing", "success", run_meta, run_metadata_file)
+        else:
+            print("Resuming — loading proteinAbundance from file...")
+            df_protAbundance = pd.read_csv(os.path.join(outPath, "data", "proteinAbundance.csv"), index_col=0)
+
+        # Analysis
+        print("Running analysis...")
+
+        # if subsetting not required, go through with full datasets
+        if config["analyse_full_dataset"] is True and 'full_dataset_analysis' not in completed_steps:
+            full_outPath = os.path.join(outPath, "full_dataset")
+            make_outdir(full_outPath)
+            an.run_analysis(
+                df=df_protAbundance,
+                metadata=metadata,
+                json_out=json_out,
+                output_dir=full_outPath,
+                config=config,
+                formula=full_formula,
+            )
+            print("Full analysis complete.")
+            record_step_complete("full_dataset_analysis", "success", run_meta, run_metadata_file)
+
+        if config["analyse_subsets"] is True:
+            # Read subsets from config
+            if not config["subsets"]:
+                subset_terms = metadata[config["subset_variable"]].unique()
+            if config["subsets"]:
+                subset_terms = list(config["subsets"])
+            # Loop through subsets
+            for subset in subset_terms:
+                step_name = f"subset_{str(subset).replace(' ', '_')}"
+                if step_name in completed_steps:
+                    print(f"Skipping already-completed subset: {subset}")
+                    continue
+                print(f"Processing subset: {subset}")
+                subset_variable = config["subset_variable"]
+                ### find the rows in metadata that match the subset term
+                subset_metadata = metadata.loc[
+                    metadata[subset_variable].astype(str) == str(subset),
+                ]
+                # Subset data based on index search term
+                subset_df = get_subset(
+                    df=df_protAbundance,
+                    subset_term=subset,
+                    metadata=subset_metadata,
+                    subset_variable=subset_variable,
+                )
+                # Create a new output directory for the subset
+                # if subset has a space in it, replace with _
+                if " " in str(subset):
+                    subset = str(subset).replace(" ", "_")
+                subset_outPath = os.path.join(
+                    outPath, "subsets", subset_variable + "_" + str(subset)
+                )
+                make_outdir(subset_outPath, make_subdirs=True)
+                # Run analysis for the subset
+                print(f"Running analysis for {subset}...")
+                an.run_analysis(
+                    df=subset_df,
+                    metadata=subset_metadata,
+                    json_out=json_out,
+                    output_dir=subset_outPath,
+                    config=config,
+                    formula=subset_formula,
+                )
+                record_step_complete(step_name, "success", run_meta, run_metadata_file)
+            print("All subsets processed successfully.")
+
+        if 'report_generation' not in completed_steps:
+            print("generating html report...")
+            generate_report_html(config=config)
+            record_step_complete("report_generation", "success", run_meta, run_metadata_file)
+
+        if 'tidy_up' not in completed_steps:
+            print("Analysis complete. Outputs saved to output directory. Tidying up intermediate files")
+            deleted = tidy_up_files(outPath)
+            record_step_complete("tidy_up", "success", run_meta, run_metadata_file,
+                                 details={"deleted_files": deleted})
+
+        # Finalize metadata
+        finalise_run_metadata(run_metadata_file, run_meta, exit_status='success')
+        print(f"Metadata logged to {run_metadata_file} and run_diff.patch (if dirty).")
+
+    except Exception as e:
+        finalise_run_metadata(run_metadata_file, run_meta, exit_status='error', error=str(e))
+        raise
 
 
-
-    
 #### If executed in main script, run the function to produce the output
 if __name__ == "__main__":
     main()

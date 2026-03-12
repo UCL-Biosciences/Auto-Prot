@@ -182,9 +182,10 @@ def clean_data(
     Raises:
         ValueError: If metadata is missing or incomplete when required.
     """
-    if "metadata" in file_path:
+    fname = os.path.basename(file_path)
+    if "metadata" in fname:
         df = clean_meta(df=df, json_out=json_out)
-    if "protein" in file_path:
+    if "protein" in fname:
         if metadata is None:
             raise ValueError("Error: Metadata is required but not provided.")
         # Check if the required column is in metadata
@@ -241,7 +242,8 @@ def process_data(file_path, metadata=None, json_out=None, outPath=None, config=N
         df_renamed = normalise_column_names(
             df=df_in, file_path=file_path, outPath=outPath, config=config
         )
-    if "metadata" in file_path:
+    fname = os.path.basename(file_path)
+    if "metadata" in fname:
         ### clean metadata
         df = clean_data(
             df=df_renamed, file_path=file_path, config=config, json_out=json_out
@@ -249,7 +251,7 @@ def process_data(file_path, metadata=None, json_out=None, outPath=None, config=N
         ### run function to validate metadata
         validate_metadata(df)
 
-    if "protein" in file_path:
+    if "protein" in fname:
         df = clean_data(
             df=df_renamed,
             file_path=file_path,
