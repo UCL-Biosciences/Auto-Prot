@@ -1,7 +1,0 @@
-# requirements for running tests on merge to staging or stable
-pytest
-numpy
-pandas
-pyyaml
-pillow
-matplotlib
