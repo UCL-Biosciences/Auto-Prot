@@ -4,7 +4,6 @@
 ## Inputs must be protein abundance file and metadata, as specified below and in the github README.
 
 ## Import libraries
-import json
 import os
 import sys
 
@@ -22,7 +21,7 @@ import autoprot.utils.check_env as env
 from autoprot.utils.data_io import make_outdir
 from autoprot.utils.data_utils import get_subset, tidy_up_files
 from autoprot.reporting.generate_report import generate_report_html
-from autoprot.utils.metadata_recording import log_run_metadata, load_run_metadata, finalise_run_metadata, record_step_complete
+from autoprot.utils.metadata_recording import log_run_metadata, finalise_run_metadata, record_step_complete
 
 ##### Define main function for creating outputs
 def main():
@@ -58,20 +57,12 @@ def main():
 
     ## Record run metadata
     input_files = [proteinDataPath, metadataPath, config_path]
-    run_metadata_file = os.path.join(outPath, 'run_metadata.json')
-
-    # Resume detection: opt in via --resume flag or config field
-    resume_requested = '--resume' in sys.argv or config.get('resume', False)
-
-    if resume_requested and os.path.exists(run_metadata_file):
-        run_meta, completed_steps = load_run_metadata(run_metadata_file)
-        print(f"Resuming incomplete run. Already completed: {completed_steps}")
-    else:
-        completed_steps = set()
-        run_metadata_file, run_meta = log_run_metadata(
-            input_files=input_files, args=sys.argv, config=config,
-            out_path=outPath, run_metadata_file=run_metadata_file
-        )
+    run_metadata_file = os.path.join(outPath, 'run_metadata', 'run_metadata.yaml')
+    run_metadata_file, run_meta = log_run_metadata(
+        input_files=input_files, args=sys.argv, config=config,
+        out_path=outPath, run_metadata_file=run_metadata_file,
+        repo_root=REPO_ROOT,
+    )
 
     try:
         # Data processing
@@ -81,7 +72,7 @@ def main():
             file_path=metadataPath, json_out=json_out, outPath=outPath, config=config
         )
 
-        if 'data_processing' not in completed_steps:
+        if config.get('process_prot_data', True):
             df_protAbundance = dp.process_data(
                 file_path=proteinDataPath,
                 metadata=metadata,
@@ -92,20 +83,20 @@ def main():
             print("Data loaded and processed...")
             record_step_complete("data_processing", "success", run_meta, run_metadata_file)
         else:
-            print("Resuming — loading proteinAbundance from file...")
+            print("Skipping protein data processing — loading proteinAbundance from file...")
             df_protAbundance = pd.read_csv(os.path.join(outPath, "data", "proteinAbundance.csv"), index_col=0)
+            record_step_complete("data_processing", "skipped", run_meta, run_metadata_file)
 
         # Analysis
         print("Running analysis...")
 
         # if subsetting not required, go through with full datasets
-        if config["analyse_full_dataset"] is True and 'full_dataset_analysis' not in completed_steps:
+        if config["analyse_full_dataset"] is True:
             full_outPath = os.path.join(outPath, "full_dataset")
             make_outdir(full_outPath)
             an.run_analysis(
                 df=df_protAbundance,
                 metadata=metadata,
-                json_out=json_out,
                 output_dir=full_outPath,
                 config=config,
                 formula=full_formula,
@@ -122,9 +113,6 @@ def main():
             # Loop through subsets
             for subset in subset_terms:
                 step_name = f"subset_{str(subset).replace(' ', '_')}"
-                if step_name in completed_steps:
-                    print(f"Skipping already-completed subset: {subset}")
-                    continue
                 print(f"Processing subset: {subset}")
                 subset_variable = config["subset_variable"]
                 ### find the rows in metadata that match the subset term
@@ -159,20 +147,18 @@ def main():
                 record_step_complete(step_name, "success", run_meta, run_metadata_file)
             print("All subsets processed successfully.")
 
-        if 'report_generation' not in completed_steps:
-            print("generating html report...")
-            generate_report_html(config=config)
-            record_step_complete("report_generation", "success", run_meta, run_metadata_file)
+        print("generating html report...")
+        generate_report_html(config=config)
+        record_step_complete("report_generation", "success", run_meta, run_metadata_file)
 
-        if 'tidy_up' not in completed_steps:
-            print("Analysis complete. Outputs saved to output directory. Tidying up intermediate files")
-            deleted = tidy_up_files(outPath)
-            record_step_complete("tidy_up", "success", run_meta, run_metadata_file,
-                                 details={"deleted_files": deleted})
+        print("Analysis complete. Outputs saved to output directory. Tidying up intermediate files")
+        deleted = tidy_up_files(outPath)
+        record_step_complete("tidy_up", "success", run_meta, run_metadata_file,
+                             details={"deleted_files": deleted})
 
         # Finalize metadata
         finalise_run_metadata(run_metadata_file, run_meta, exit_status='success')
-        print(f"Metadata logged to {run_metadata_file} and run_diff.patch (if dirty).")
+        print(f"Metadata logged to {run_metadata_file} (conda_envs/ and run_diff.patch alongside if applicable).")
 
     except Exception as e:
         finalise_run_metadata(run_metadata_file, run_meta, exit_status='error', error=str(e))

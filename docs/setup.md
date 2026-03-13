@@ -95,7 +95,8 @@ To make the code work, you must enter the correct parameters and combination of 
 
 ### Run Settings
 
-**resume.** Whether to resume a previous incomplete run. If `true`, the pipeline reads `<outPath>/run_metadata.json`, identifies steps already marked `success`, and skips them. `data_processing` always re-runs to reconstruct in-memory state. Can also be enabled at the command line with `--resume` (overrides this field). Default: `false`.
+**process_prot_data.** Whether to complete the full protein data processing. If you have already done the data processing and have a `data/proteinAbundance.csv` file to use, set this to false to save a few seconds. If true (default), process protein data from scratch. If false, load from `output/data/proteinAbundance.csv`. 
+
 
 ### Input Data
 

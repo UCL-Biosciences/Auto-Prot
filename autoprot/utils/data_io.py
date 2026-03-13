@@ -61,13 +61,6 @@ def make_outdir(out_path, make_subdirs=True):
     Side effects:
         Creates directories on the file system. Prints status messages.
     """
-    ### some previous outputs are brought into the report unintentionally
-    ### remove output dir if it exists
-    if os.path.exists(out_path):
-        
-        import shutil
-        shutil.rmtree(out_path) # remove directory and all its contents
-
     if not os.path.exists(out_path):
 
         try:

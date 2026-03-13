@@ -27,6 +27,7 @@ import os
 from unittest.mock import MagicMock, patch
 
 import pytest
+import yaml
 
 import autoprot.utils.metadata_recording as rm
 
@@ -223,19 +224,22 @@ def _mock_git_info(**kwargs):
 @patch("autoprot.utils.metadata_recording.get_conda_env", return_value="numpy 1.26\n")
 @patch("autoprot.utils.metadata_recording.get_git_info", return_value=_mock_git_info())
 def test_log_run_metadata_creates_file(mock_git, mock_conda, tmp_path):
-    """log_run_metadata writes a valid JSON file containing all expected keys.
+    """log_run_metadata writes a valid YAML file with the expected schema.
 
     git and conda calls are mocked so the test does not require a real repo
     or conda installation. We verify that:
-      - the file is created on disk and is valid JSON
+      - the YAML file is created on disk under <meta_dir>/run_metadata.yaml
+      - top-level keys follow the schema: run, steps, config, provenance
       - input file hashes, config, git info, and platform are all present
       - steps is initialised as an empty list (no steps have run yet)
-      - start_time is recorded
+      - start_time is recorded under run.start_time
+      - conda env dump is written to conda_envs/<env_name>.txt
     """
     input_file = tmp_path / "input.txt"
     input_file.write_bytes(b"data")
     out_path = str(tmp_path)
-    meta_file = str(tmp_path / "run_metadata.json")
+    meta_dir = tmp_path / "run_metadata"
+    meta_file = str(meta_dir / "run_metadata.yaml")
 
     result_file, result_meta = rm.log_run_metadata(
         input_files=[str(input_file)],
@@ -247,14 +251,17 @@ def test_log_run_metadata_creates_file(mock_git, mock_conda, tmp_path):
 
     assert os.path.exists(result_file)
     with open(result_file) as f:
-        on_disk = json.load(f)
+        on_disk = yaml.safe_load(f)
 
-    assert on_disk["git"]["commit"] == GOOD_COMMIT
+    assert on_disk["provenance"]["git"]["commit"] == GOOD_COMMIT
     assert on_disk["config"] == {"threshold": 0.05}
-    assert str(input_file) in on_disk["input_files"]
+    # no repo_root provided, so input_files uses absolute paths as keys
+    assert str(input_file) in on_disk["provenance"]["input_files"]
     assert on_disk["steps"] == []
-    assert "start_time" in on_disk
-    assert "platform" in on_disk
+    assert "start_time" in on_disk["run"]
+    assert "platform" in on_disk["provenance"]
+    # conda env text is written to a separate file, not inlined
+    assert os.path.exists(str(meta_dir / "conda_envs" / "auto-proteomics.txt"))
 
 
 # ---------------------------------------------------------------------------
@@ -309,13 +316,13 @@ def test_load_run_metadata_no_steps(tmp_path):
 # ---------------------------------------------------------------------------
 
 def test_record_step_complete_appends_and_flushes(tmp_path):
-    """record_step_complete appends each step and keeps the JSON file in sync.
+    """record_step_complete appends each step and keeps the YAML file in sync.
 
     We call it twice and verify that both the in-memory dict and the on-disk
-    JSON reflect both entries. The flush-to-disk behaviour is critical: if
+    YAML reflect both entries. The flush-to-disk behaviour is critical: if
     the run is interrupted after this call, the completed step is not lost.
     """
-    meta_file = str(tmp_path / "run_metadata.json")
+    meta_file = str(tmp_path / "run_metadata.yaml")
     run_meta = {"steps": []}
 
     rm.record_step_complete("data_processing", "success", run_meta, meta_file)
@@ -323,7 +330,7 @@ def test_record_step_complete_appends_and_flushes(tmp_path):
 
     assert len(run_meta["steps"]) == 2
     with open(meta_file) as f:
-        on_disk = json.load(f)
+        on_disk = yaml.safe_load(f)
     assert len(on_disk["steps"]) == 2
     assert on_disk["steps"][0]["step"] == "data_processing"
 
@@ -334,7 +341,7 @@ def test_record_step_complete_with_details(tmp_path):
     The details argument lets callers attach step-specific metadata (e.g.
     number of proteins quantified). We confirm the dict is preserved verbatim.
     """
-    meta_file = str(tmp_path / "run_metadata.json")
+    meta_file = str(tmp_path / "run_metadata.yaml")
     run_meta = {"steps": []}
 
     rm.record_step_complete(
@@ -351,7 +358,7 @@ def test_record_step_complete_error_status(tmp_path):
     Failed steps must be recorded (not silently dropped) so that resume
     logic can identify which steps need to be re-run.
     """
-    meta_file = str(tmp_path / "run_metadata.json")
+    meta_file = str(tmp_path / "run_metadata.yaml")
     run_meta = {"steps": []}
 
     rm.record_step_complete("normalisation", "error", run_meta, meta_file)
@@ -364,21 +371,22 @@ def test_record_step_complete_error_status(tmp_path):
 # ---------------------------------------------------------------------------
 
 def test_finalise_adds_end_time_and_status(tmp_path):
-    """finalise_run_metadata adds end_time and exit_status and flushes to disk.
+    """finalise_run_metadata adds end_time and exit_status inside run_meta['run'].
 
-    Both the in-memory dict and the JSON file on disk are checked, confirming
+    Both the in-memory dict and the YAML file on disk are checked, confirming
     the final state is durable even if the process exits immediately after.
     """
-    meta_file = str(tmp_path / "run_metadata.json")
-    run_meta = {"steps": []}
+    meta_file = str(tmp_path / "run_metadata.yaml")
+    run_meta = {"run": {"start_time": "2024-01-01T00:00:00+00:00"}, "steps": []}
 
     rm.finalise_run_metadata(meta_file, run_meta, exit_status="success")
 
-    assert "end_time" in run_meta
-    assert run_meta["exit_status"] == "success"
+    assert "end_time" in run_meta["run"]
+    assert run_meta["run"]["exit_status"] == "success"
+    assert run_meta["run"]["duration_s"] is not None
     with open(meta_file) as f:
-        on_disk = json.load(f)
-    assert on_disk["exit_status"] == "success"
+        on_disk = yaml.safe_load(f)
+    assert on_disk["run"]["exit_status"] == "success"
 
 
 def test_finalise_records_error_message(tmp_path):
@@ -387,16 +395,16 @@ def test_finalise_records_error_message(tmp_path):
     The error string lets someone reading the metadata understand what went
     wrong without having to dig through log files.
     """
-    meta_file = str(tmp_path / "run_metadata.json")
-    run_meta = {"steps": []}
+    meta_file = str(tmp_path / "run_metadata.yaml")
+    run_meta = {"run": {"start_time": "2024-01-01T00:00:00+00:00"}, "steps": []}
 
     rm.finalise_run_metadata(meta_file, run_meta, exit_status="error", error="ValueError: bad input")
 
-    assert run_meta["error"] == "ValueError: bad input"
+    assert run_meta["run"]["error"] == "ValueError: bad input"
 
 
 def test_finalise_with_psutil(tmp_path):
-    """finalise_run_metadata records memory and CPU usage when psutil is available.
+    """finalise_run_metadata records memory and CPU usage inside run_meta['run'].
 
     psutil.Process is mocked to return fixed RSS memory (500 MB) and CPU times
     (10 s user + 2 s system = 12 s total). We use pytest.approx because the
@@ -404,8 +412,8 @@ def test_finalise_with_psutil(tmp_path):
     to True so the resource block is entered regardless of whether psutil is
     actually installed in the test environment.
     """
-    meta_file = str(tmp_path / "run_metadata.json")
-    run_meta = {"steps": []}
+    meta_file = str(tmp_path / "run_metadata.yaml")
+    run_meta = {"run": {"start_time": "2024-01-01T00:00:00+00:00"}, "steps": []}
 
     mock_proc = MagicMock()
     mock_proc.memory_info.return_value.rss = 500_000_000   # bytes -> 500 MB
@@ -415,8 +423,8 @@ def test_finalise_with_psutil(tmp_path):
          patch("autoprot.utils.metadata_recording.psutil.Process", return_value=mock_proc):
         rm.finalise_run_metadata(meta_file, run_meta)
 
-    assert run_meta["resources"]["peak_memory_mb"] == pytest.approx(500.0)
-    assert run_meta["resources"]["cpu_time_s"] == pytest.approx(12.0)
+    assert run_meta["run"]["resources"]["peak_memory_mb"] == pytest.approx(500.0)
+    assert run_meta["run"]["resources"]["cpu_time_s"] == pytest.approx(12.0)
 
 
 def test_finalise_without_psutil(tmp_path):
@@ -426,10 +434,10 @@ def test_finalise_without_psutil(tmp_path):
     normally and simply not record resource usage — downstream code reading
     the metadata must handle the missing key gracefully.
     """
-    meta_file = str(tmp_path / "run_metadata.json")
-    run_meta = {"steps": []}
+    meta_file = str(tmp_path / "run_metadata.yaml")
+    run_meta = {"run": {"start_time": "2024-01-01T00:00:00+00:00"}, "steps": []}
 
     with patch("autoprot.utils.metadata_recording._PSUTIL_AVAILABLE", False):
         rm.finalise_run_metadata(meta_file, run_meta)
 
-    assert "resources" not in run_meta
+    assert "resources" not in run_meta["run"]

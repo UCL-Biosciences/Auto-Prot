@@ -99,7 +99,7 @@ The `steps` list has one entry per pipeline step, appended as each step complete
 ]
 ```
 
-Because the file is flushed to disk after every step, a partial `steps` list is preserved even if the run crashes — which is what the resume feature uses (see `resume` in the config docs).
+Because the file is flushed to disk after every step, a partial `steps` list is preserved even if the run crashes.
 
 ## Refs
 Martinez-Val, A., Bekker-Jensen, D.B., Hogrebe, A., Olsen, J.V. (2021). Data Processing and Analysis for DIA-Based Phosphoproteomics Using Spectronaut. In: Cecconi, D. (eds) Proteomics Data Analysis. Methods in Molecular Biology, vol 2361. Humana, New York, NY. https://doi.org/10.1007/978-1-0716-1641-3_6
