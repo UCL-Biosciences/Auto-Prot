@@ -218,7 +218,11 @@ def enrichment_analysis(
     #     pathway_query_genes = [str(gene).split("__")[0] for gene in pathway_query_genes]
     # pathway database can be REAC, GO or KEGG. Also less common but available: CORUM, HPA, TF and MIRNA
     # defaults to REAC
-    source = ["KEGG"]
+    source = config.get("enrichment_pathways")
+    # Normalise to list for gprofiler if just a single source specified as string
+    if isinstance(source, str):
+        source = [source]
+    #source = ["KEGG"]
     plot_title = "Pathway Enrichment (" + source[0] + ") for treatments \n " + pair_name
     # p value threshold defaults to 0.05
     p_threshold = 0.05
@@ -237,7 +241,9 @@ def enrichment_analysis(
             user_threshold=p_threshold,
             significance_threshold_method=significance_threshold_method,
             all_results=all_results,
-        )  # REAC for Reactome
+            domain_scope="custom",
+            background = list(lm_results_df.index) # calculates enrichment against detected prots, not all known prots for the species
+        )
         ### gprofiler can return empty results that write to file. In that case, return nothing
         if pathway_result.empty:
             print(
