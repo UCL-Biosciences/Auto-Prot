@@ -15,5 +15,5 @@ jobs:
         with:
           python-version: '3.11'
       - run: pip install -e ".[dev]"
-      - run: pip install configs/requirements-dev.txt
+      - run: pip install -r configs/requirements-dev.txt
       - run: pytest
