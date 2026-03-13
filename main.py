@@ -60,7 +60,7 @@ def main():
     run_metadata_file = os.path.join(outPath, 'run_metadata', 'run_metadata.yaml')
     run_metadata_file, run_meta = log_run_metadata(
         input_files=input_files, args=sys.argv, config=config,
-        out_path=outPath, run_metadata_file=run_metadata_file,
+        run_metadata_file=run_metadata_file,
         repo_root=REPO_ROOT,
     )
 

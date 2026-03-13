@@ -58,7 +58,7 @@ def get_git_info(diff_file: Optional[str] = None) -> dict:
                 f.write(diff)
         try:
             tag = subprocess.check_output(
-                ['git', 'describe', '--tags', '--always'],
+                ['git', 'describe', '--tags' ],
                 stderr=subprocess.DEVNULL
             ).decode().strip()
         except Exception:
