@@ -4,19 +4,19 @@ on:
     branches: [stable, staging]
   pull_request:
     branches: [stable, staging]
+
 jobs:
   pytest:
     runs-on: ubuntu-latest
     defaults:
       run:
-        shell: bash -el {0}  # activates conda for all steps
+        shell: bash -el {0}
     steps:
       - uses: actions/checkout@v4
       - uses: conda-incubator/setup-miniconda@v3
         with:
-          environment-file: configs/auto-prot-env-windowsOS.yml
-          activate-environment: myenv
-          miniforge-version: latest
+          environment-file: configs/environment-ci.yml
+          activate-environment: auto-proteomics
           use-mamba: true
       - run: pip install -e ".[dev]"
       - run: pytest
