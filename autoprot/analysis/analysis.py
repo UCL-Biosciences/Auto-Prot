@@ -32,7 +32,6 @@ def run_analysis(
     metadata: pd.DataFrame,
     output_dir: str,
     config: dict,
-    json_out: str,
     formula: str,
 ) -> dict:
     """
@@ -54,7 +53,6 @@ def run_analysis(
             - "LFC_threshold" (float): Suggested log fold change threshold for classification and plotting.
             - "FDR_threshold" (float): Suggested p-value threshold for volcano plot annotation.
             - "LFC_plot_p_or_FDRp" (str): Column to use for y-axis in volcano plot.
-        json_out (str): Path to JSON file where version metadata will be recorded.
         formula (str): the formula passted to the DE calculation. May need to be different for full dataset and subsets.
 
     Returns:

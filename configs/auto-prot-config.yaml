@@ -2,6 +2,8 @@
 # AUTO-PROTEOMICS CONFIG
 # ========================
 # This file controls how the pipeline runs. Update paths and parameters as needed.
+# ---- RUN SETTINGS ----
+process_prot_data: true          # If true, process protein data from scratch. If false, load from output/data/proteinAbundance.csv
 
 # ---- DATA SETTINGS ----
 data_type: prot                 # Type of data: "prot" for proteomics (default), "phospho" for phosphoproteomics

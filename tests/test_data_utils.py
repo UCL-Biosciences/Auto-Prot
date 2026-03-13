@@ -324,11 +324,9 @@ def test_combine_plots_creates_output(image_dir_with_pngs):
     output_dir = tempfile.mkdtemp()
 
     combine_plots(
-        search_term="volcano_plot.png",
+        search_term="volcano",
         search_path=image_dir_with_pngs,
         output_dir=output_dir,
-        img_size=(100, 100),
-        max_cols=2,
     )
 
     # Final path based on default combine logic

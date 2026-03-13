@@ -93,6 +93,11 @@ We want this tool to be accessible for people with limited coding experience. Th
 
 To make the code work, you must enter the correct parameters and combination of parameters. For example, if you change the input file but not the output file, it will overwrite any previous output in the output file.
 
+### Run Settings
+
+**process_prot_data.** Whether to complete the full protein data processing. If you have already done the data processing and have a `data/proteinAbundance.csv` file to use, set this to false to save a few seconds. If true (default), process protein data from scratch. If false, load from `output/data/proteinAbundance.csv`. 
+
+
 ### Input Data
 
 **data_type.** Type of data. Options:

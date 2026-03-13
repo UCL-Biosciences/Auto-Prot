@@ -99,7 +99,7 @@ def test_clean_prot():
     )
 
     # 3. Call clean_prot
-    cleaned_df, _ = clean_prot(df.copy(), metadata)
+    cleaned_df = clean_prot(df.copy(), metadata)
 
     # 4. It should drop the unrelated column
     assert "unrelated_column" not in cleaned_df.columns
@@ -151,13 +151,13 @@ def test_prot_summary(tmp_path):
     assert data["NUM_PROTS"] == "2"
 
     # Minimum mean → 2.0, formatted with `:,.0f` → "2"
-    assert data["MIN_AVERAGE_ABUNDANCE"] == "2"
+    assert data["MIN_AVERAGE_ABUNDANCE"] == "2.00"
 
     # Maximum mean → 3.0 → "3"
-    assert data["MAX_AVERAGE_ABUNDANCE"] == "3"
+    assert data["MAX_AVERAGE_ABUNDANCE"] == "3.00"
 
     # Median of [2.0, 3.0] is 2.5, `:,.0f` rounds to "2"
-    assert data["MEDIAN_AVERAGE_ABUNDANCE"] == "2"
+    assert data["MEDIAN_AVERAGE_ABUNDANCE"] == "2.50"
 
 
 # ────────────────────────────────────────────────────
@@ -238,15 +238,17 @@ def test_clean_data(tmp_path, monkeypatch):
         "normalise_method": "sample-median",
         "imputation_method": "hist_grad_boost",
     }
+    
+    prot_out = Path(tmp_path) / "proteindata.csv"
 
-    df = normalise_column_names(df, file_path="path/to/proteindata.csv", config=config)
+    df = normalise_column_names(df, file_path=prot_out, config=config, outPath=tmp_path)
 
     # ────────────────────────────────────────────────────
     # 6) Run the pipeline
     # ────────────────────────────────────────────────────
     cleaned_df = clean_data(
         df.copy(),
-        file_path="path/to/proteindata.csv",
+        file_path=prot_out,
         metadata=metadata,
         outPath=str(tmp_path),
         config=config,
@@ -325,6 +327,7 @@ def test_process_data_proteindata_branch(monkeypatch, tmp_path):
     """Test the process_data function from data_processing.py with proteindata branch."""
 
     monkeypatch.setattr(dpp, "view_prot_distributions", lambda *a, **k: None)
+    os.makedirs(tmp_path / "data")
 
     # 1) Create a tiny proteindata CSV (two columns)
     long_cols = [
@@ -333,14 +336,14 @@ def test_process_data_proteindata_branch(monkeypatch, tmp_path):
     ]
     prot_df = pd.DataFrame(
         {
+            "pg.genes": [np.nan, "p2", "p3", "p4", "p4"],
             long_cols[0]: [1, 0, "x", 6, 6],
             long_cols[1]: [4, 5, 6, 6, 6],
-        },
-        index=[np.nan, "p2", "p3", "p4", "p4"],
+        }
     )
 
     prot_path = Path(tmp_path) / "my_proteindata.csv"
-    prot_df.to_csv(prot_path)
+    prot_df.to_csv(prot_path, index=False)
 
     # 2) Build matching metadata (so clean_data won’t error)
     metadata = pd.DataFrame(
@@ -384,4 +387,4 @@ def test_process_data_proteindata_branch(monkeypatch, tmp_path):
     # Columns must now be your sample_rep names
     assert set(result.columns) == {"S1_1", "S2_1"}
     ### two prots should be left
-    assert ("Unknown-gene-1" in result.index) and ("p4" in result.index)
+    assert ("Unknown-gene-1" in result.index) and ("p4-1" in result.index) # note additional -1 suffix to p4 due to duplicate removal

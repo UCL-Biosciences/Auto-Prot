@@ -72,7 +72,7 @@ def normalise_column_names(df, file_path=None, outPath = None, config=None):
     df.columns = df.columns.astype(str) # ensure all columns are strings
 
     # If 'protein' is in the file path, set a column containing 'gene' as the index
-    if "protein" in file_path:
+    if "protein" in os.path.basename(file_path):
 
         genes_columns = [col for col in df.columns if "gene" in col.lower()]
         
@@ -128,11 +128,14 @@ def normalise_column_names(df, file_path=None, outPath = None, config=None):
         # this is useful for debugging and for tracking proteins through the analysis
         # at this point in the pipeline, the old names are in the column with genes in the name (this will soon be removed)
         # and the new names are the index. so it is a good time to save
-        (df.loc[ df.index != df[genes_columns[0]], ]
-         .rename(columns={'pg.genes': 'pg.genes_original'})
-         .to_csv(os.path.join(outPath, "data/prots_name_mapping.csv"),
-                                                           index = True)
-        )
+
+        # only required if there is a genes columns
+        if genes_columns:
+            (df.loc[ df.index != df[genes_columns[0]], ]
+            .rename(columns={'pg.genes': 'pg.genes_original'})
+            .to_csv(os.path.join(outPath, "data/prots_name_mapping.csv"),
+                                                            index = True)
+            )
 
         ### For phosphoproteomic data, there are abundances for phosphorylated proteins
         ### Each protein can be present multiple times - once per phosphorylation state
@@ -330,6 +333,7 @@ def combine_plots(search_path, search_term, output_dir):
     combined_image = combined_image.convert("P", palette=Image.ADAPTIVE)
 
     # Save the combined image
+    os.makedirs(os.path.join(output_dir, "plots"), exist_ok=True)
     combined_image_path = os.path.join(output_dir, f"plots/combined_{search_term}_plot.png")
     combined_image.save(combined_image_path, optimize = True)
     print(f"Combined image saved to {combined_image_path}")
@@ -414,29 +418,35 @@ def combine_csv_files(
     print(f"Combined file saved at: {output_filename}")
 
 
-def tidy_up_files(outPath):
+def tidy_up_files(outPath) -> list:
     """
     Remove temporary files created during processing.
 
     Specifically removes:
     - 'prots_name_mapping.csv' from the 'data' directory.
+
+    Returns:
+        List of relative paths (relative to outPath) of files that were deleted.
     """
     files_to_remove = [
         glob.glob(os.path.join(outPath, "full_dataset/data/*/limma_output.csv")),
         glob.glob(os.path.join(outPath, "full_dataset/data/*/prots.csv")),
         glob.glob(os.path.join(outPath, "full_dataset/data/*/top_20_by_LFC.csv")),
     ]
-    
+
     # glob returns a list of files so files_to_remove is currently a list of lists
     # flatten the list of lists
     flattened_files_to_remove = []
     for sublist in files_to_remove: # loop through list of lists
         for file in sublist: # take each file
             flattened_files_to_remove.append(file)
-        
-    # remove each file if it exists
+
+    # remove each file if it exists and track what was deleted
+    deleted = []
     for file in flattened_files_to_remove:
         if os.path.exists(file):
             os.remove(file)
+            deleted.append(os.path.relpath(file, outPath))
 
     print("Temporary files removed.")
+    return deleted

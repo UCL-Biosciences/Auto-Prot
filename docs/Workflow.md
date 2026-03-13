@@ -64,6 +64,43 @@ This script:
 Output
 You will find the report at: `<repo-root>/<outPath>/report-out.html`. All embedded content (tables, images, version hashes) is included in the single HTML file for easy sharing.
 
+## Run Metadata
+
+Every run automatically writes a `run_metadata.json` file to `<outPath>/` — no config needed. It records everything required to reproduce or audit a run:
+
+| Field | Description |
+|---|---|
+| `start_time` / `end_time` | ISO-8601 UTC timestamps |
+| `exit_status` | `"success"` or `"error"` |
+| `error` | Exception message (only present on error) |
+| `input_files` | SHA-256 hash of each input file |
+| `config` | Full config snapshot |
+| `args` | Command-line arguments |
+| `git` | Commit SHA, nearest tag, dirty flag, path to diff patch |
+| `conda` | `conda list` output for `auto-proteomics` and `r-limma-env` |
+| `platform` | OS and Python platform string |
+| `resources` | Peak memory (MB) and CPU time (s), if psutil is available |
+| `steps` | Timestamped entry for each completed pipeline step (see below) |
+
+If the working tree has uncommitted changes at run time, the full diff is written to `<outPath>/run_diff.patch` so the exact code state can be reproduced later.
+
+### Steps list
+
+The `steps` list has one entry per pipeline step, appended as each step completes:
+
+```json
+"steps": [
+  {"step": "data_processing",      "status": "success", "timestamp": "2026-03-12T10:00:01Z"},
+  {"step": "full_dataset_analysis","status": "success", "timestamp": "2026-03-12T10:02:14Z"},
+  {"step": "subset_timepoint_1",   "status": "success", "timestamp": "2026-03-12T10:04:55Z"},
+  {"step": "report_generation",    "status": "success", "timestamp": "2026-03-12T10:05:03Z"},
+  {"step": "tidy_up",              "status": "success", "timestamp": "2026-03-12T10:05:04Z",
+   "details": {"deleted_files": ["full_dataset/data/treatment_1_treatment_2/limma_output.csv"]}}
+]
+```
+
+Because the file is flushed to disk after every step, a partial `steps` list is preserved even if the run crashes.
+
 ## Refs
 Martinez-Val, A., Bekker-Jensen, D.B., Hogrebe, A., Olsen, J.V. (2021). Data Processing and Analysis for DIA-Based Phosphoproteomics Using Spectronaut. In: Cecconi, D. (eds) Proteomics Data Analysis. Methods in Molecular Biology, vol 2361. Humana, New York, NY. https://doi.org/10.1007/978-1-0716-1641-3_6
 
