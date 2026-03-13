@@ -241,7 +241,9 @@ def enrichment_analysis(
             user_threshold=p_threshold,
             significance_threshold_method=significance_threshold_method,
             all_results=all_results,
-        )  # REAC for Reactome
+            domain_scope="custom",
+            background = list(lm_results_df.index) # calculates enrichment against detected prots, not all known prots for the species
+        )
         ### gprofiler can return empty results that write to file. In that case, return nothing
         if pathway_result.empty:
             print(

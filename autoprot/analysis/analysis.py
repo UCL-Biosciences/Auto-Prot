@@ -63,7 +63,6 @@ def run_analysis(
     results = {}
 
     ##### Analyses for all treatment groups #####
-    print(df.head())
 
     # Perform clustering (PCA, MDS, heatmap) and save results
     if config.get("z_score_for_clustering"):
@@ -73,7 +72,6 @@ def run_analysis(
     else:
         results = run_clustering_analysis(df = df, metadata = metadata, output_dir = output_dir)
 
-    print(df.head())
     ###### Pairwise Analyses #####
     # if there are > 2 treatment groups, pairwise analyses will have to be run separately for each pair of treatments
     treatment_pairs = list(itertools.combinations(metadata["treatment"].unique(), 2))
