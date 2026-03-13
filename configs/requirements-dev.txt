@@ -3,6 +3,5 @@ pytest
 numpy
 pandas
 pyyaml
-PIL
-pathlib
+pillow
 matplotlib
