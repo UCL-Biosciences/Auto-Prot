@@ -16,6 +16,7 @@ jobs:
         with:
           environment-file: configs/auto-prot-env-macOS.yml
           activate-environment: myenv
-          cache-environment: true
+          miniforge-version: latest
+          use-mamba: true
       - run: pip install -e ".[dev]"
       - run: pytest
