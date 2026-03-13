@@ -1,19 +1,21 @@
-# .github/workflows/test.yml
 name: Tests
 on:
   push:
     branches: [stable, staging]
   pull_request:
     branches: [stable, staging]
-
 jobs:
   pytest:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -el {0}  # activates conda for all steps
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: conda-incubator/setup-miniconda@v3
         with:
-          python-version: '3.11'
+          environment-file: configs/auto-prot-env-macOS.yml
+          activate-environment: myenv
+          cache-environment: true
       - run: pip install -e ".[dev]"
-      - run: pip install -r configs/requirements-dev.txt
       - run: pytest
