@@ -3,7 +3,6 @@ pytest
 numpy
 pandas
 pyyaml
-json
 PIL
 pathlib
 matplotlib
