@@ -16,7 +16,7 @@ There are four main steps:
 Note, this should be straight forward if you are confident with conda environments and running programmes from the command line. Experience with Auto-Prot also helps. It might be tricky for people with less experience. Have a go and let us know if you have problems via contact details on main repo. 
 
 ### Create environment
-the R script requires a separate environment: `conda create -f configs/auto-prot-env-compare-msstats-windowsOS.yml`. This env has some of the R packages required, although others may be downloaded in R if required. They are downloaded to a dir within the repo so should not affect system-wide installs.
+the R script requires a separate environment: `conda env create -f configs/auto-prot-env-compare-msstats-windowsOS.yml`. This env has some of the R packages required, although others may be downloaded in R if required. They are downloaded to a dir within the repo so should not affect system-wide installs.
 
 ### Run R Script
 Run the R script with `conda run -n r-env-compare-msstats Rscript autoprot/r_scripts/DE-with-MSstats-Limma.R`. This script:
