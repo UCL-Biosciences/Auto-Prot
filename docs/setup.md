@@ -14,7 +14,7 @@ This project includes an automatic Conda environment check before running the re
 If the environments differ, you will receive a warning before continuing. Note this doesn't happen in notebooks in VSC.
 
 ### R comparison script (renv, no conda)
-The script `autoprot/r_scripts/DE-with-MSstats-Limma.R` is independent of conda and manages its own R packages via `renv`. See [compare-analysis-methods.md](compare-analysis-methods.md) for full setup instructions. In short: install R from https://cran.r-project.org, add it to your PATH, then run the script directly with `Rscript`. All packages install automatically into the repo on first run — nothing touches your system R libraries.
+The script `autoprot/r_scripts/DE-with-MSstats-Limma.R` is independent of conda and manages its own R packages via `renv`. See [compare-analysis-methods.md](compare-analysis-methods.md) for full setup instructions. In short: install R 4.5 or above from https://cran.r-project.org, add it to your PATH, then run the script directly with `Rscript`. All packages install automatically into the repo on first run — nothing touches your system R libraries.
 
 #### Conda Issues
 I ran into a few common issues with the environment worth noting. They mostly come down to making sure that your computer knows where to look for the packages installed by conda. E.g.:

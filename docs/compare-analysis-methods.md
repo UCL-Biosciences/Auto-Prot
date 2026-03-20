@@ -18,7 +18,7 @@ Note, this should be straight forward if you are confident with running programm
 ### Prerequisites: install R
 The R script is independent of conda and manages its own packages via `renv`. You need system R installed and on your PATH — do **not** run this inside a conda environment.
 
-1. Download and install R from https://cran.r-project.org
+1. Download and install R 4.5 or above from https://cran.r-project.org
 2. Add R to your PATH:
    - **Windows (Git Bash)** — add to `~/.bashrc` (replace `R-4.x.x` with your version):
      ```bash

@@ -51,13 +51,7 @@ if (grepl("conda|envs", R.home(), ignore.case = TRUE) ||
 
 source(file.path(repo_root, "renv", "activate.R"))  # bootstraps renv if needed, isolates library
 
-lockfile <- file.path(repo_root, "renv.lock")
-if (!file.exists(lockfile)) {
-  stop(
-    "renv.lock not found in ", repo_root, "\n",
-    "Ask the project maintainer to run renv::snapshot() and commit renv.lock."
-  )
-}
+if (getRversion() < "4.5.0") stop("R >= 4.5.0 is required. Download from https://cran.r-project.org")
 
 message("Restoring R packages from renv.lock (first run may take several minutes)...")
 renv::restore(project = repo_root, prompt = FALSE)
