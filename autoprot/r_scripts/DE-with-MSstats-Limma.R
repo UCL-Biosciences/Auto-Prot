@@ -13,13 +13,6 @@
 #
 
 ## -------------------------------
-## Environment setup
-## -------------------------------
-#### don't want to install system wide for every user
-#### instead, we will create a project specific library manually
-#### and install there
-
-## -------------------------------
 ## Locate repo root
 ## -------------------------------
 ### if this doesn't work, set your wd (setwd()) to the Auto-Prot dir
@@ -35,44 +28,39 @@ find_repo_root <- function(start = getwd()) {
 
 repo_root <- find_repo_root()
 
-# Define project-local library
-proj_lib <- file.path(repo_root, "r_libs")
-if (!dir.exists(proj_lib)) dir.create(proj_lib, recursive = TRUE)
+## -------------------------------
+## Bootstrap renv (fully isolated)
+## -------------------------------
+# All packages install into renv/library/ inside the repo.
+# Nothing is written to your system or user R libraries.
+#
+# First run: installs all packages automatically (takes a few minutes).
+# Subsequent runs: instant (packages already cached).
+#
+# Requires: R installed from https://cran.r-project.org and on your PATH.
+# Do NOT run this script with conda's R — activate no conda env beforehand.
 
-# Prepend to library search path
-.libPaths(c(proj_lib, .libPaths()))
+if (grepl("conda|envs", R.home(), ignore.case = TRUE) ||
+    nzchar(Sys.getenv("CONDA_DEFAULT_ENV"))) {
+  stop(
+    "This script must be run with system R (https://cran.r-project.org), ",
+    "not conda's R.\n",
+    "Deactivate any conda environment first: conda deactivate"
+  )
+}
 
-options(repos = BiocManager::repositories())
+source(file.path(repo_root, "renv", "activate.R"))  # bootstraps renv if needed, isolates library
 
-## install required packages (if not available)
-print("installing packages")
+lockfile <- file.path(repo_root, "renv.lock")
+if (!file.exists(lockfile)) {
+  stop(
+    "renv.lock not found in ", repo_root, "\n",
+    "Ask the project maintainer to run renv::snapshot() and commit renv.lock."
+  )
+}
 
-cran_pkgs <- c(
-  "dplyr", "tidyr", "ggplot2", "MASS", "Matrix", "KernSmooth",
-  "data.table", "plyr", "htmltools", "lme4", "statmod",
-  "survival", "plotly", "ggrepel", "gplots"
-)
-
-
-for (p in cran_pkgs) {
-    if (!requireNamespace(p, quietly = TRUE)) {
-      message(sprintf("Installing CRAN package '%s' into %s ...", p, proj_lib))
-      install.packages(p, lib = proj_lib, dependencies = TRUE)
-    }
-  }
-
-
-bioc_pkgs <- c(
-  "vsn", "MSstats", "limma", "MSnbase", "mzR",
-  "BiocGenerics", "S4Vectors", "Biobase", "IRanges", "preprocessCore"
-)
-
-for (p in bioc_pkgs) {
-    if (!requireNamespace(p, quietly = TRUE)) {
-      message(sprintf("Installing CRAN package '%s' into %s ...", p, proj_lib))
-      BiocManager::install(p, lib = proj_lib, ask = FALSE, update = FALSE, dependencies = TRUE)
-    }
-  }
+message("Restoring R packages from renv.lock (first run may take several minutes)...")
+renv::restore(project = repo_root, prompt = FALSE)
 
 ## -------------------------------
 ## Load packages

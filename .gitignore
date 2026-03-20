@@ -8,10 +8,10 @@ configs/auto-prot-config.yaml
 __pycache__/
 *.pyc
 .Rprofile
-renv*
-renv/*
+renv/library/
+renv/python/
+renv/staging/
 r_libs/
-
 r_libs/*
 
 # Bytecode

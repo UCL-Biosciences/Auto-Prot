@@ -7,28 +7,51 @@ It is not a comprehensive benchmarking exercise. It is supposed to compare light
 
 There are four main steps:
 
-1. Set up the conda env for running the R script with Limma and MS stats functions
+1. Set up the R env for running the R script with Limma and MS stats functions
 2. Run the R script - this creates DE output for Limma (once on log-transformed data, once after normalising and imputing) and MS stats
 3. Run auto-prot twice. Once analysing the log2-transformed data, once analysing the normalised and imputed data
 4. Work through the comparison notebooks to see the log fold changes and p-values produced by the different methods.
 
 ## Usage
-Note, this should be straight forward if you are confident with conda environments and running programmes from the command line. Experience with Auto-Prot also helps. It might be tricky for people with less experience. Have a go and let us know if you have problems via contact details on main repo. 
+Note, this should be straight forward if you are confident with running programmes from the command line. Experience with Auto-Prot also helps. It might be tricky for people with less experience. Have a go and let us know if you have problems via contact details on main repo.
 
-### Create environment
-the R script requires a separate environment: `conda env create -f configs/auto-prot-env-compare-msstats-windowsOS.yml`. This env has some of the R packages required, although others may be downloaded in R if required. They are downloaded to a dir within the repo so should not affect system-wide installs.
+### Prerequisites: install R
+The R script is independent of conda and manages its own packages via `renv`. You need system R installed and on your PATH — do **not** run this inside a conda environment.
+
+1. Download and install R from https://cran.r-project.org
+2. Add R to your PATH:
+   - **Windows (Git Bash)** — add to `~/.bashrc` (replace `R-4.x.x` with your version):
+     ```bash
+     echo 'export PATH="/c/Program Files/R/R-4.x.x/bin:$PATH"' >> ~/.bashrc
+     source ~/.bashrc
+     ```
+   - **macOS** — add to `~/.zshrc`:
+     ```bash
+     echo 'export PATH="/Library/Frameworks/R.framework/Resources/bin:$PATH"' >> ~/.zshrc
+     source ~/.zshrc
+     ```
+3. Install system build tools needed to compile some R packages:
+   - **Windows**: install [Rtools](https://cran.r-project.org/bin/windows/Rtools/)
+   - **macOS**: run `xcode-select --install` in Terminal
+4. Verify: `Rscript --version`
 
 ### Run R Script
-Run the R script with `conda run -n r-env-compare-msstats Rscript autoprot/r_scripts/DE-with-MSstats-Limma.R`. This script:
+Deactivate any conda environment first (`conda deactivate`), then run:
+
+```bash
+Rscript autoprot/r_scripts/DE-with-MSstats-Limma.R
+```
+
+On first run, all required R packages are installed automatically into `renv/library/` inside the repo — nothing is written to your system R libraries. Packages are cached globally so a second clone won't re-download them. This first run may take several minutes.
+
+The script:
 - downloads data from an online tutorial
 - processes and filters
-- calculates DE with MS stats 
+- calculates DE with MS stats
 - runs Limma on the log2-transformed data
 - runs Limma after normalising (vsn) and imputing with QRILC, a quantile regression approach for the imputation of left-censored missing data in quantitative proteomics.
 
 All of the outputs are saved to file.
-
-**Note** about running this. I have had some problems with installing r libraries for this. Might need some manual tweaking. I've uploaded the notebook to `.../autoprot/reporting/compare-autoprot-msstats.ipynb` if you want to look at the output. If you want to try it your self and it's not working, get in touch.
 
 ### Run Auto-Prot twice
 We want to compare Limma-in-R and Auto-Prot twice; once with just log-transformed data where we know the results should be the same, and once after applying normalisation (both VSN) and imputation (different in Limma-in-R and Auto-Prot). This allows us to see where differences arise. Therefore, we run Auto-Prot twice, once to calculate DE with log-transformed data and once with imputed data.
