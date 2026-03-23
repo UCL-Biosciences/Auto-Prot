@@ -11,7 +11,7 @@ Processing
 _After converting zero values to missing, we removed proteins not observed in at least XX% of samples in all groups, leaving XX proteins. We then log2-transformed, normalised the data using the R package vsn (version XX) and imputed with the CollaborativeFilteringTransformer function from python package pimms (version XX)/HistGradientBoostingRegressor from the python package scikit-learn (version XX)._
 
 Clustering
-_To understand relationships among samples, we generated PCA and MDS plots using scikit-learn (version XX) and scipy (vXX). We made a heatmap showing relationships among samples and proteins using the clustermap function from sseaborn (vXX). Proteins with missing data were not included in making these plots._
+_To understand relationships among samples, we generated PCA and MDS plots using scikit-learn (version XX) and scipy (vXX). We made a heatmap showing relationships among samples and proteins using the clustermap function from seaborn (vXX). Proteins with missing data were not included in making these plots._
 
 Differential Expression
 _Differental expression calculations were done using the R package limma (version XX). For each pair of treatments, we ran limma, including Bayesian variance shrinkage, and generated volcano plots with seaborn (version XX). We used Benajmini-Hochberg False Discovery Rate adjustment to control for multiple testing. Proteins were considered differentially expressed if they had an FDR-adjusted p-value <XX and an absolute log fold change of at least XX._

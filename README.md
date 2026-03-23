@@ -1,13 +1,11 @@
 # Proteomics Report
 This repository contains the Auto-Proteomics analysis pipeline for generating standardised reports from protein intensity datasets. Welcome.
 
-The pipeline is still in testing. Staging is the best branch to use but there might still be some things to fix. Would only suggest trying this if you know python and/or proteomics reasonably well :') clone the repo using the instructions below, then run `git checkout staging` to change to the staging branch.
+The tool produces common outputs from mass spec proteomic and phosphoproteomic data. We want to make this possible for people with limited coding experience by requiring only some preparation steps and one line of code to run the pipeline. Parameters are determined in a "config" file so you don't need to look through the code to change things.
 
-This tool produces common outputs from MS proteomic and phosphoproteomic data. We want to make this possible for people with limited coding experience by requiring only some preparation steps and one line of code to run the pipeline. Parameters are determined in a "config" file so you don't need to look through the code to change things.
+By producing common exploratory outputs automatically, we hope you can spend more time thinking about your data and results. Note, this pipeline produces results automatically without thinking about the idiosyncracies of your beautiful, unique dataset. **This should never be used without a full evaluation and validation of the results.** Best practice would be to run a similar analysis with your favourite software or collaborator to confirm your conclusions are supported.
 
-By producing common exploratory outputs automatically, we hope you can spend more time thinking about your data and results. Note, this pipeline produces results automatically without thinking about the idiosyncracies of your beautiful, unique dataset. **This should never be used without a full evaluation and validation of the results.** Best practice would be to run a similar analysis with your favourite software or collaborator to confirm our results are sensible.
-
-If you think the results look reasonable and you want to make use of them, please review the tool carefully. We hope the docs give you an idea of what we are doing and why. We have tried to annotate the code so that you can also understand how the pipeline works. If you would like further info or to suggest an improvement to the pipeline, please get in touch. Contact details below.
+If you you want to use the results, please review the tool carefully. We hope the docs give you an idea of what we are doing and why. We have tried to annotate the code so that you can also understand how the pipeline works. If you would like further info or to suggest an improvement to the pipeline, please get in touch. Contact details below.
 
 ## Features
 - Processes mass spec-generated protein abundance data.
@@ -33,15 +31,17 @@ This tool has been tested on Windows and macOS.
 
 **Optional** switch to staging branch: `git checkout staging`.
 
-This is important - it allows you to make changes to the config file withour your setup being sent to the main repo: `git update-index --skip-worktree configs/auto-prot-config.yaml`
+This allows you to make changes to the config file withour your setup being sent to the main repo: `git update-index --skip-worktree configs/auto-prot-config.yaml`. Needed if you plan to make edits and suggest them as updates for the tool.
 
 ### 3. Install dependencies for your operating system
 Create the environment and download dependencies using the information in configuration files: `conda env create -f configs/auto-prot-env-YOUR-OS-HERE.yml`. Which version you use will depend on whether you are using a Windows machine or a Mac. You will need to create environments for the general pipeline and the R functions:
 
 - For general processing:  
   `conda env create -f configs/auto-prot-env-windowsOS.yml`
+  `conda env create -f configs/auto-prot-env-macOS.yml`
 - For R-based differential expression:  
   `conda env create -f configs/auto-prot-env-limma-windowsOS.yml`
+  `conda env create -f configs/auto-prot-env-limma-macOS.yml`
 
 Activate the environment with: `conda activate auto-proteomics`. If you keep getting a message about running `conda init`, try running `source activate`. You might have to do that at the start of every session. If you get a `command not found` error, you will need to run the following code, replacing the path with the [path to conda on your machine](https://stackoverflow.com/questions/37117571/where-does-anaconda-python-install-on-windows):
 ```
@@ -53,10 +53,10 @@ conda activate some-conda-environment
 
 ### 4. Generate outputs
 #### Input
-If you don't add your files to the `data` folder, you can generate an example dataset by running `python autoprot/utils/gen_random_data.py`. This will give a quick picture of how the input data should be formatted. Make sure your data are in `data/proteindata.csv` and `data/metadata.csv` (requirements given in /docs/Workflow.md). 
+The repository contains example protein and metadata files: `proteindata.csv` and `metadata.csv` files, generated by `autoprot/utils/gen_random_data.py`. This will give a quick picture of how the input data should be formatted. You can overwrite these files with your own data (requirements given in `/docs/Workflow.md`). 
 
 #### Generate output
-To generate the output, you can run `python main.py`.
+To generate the output, you can run `python main.py`. Runtime depends on number of proteins/samples and computer spec, but as a general guide, the pipeline should the whole pipeline should run in 5-20 mins for a few thousand proteins and 10-20 samples.
 
 #### Outputs
 Running `python main.py` will generate:

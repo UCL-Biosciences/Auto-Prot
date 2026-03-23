@@ -4,7 +4,6 @@ input/data/proteindata.csv
 input/data/*
 output/*
 output*/
-configs/auto-prot-config.yaml
 __pycache__/
 *.pyc
 .Rprofile

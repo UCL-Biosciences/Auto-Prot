@@ -31,6 +31,11 @@ Phosphoproteomic data are generated using similar mass spec workflows. The data 
 If you are unsure, discuss with a colleague who has experience processing mass spec phosphoproteomic data.
 
 ## Analysis
+The analysis pipeline runs in two stages: whole-dataset visualisation followed by pairwise differential abundance testing.
+
+For the full dataset, three clustering analyses are run: PCA, MDS, and a clustered heatmap. These give you an overview of how similar your samples are to each other and whether they separate by treatment group. Because PCA and MDS cannot handle missing values, these plots use only proteins with complete data across all samples. The heatmap also drops proteins with any missing values. The number of proteins used is shown in each plot title — this will typically be lower than the total number of proteins in your dataset, which is expected (see Filtering). If `z_score_for_clustering` is set to true in the config (default), the data are z-score standardised before clustering, which can help visualise relative patterns when absolute abundance differences between proteins are very large.
+
+For pairwise comparisons, every combination of treatment groups is tested in turn. Differential abundance is calculated using the R package limma, called internally via an R script — this requires the `r-limma-env` conda environment to be present (see installation). Results are visualised as a volcano plot, with proteins highlighted in blue if they exceed both the `LFC_threshold` and `FDR_threshold` set in your config. You can choose whether the y-axis uses the FDR-adjusted or unadjusted p-value using the `LFC_plot_p_or_FDRp` config field. Following differential testing, over-representation analysis is run using `g:Profiler` against the pathway database specified by `enrichment_pathways` (e.g. GO, KEGG, REAC), using the proteins detected in your experiment as the background set rather than all proteins in the genome. Combined outputs across all pairwise comparisons are written to `...data/combined_topLFC.csv` and `...data/combined_top_pathway_enrichment`.csv.
 
 ## 📝 Generating the HTML Report
 After running your analysis, you can generate a summary report in HTML format using the generate_report.py file.
