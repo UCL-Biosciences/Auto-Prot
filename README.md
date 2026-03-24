@@ -1,13 +1,11 @@
 # Proteomics Report
 This repository contains the Auto-Proteomics analysis pipeline for generating standardised reports from protein intensity datasets. Welcome.
 
-The pipeline is still in testing. Staging is the best branch to use but there might still be some things to fix. Would only suggest trying this if you know python and/or proteomics reasonably well :') clone the repo using the instructions below, then run `git checkout staging` to change to the staging branch.
+The tool produces common outputs from mass spec proteomic and phosphoproteomic data. We want to make this possible for people with limited coding experience by requiring only some preparation steps and one line of code to run the pipeline. Parameters are determined in a "config" file so you don't need to look through the code to change things.
 
-This tool produces common outputs from MS proteomic and phosphoproteomic data. We want to make this possible for people with limited coding experience by requiring only some preparation steps and one line of code to run the pipeline. Parameters are determined in a "config" file so you don't need to look through the code to change things.
+By producing common exploratory outputs automatically, we hope you can spend more time thinking about your data and results. Note, this pipeline produces results automatically without thinking about the idiosyncracies of your beautiful, unique dataset. **This should never be used without a full evaluation and validation of the results.** Best practice would be to run a similar analysis with your favourite software or collaborator to confirm your conclusions are supported.
 
-By producing common exploratory outputs automatically, we hope you can spend more time thinking about your data and results. Note, this pipeline produces results automatically without thinking about the idiosyncracies of your beautiful, unique dataset. **This should never be used without a full evaluation and validation of the results.** Best practice would be to run a similar analysis with your favourite software or collaborator to confirm our results are sensible.
-
-If you think the results look reasonable and you want to make use of them, please review the tool carefully. We hope the docs give you an idea of what we are doing and why. We have tried to annotate the code so that you can also understand how the pipeline works. If you would like further info or to suggest an improvement to the pipeline, please get in touch. Contact details below.
+If you you want to use the results, please review the tool carefully. We hope the docs give you an idea of what we are doing and why. We have tried to annotate the code so that you can also understand how the pipeline works. If you would like further info or to suggest an improvement to the pipeline, please get in touch. Contact details below.
 
 ## Features
 - Processes mass spec-generated protein abundance data.
@@ -19,40 +17,46 @@ If you think the results look reasonable and you want to make use of them, pleas
 `stable` branch is the most tested and should work reliably. If not, please let me know! It would be best to quick start using that branch. `staging` has new features that haven't been fully tested. Other branches are for developing new features.
 
 ### Prerequisites
-- [conda](https://conda-forge.org/)
-- [git](https://github.com/git-guides/install-git)
-- Somewhere to run command line commands (e.g. VS Code).
+- a [conda](https://github.com/conda-forge/miniforge) distribution.
+- [git for mac](https://git-scm.com/install/mac) or [Git bash for windows](https://git-scm.com/install/windows).
+- Somewhere to run command line commands. We recommend [VS Code](https://code.visualstudio.com/)) and can't advise on other platforms e.g. conda prompt.
 
 This tool has been tested on Windows and macOS.
 
 ### 1. Clone the repository
-`git clone https://github.com/jdgilbert245/Auto-Prot`
+`git clone https://github.com/UCL-Biosciences/Auto-Prot`
 
 ### 2. Navigate into the project
 `cd Auto-Prot`
 
 **Optional** switch to staging branch: `git checkout staging`.
 
-This is important - it allows you to make changes to the config file withour your setup being sent to the main repo: `git update-index --skip-worktree configs/auto-prot-config.yaml`
+This allows you to make changes to the config file withour your setup being sent to the main repo: `git update-index --skip-worktree configs/auto-prot-config.yaml`. Needed if you plan to make edits and suggest them as updates for the tool.
 
 ### 3. Install dependencies for your operating system
 Create the environment and download dependencies using the information in configuration files: `conda env create -f configs/auto-prot-env-YOUR-OS-HERE.yml`. Which version you use will depend on whether you are using a Windows machine or a Mac. You will need to create environments for the general pipeline and the R functions:
 
 - For general processing:  
   `conda env create -f configs/auto-prot-env-windowsOS.yml`
+  `conda env create -f configs/auto-prot-env-macOS.yml`
 - For R-based differential expression:  
   `conda env create -f configs/auto-prot-env-limma-windowsOS.yml`
+  `conda env create -f configs/auto-prot-env-limma-macOS.yml`
 
-Activate the environment with: `conda activate auto-proteomics`. If you keep getting a message about running `git init`, try running `source activate`. You might have to do that at the start of every session.
+Activate the environment with: `conda activate auto-proteomics`. If you keep getting a message about running `conda init`, try running `source activate`. You might have to do that at the start of every session. If you get a `command not found` error, you will need to run the following code, replacing the path with the [path to conda on your machine](https://stackoverflow.com/questions/37117571/where-does-anaconda-python-install-on-windows):
+```
+source ~/miniconda3/etc/profile.d/conda.sh # Or path to where your conda is
+conda activate some-conda-environment
+```
 
 *Optional* After creating the conda environment, run: `pre-commit install`. This sets up automatic code formatting and linting before each commit.
 
 ### 4. Generate outputs
 #### Input
-If you don't add your files to the `data` folder, you can generate an example dataset by running `python autoprot/utils/gen_random_data.py`. This will give a quick picture of how the input data should be formatted. Make sure your data are in `data/proteindata.csv` and `data/metadata.csv` (requirements given in /docs/Workflow.md). 
+The repository contains example protein and metadata files: `proteindata.csv` and `metadata.csv` files, generated by `autoprot/utils/gen_random_data.py`. This will give a quick picture of how the input data should be formatted. You can overwrite these files with your own data (requirements given in `/docs/Workflow.md`). 
 
 #### Generate output
-To generate the output, you can run `python main.py`.
+To generate the output, you can run `python main.py`. Runtime depends on number of proteins/samples and computer spec, but as a general guide, the pipeline should the whole pipeline should run in 5-20 mins for a few thousand proteins and 10-20 samples.
 
 #### Outputs
 Running `python main.py` will generate:
@@ -62,17 +66,17 @@ Running `python main.py` will generate:
 - Differential expression tables
 - An html report summarising the results. An example generated from simulated data is available in `../docs/`
 
-These are saved in `/output`.
+These are saved in `/output`. An example of the report generated is in [`report/example-report-out.html`](https://github.com/UCL-Biosciences/Auto-Prot/blob/staging/report/example-report-out.html) - if it doesn't show properly in the repo, try downloading and opening locally.
 
 ## 📂 Project Structure
+```
 /docs                 # Documentation files  
 /report            # report template
 /autoprot             # Processing & analysis scripts  
 /main.py           # Python script for generating outputs  
-/autoprot/utils/generate_report.py   # Script to generate HTML report  
 /input/data                # input data. By default: `human_genes.txt`. Optional: `run autoprot/utils/gen_random_data.py` to generate additional proteindata.csv and metadata.csv in input/data
-
 /output              # plots and tables generated by `main.py`. report saved as output/report-out.html
+```
 
 ## 📝 Analysis Description
 For more details on the analysis and calculations, see `docs/Workflow.md` and `docs/stats_details.md`/
@@ -102,7 +106,7 @@ Please note:
 This project uses a standard Python package layout and is installable via `pip`. The core code lives in the `autoprot/` directory and is defined as a package using `pyproject.toml`. Note: The package is not published on PyPI. Users must clone the repository and install it locally. It can also be cloned and used via `python main.py` - pip installing is not required.
 
 #### Building for distribution
-If you update the package structure or plan to share the repo: `python -m build` will generate `.tar.gz` and `.whl` files in the `dist/` directory. These are needed for `pip install .` installs or for future publishing.
+If you update the package structure or plan to share the repo: `python -m build` will generate `.tar.gz` and `.whl` files in the `dist/` directory. These are needed for `pip install .`
 
 #### Testing
 The project uses pytest for testing. Test files are located in the tests/ directory and follow standard pytest conventions.
@@ -114,6 +118,7 @@ To see the test coverage, run `pytest --cov=autoprot --cov-report=term-missing` 
 ## Further Analysis
 The outputs generated by this tool are exploratory only. We recommend a thorough examination of the data using the code in this repository or with other available tools. E.g.:
 - [MS-DAP](https://pubs.acs.org/doi/10.1021/acs.jproteome.2c00513) R package
+- [proDA](https://github.com/const-ae/proDA?tab=readme-ov-file) seems a good option if you have a lot of missing values or want to explicitly include missingness in your calculations.
 - [AlphaPepStats](https://github.com/MannLabs/alphapept) Python package
 - [Perseus](https://maxquant.net/perseus/) platform has a GUI with lots of functionality and doesn't require any coding.
   

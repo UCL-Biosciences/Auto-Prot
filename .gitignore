@@ -1,5 +1,18 @@
+
 input/data/metadata.csv
 input/data/proteindata.csv
 input/data/*
 output/*
-configs/auto-prot-config.json
+output*/
+__pycache__/
+*.pyc
+.Rprofile
+renv/library/
+renv/python/
+renv/staging/
+r_libs/
+r_libs/*
+
+# Bytecode
+__pycache__/
+*.pyc

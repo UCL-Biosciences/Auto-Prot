@@ -31,6 +31,11 @@ Phosphoproteomic data are generated using similar mass spec workflows. The data 
 If you are unsure, discuss with a colleague who has experience processing mass spec phosphoproteomic data.
 
 ## Analysis
+The analysis pipeline runs in two stages: whole-dataset visualisation followed by pairwise differential abundance testing.
+
+For the full dataset, three clustering analyses are run: PCA, MDS, and a clustered heatmap. These give you an overview of how similar your samples are to each other and whether they separate by treatment group. Because PCA and MDS cannot handle missing values, these plots use only proteins with complete data across all samples. The heatmap also drops proteins with any missing values. The number of proteins used is shown in each plot title — this will typically be lower than the total number of proteins in your dataset, which is expected (see Filtering). If `z_score_for_clustering` is set to true in the config (default), the data are z-score standardised before clustering, which can help visualise relative patterns when absolute abundance differences between proteins are very large.
+
+For pairwise comparisons, every combination of treatment groups is tested in turn. Differential abundance is calculated using the R package limma, called internally via an R script — this requires the `r-limma-env` conda environment to be present (see installation). Results are visualised as a volcano plot, with proteins highlighted in blue if they exceed both the `LFC_threshold` and `FDR_threshold` set in your config. You can choose whether the y-axis uses the FDR-adjusted or unadjusted p-value using the `LFC_plot_p_or_FDRp` config field. Following differential testing, over-representation analysis is run using `g:Profiler` against the pathway database specified by `enrichment_pathways` (e.g. GO, KEGG, REAC), using the proteins detected in your experiment as the background set rather than all proteins in the genome. Combined outputs across all pairwise comparisons are written to `...data/combined_topLFC.csv` and `...data/combined_top_pathway_enrichment`.csv.
 
 ## 📝 Generating the HTML Report
 After running your analysis, you can generate a summary report in HTML format using the generate_report.py file.
@@ -63,6 +68,43 @@ This script:
 
 Output
 You will find the report at: `<repo-root>/<outPath>/report-out.html`. All embedded content (tables, images, version hashes) is included in the single HTML file for easy sharing.
+
+## Run Metadata
+
+Every run automatically writes a `run_metadata.json` file to `<outPath>/` — no config needed. It records everything required to reproduce or audit a run:
+
+| Field | Description |
+|---|---|
+| `start_time` / `end_time` | ISO-8601 UTC timestamps |
+| `exit_status` | `"success"` or `"error"` |
+| `error` | Exception message (only present on error) |
+| `input_files` | SHA-256 hash of each input file |
+| `config` | Full config snapshot |
+| `args` | Command-line arguments |
+| `git` | Commit SHA, nearest tag, dirty flag, path to diff patch |
+| `conda` | `conda list` output for `auto-proteomics` and `r-limma-env` |
+| `platform` | OS and Python platform string |
+| `resources` | Peak memory (MB) and CPU time (s), if psutil is available |
+| `steps` | Timestamped entry for each completed pipeline step (see below) |
+
+If the working tree has uncommitted changes at run time, the full diff is written to `<outPath>/run_diff.patch` so the exact code state can be reproduced later.
+
+### Steps list
+
+The `steps` list has one entry per pipeline step, appended as each step completes:
+
+```json
+"steps": [
+  {"step": "data_processing",      "status": "success", "timestamp": "2026-03-12T10:00:01Z"},
+  {"step": "full_dataset_analysis","status": "success", "timestamp": "2026-03-12T10:02:14Z"},
+  {"step": "subset_timepoint_1",   "status": "success", "timestamp": "2026-03-12T10:04:55Z"},
+  {"step": "report_generation",    "status": "success", "timestamp": "2026-03-12T10:05:03Z"},
+  {"step": "tidy_up",              "status": "success", "timestamp": "2026-03-12T10:05:04Z",
+   "details": {"deleted_files": ["full_dataset/data/treatment_1_treatment_2/limma_output.csv"]}}
+]
+```
+
+Because the file is flushed to disk after every step, a partial `steps` list is preserved even if the run crashes.
 
 ## Refs
 Martinez-Val, A., Bekker-Jensen, D.B., Hogrebe, A., Olsen, J.V. (2021). Data Processing and Analysis for DIA-Based Phosphoproteomics Using Spectronaut. In: Cecconi, D. (eds) Proteomics Data Analysis. Methods in Molecular Biology, vol 2361. Humana, New York, NY. https://doi.org/10.1007/978-1-0716-1641-3_6
