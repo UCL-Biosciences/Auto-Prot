@@ -1,4 +1,6 @@
 # Proteomics Report
+[![DOI](https://zenodo.org/badge/932247341.svg)](https://doi.org/10.5281/zenodo.19203297)
+
 This repository contains the Auto-Proteomics analysis pipeline for generating standardised reports from protein intensity datasets. Welcome.
 
 The tool produces common outputs from mass spec proteomic and phosphoproteomic data. We want to make this possible for people with limited coding experience by requiring only some preparation steps and one line of code to run the pipeline. Parameters are determined in a "config" file so you don't need to look through the code to change things.
@@ -85,6 +87,10 @@ For more details on the analysis and calculations, see `docs/Workflow.md` and `d
 We want this tool to be useful and accessible for as many people as possible - comments and feedback are very welcome. Please send to [james.d.gilbert@ucl.ac.uk](mailto:james.d.gilbert@ucl.ac.uk). 
 
 For help, please first open an issue and send an email if required.
+
+## Citation
+If you use this software, please cite:
+Gilbert, J.D. et al. (2025). Auto-Prot. Zenodo. https://doi.org/10.5281/zenodo.19203297
 
 ## ⚙️ Configuration
 There is a configuration (config) file that allows the user to control lots of parts of the analysis without editing any code. For instructions, see the workflow document. Changes to the config file are ignored (config file in .gitignore) so the default config doesn't get overwritten and continues to work when downloaded.
