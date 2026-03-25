@@ -1,4 +1,6 @@
 # Proteomics Report
+[![DOI](https://zenodo.org/badge/932247341.svg)](https://doi.org/10.5281/zenodo.19203297)
+
 This repository contains the Auto-Proteomics analysis pipeline for generating standardised reports from protein intensity datasets. Welcome.
 
 The tool produces common outputs from mass spec proteomic and phosphoproteomic data. We want to make this possible for people with limited coding experience by requiring only some preparation steps and one line of code to run the pipeline. Parameters are determined in a "config" file so you don't need to look through the code to change things.
