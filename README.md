@@ -90,7 +90,7 @@ For help, please first open an issue and send an email if required.
 
 ## Citation
 If you use the outputs of this tool in a paper, please cite:
-James D Gilbert, Zenezini Chiozzi, R., & Thalassinos, K. (2026). Auto-Prot: A reproducible, no-code python tool for running exploratory proteomics analyses (v1.0). Zenodo. https://doi.org/10.5281/zenodo.19203298
+Gilbert, J.D, Zenezini Chiozzi, R., & Thalassinos, K. (2026). Auto-Prot: A reproducible, no-code python tool for running exploratory proteomics analyses (v1.0). Zenodo. https://doi.org/10.5281/zenodo.19203298
 
 ## ⚙️ Configuration
 There is a configuration (config) file that allows the user to control lots of parts of the analysis without editing any code. For instructions, see the workflow document. Changes to the config file are ignored (config file in .gitignore) so the default config doesn't get overwritten and continues to work when downloaded.
