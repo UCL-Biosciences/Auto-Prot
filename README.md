@@ -101,7 +101,7 @@ Contributions are welcome!
 
 If you’d like to contribute a bug fix, feature, or improvement:
 1. Fork this repository and create a new branch from `staging`
-2. Make your changes
+2. Make your changes and add to CHANGELOG.md
 3. Ensure code passes `pre-commit` checks (run `pre-commit run --all-files`)
 4. Open a pull request to the `staging` branch with a short description of your changes
 
