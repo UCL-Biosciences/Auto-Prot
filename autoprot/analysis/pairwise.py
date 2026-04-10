@@ -50,6 +50,12 @@ def make_volcano(
     metadata_pair.to_csv(pair_metadata_path, index=False)
     # Define where to save the limma results
     pair_result_path = os.path.join(output_dir, "data", pair_name, "limma_output.csv")
+
+    # ref_level is the reference level for the group variable in the DE analysis
+    # which is the first part of the pair name before the underscore (e.g., "Control" in "Control_TreatmentA")
+    # so limma is consistent with figures, tables etc
+    ref_level = pair_name.split("_")[0]
+
     # run R script - note: r-limma-env conda env required
     subprocess.run(
         [
@@ -63,6 +69,7 @@ def make_volcano(
             pair_metadata_path.replace("\\", "/"),
             pair_result_path.replace("\\", "/"),
             formula,  ## formula used in DE analysis
+            ref_level
         ],
         check=True,
     )
@@ -273,7 +280,7 @@ def enrichment_analysis(
             size="recall",  # the proportion of query genes associated with the term
             color="green",
             height=15,  # Adjust figure height for better fit
-            aspect=0.5,  # Maintain a suitable aspect ratio)
+            aspect=1.2,  # Maintain a suitable aspect ratio)
         )
         # Adjustments for axes padding and limits
         # Adjustments for labels and titles

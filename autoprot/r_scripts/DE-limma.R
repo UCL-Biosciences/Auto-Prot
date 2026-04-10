@@ -73,6 +73,7 @@ meta_file <- args[2]
 output_file <- args[3]
 ### the formula to be used in the model
 formula_str <- args[4]
+ref_level <- args[5]  # base level to use in limma calcs - so it is consistent with figure labelling
 
 # Load data
 df <- as.matrix(read.csv(expr_file, row.names = 1, check.names = FALSE))
@@ -80,6 +81,7 @@ mode(df) <- "numeric"
 
 # load metadata
 meta <- read.csv(meta_file)
+meta$treatment <- relevel(factor(meta$treatment), ref = ref_level)
 
 # design is taken directly from the input string
 design <- model.matrix(as.formula(formula_str), data = meta)
