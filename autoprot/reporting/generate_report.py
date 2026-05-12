@@ -105,7 +105,18 @@ def generate_report_html(config = None):
             "<p><em>No pathway enrichment plot available. "
             "This may be due to lack of enriched terms.</em></p>"
         )
-    top_LFC_df = pd.read_csv(top_LFC_prots_path).to_html(index=False, border=1)
+    top_LFC_df = pd.read_csv(top_LFC_prots_path)
+
+    # P.Value and adj.P.Val round to 4dp
+    top_LFC_df["P.Value"] = pd.to_numeric(top_LFC_df["P.Value"], errors="coerce").round(4)
+    top_LFC_df["adj.P.Val"] = pd.to_numeric(top_LFC_df["adj.P.Val"], errors="coerce").round(4)
+
+    # logFC, AveExpr, t, B all to 2dp
+    for col in [ "logFC", "AveExpr", "t", "B" ]:
+        top_LFC_df[ col ] = top_LFC_df[ col ].round(2)
+
+    # convert to html for template
+    top_LFC_df = top_LFC_df.to_html(index=False, border=1)
 
     # Open the file for reading and read the input to a temp variable
     with open(report_MD) as f:
