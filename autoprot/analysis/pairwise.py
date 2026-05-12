@@ -135,7 +135,7 @@ def make_volcano(
                 row["logFC"],
                 row[Volcano_y_axis],
                 row.name,  # Assumes protein names are in the index
-                fontsize=12,
+                fontsize=8,
             )
         )
 
@@ -153,10 +153,31 @@ def make_volcano(
     plt.axvline(x=LFC_threshold, color="red", linestyle="--", linewidth=1)
     plt.axvline(x=-LFC_threshold, color="red", linestyle="--", linewidth=1)
     plt.axhline(y=-np.log10(FDR_threshold), color="red", linestyle="--", linewidth=1)
-    plt.title(plot_title, fontsize=16)
-    plt.xlabel("Log2 Fold Change (LFC)", fontsize=12)
-    plt.ylabel(Volcano_y_axis, fontsize=12)
+    plt.title(plot_title, fontsize=12)
+    plt.xlabel("Log2 Fold Change (LFC)", fontsize=10)
+    plt.ylabel(Volcano_y_axis, fontsize=10)
     plt.grid(True, linestyle="--", alpha=0.6)
+    # Add directional arrows below x-axis indicating which group has higher expression
+    ax = plt.gca()
+    other_level = pair_name.split("_")[1]
+    arrow_y = -0.16
+    ax.annotate(
+        f"Higher in {ref_level}",
+        xy=(0.05, arrow_y), xycoords="axes fraction",
+        xytext=(0.44, arrow_y), textcoords="axes fraction",
+        ha="right", va="center", fontsize=10, color="black",
+        arrowprops=dict(arrowstyle="->", color="black", lw=1.5),
+        annotation_clip=False,
+    )
+    ax.annotate(
+        f"Higher in {other_level}",
+        xy=(0.95, arrow_y), xycoords="axes fraction",
+        xytext=(0.56, arrow_y), textcoords="axes fraction",
+        ha="left", va="center", fontsize=10, color="black",
+        arrowprops=dict(arrowstyle="->", color="black", lw=1.5),
+        annotation_clip=False,
+    )
+    plt.subplots_adjust(bottom=0.15)
     # Set symmetrical x-axis
     # Save plot and PCA data
     # plt.xlim(-4, 4)
