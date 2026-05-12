@@ -23,7 +23,9 @@ I ran into a few common issues with the environment worth noting. They mostly co
 * make sure the python version running in any script is the correct one i.e. it matches the version in the conda env.
 
 ## Input File Format
-**Please please please never mess with raw data**. Everything in this pipeline runs automatically. You can always re-run it to recover outputs. If you have a single copy of your raw data and overwrite it, it might not be possible to retrieve the raw data! It would be good to have a copy of the original data safely stored (and backed up) in a location that will never be touched by this pipeline (or any other). E.g. for UCL people, store the raw data on the [Research Data Storage Service](https://www.ucl.ac.uk/isd/research-data-storage-service) and make a local copy as input for the pipeline.
+**Please please please never mess with raw data**. Everything in this pipeline runs automatically. You can always re-run it to recover outputs. If you have a single copy of your raw data and overwrite it, it might not be possible to retrieve the raw data! I have overwritten `proteindata.csv' many times. It is very annoying (although so far I have not lost any data...!).
+
+It would be good to have a copy of the original data safely stored (and backed up) in a location that will never be touched by this pipeline (or any other). E.g. for UCL people, store the raw data on the [Research Data Storage Service](https://www.ucl.ac.uk/isd/research-data-storage-service) and make a local copy as input for the pipeline. You can keep the data in a folder separate from the github repository clone, which reduces the chance of git doing anything naughty.
 
 This tool expects two input files in CSV format:
 - `proteindata.csv`: protein abundance table
