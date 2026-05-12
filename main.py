@@ -139,7 +139,6 @@ def main():
                 an.run_analysis(
                     df=subset_df,
                     metadata=subset_metadata,
-                    json_out=json_out,
                     output_dir=subset_outPath,
                     config=config,
                     formula=subset_formula,

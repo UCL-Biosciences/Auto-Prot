@@ -76,6 +76,9 @@ def normalise_column_names(df, file_path=None, outPath = None, config=None):
 
         genes_columns = [col for col in df.columns if "gene" in col.lower()]
         
+        # gene names must be upper case to avoid case insensitive duplicates
+        df[genes_columns[0]] = df[genes_columns[0]].str.upper()
+
         if genes_columns:  # If any column contains 'genes'
                
             # Set initial index
@@ -202,7 +205,7 @@ def validate_metadata(metadata):
         raise ValueError(f"Error: Missing required columns: {missing_columns}")
     # Check for missing values (NaNs) in the entire DataFrame
     if metadata.isna().any().any():
-        raise ValueError("Error: The metadata contains missing (NaN) values!")
+        warnings.warn("Warning: The metadata contains missing (NaN) values!")
     # Check if the combination of 'sample_id' and 'replicate' is unique
     if metadata[["sample_rep"]].duplicated().any():
         raise ValueError("Error: Each (sample_id, replicate) pair must be unique.")
