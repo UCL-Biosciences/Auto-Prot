@@ -78,7 +78,7 @@ The pipeline can be used with phosphoproteomic data. There are a few things to b
 | Sample2   | treated   | 1         | 1         | Sample2                |
 
 - `Sample_ID`: used to identify samples
-- `treatment`: treatment group for each sample. E.g. positive, negative, healthy etc. required for group comparison and plotting
+- `treatment`: treatment group for each sample. E.g. positive, negative, healthy etc. required for group comparison and plotting. Must not contain underscores :'D
 - `replicate`: integer; replicates for sample IDs. If there are no replicates, enter 1 for all rows.
 - `timepoint`: optional, can be included in model for differential expression or used to subset samples
 - `protein_abundance_name`:  Very important column linking metadata to protein abundance. This must contain the exact name of the column containing protein data for each sample, replicate etc
