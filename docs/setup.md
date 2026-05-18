@@ -117,6 +117,8 @@ To make the code work, you must enter the correct parameters and combination of 
 
 **missing_threshold.** Proportion threshold for missingness per group (0–1). Example: 0.75 means proteins must appear in at least 75% of samples per group. Default: 0.75
 
+**IQR_threshold.** Proportion threshold for low-variance proteins (0–1). The interquartile range of normalised intensities is calculated for all proteins, and the bottom XX% are removed. Example: 0.1 filters out proteins in the bottom 10% based of IQRs. Default: 0.1
+
 ### Normalisation and imputation
 
 **normalise_method.** Normalisation method. Options: "vsn" (variance stabilisation, recommended), "sample-median"

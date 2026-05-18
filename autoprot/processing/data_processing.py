@@ -198,7 +198,7 @@ def clean_data(
             ### pre process protein abundance data
             ## replace 0 with NA, remove prots with lots of missing data
             ## log2 transform, normalise, and/or impute - see docs for details
-            dfs = dpp.process_prot_data(df, config, metadata=metadata, outPath=outPath)
+            dfs = dpp.process_prot_data(df, config, metadata=metadata, outPath=outPath, json_out=json_out)
             ## to be shown when plotting distributions
             plot_titles = [
                 "Raw Intensities",

@@ -62,6 +62,7 @@ def generate_report_html(config = None):
         "NORM_METHOD": config.get("normalise_method"),
         "IMP_METHOD" : config.get("imputation_method"),
         "FDR_THRESHOLD" : config.get("FDR_threshold"),
+        "IQR_THRESHOLD" : config.get("IQR_threshold") *100,
     }
 
     # Append new data
