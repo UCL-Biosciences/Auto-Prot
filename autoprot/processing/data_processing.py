@@ -6,7 +6,6 @@ import os
 import numpy as np
 import pandas as pd
 import seaborn as sns
-import yaml
 
 import autoprot.processing.data_preprocess as dpp
 from autoprot.utils.data_io import load_data
@@ -132,6 +131,17 @@ def prot_summary(df, nrow_original, json_out):
     NUM_PROTS = len(df.index)
     NUM_PROTS_REMOVED = nrow_original - NUM_PROTS
 
+    ### this is all the prots removed due to identical values, missing data and low IQR
+    ## NUM_PROTS_REMOVED should reflect only identical/missing removals
+    ## so take away NUM_LOW_VAR_PROTS
+    # read data from json file
+    with open(json_out) as f:
+        existing_data = json.load(f)
+
+    NUM_LOW_VAR_PROTS = existing_data.get("NUM_LOW_VAR_PROTS", 0)
+        
+    NUM_PROTS_REMOVED = NUM_PROTS_REMOVED - NUM_LOW_VAR_PROTS
+
     # Compute mean value per row (per protein across all samples)
     mean_abundance = df.mean(axis=1)
 
@@ -145,9 +155,7 @@ def prot_summary(df, nrow_original, json_out):
         "MEDIAN_AVERAGE_ABUNDANCE": f"{mean_abundance.median():,.2f}",
     }
 
-    # read data from json file
-    with open(json_out) as f:
-        existing_data = yaml.safe_load(f)
+    
 
     # Append new data
     existing_data.update(abundance_stats)
