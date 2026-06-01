@@ -74,7 +74,17 @@ def run_analysis(
 
     ###### Pairwise Analyses #####
     # if there are > 2 treatment groups, pairwise analyses will have to be run separately for each pair of treatments
-    treatment_pairs = list(itertools.combinations(metadata["treatment"].unique(), 2))
+    specified_pairs = config.get("pairwise_comparisons")
+    if specified_pairs:
+        treatment_pairs = [tuple(pair) for pair in specified_pairs]
+    else:
+        treatment_pairs = list(itertools.combinations(metadata["treatment"].unique(), 2))
+    
+    # for consistency with how treatments are processed in metadata: replace spaces and underscores with hyphens in treatment names for pairwise comparisons
+    treatment_pairs = [
+        (a.replace(" ", "-").replace("_", "-"), b.replace(" ", "-").replace("_", "-"))
+        for a, b in treatment_pairs
+    ]
 
     for pair in treatment_pairs:
         print("starting analysis for pair ", pair)

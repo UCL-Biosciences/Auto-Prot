@@ -40,6 +40,10 @@ def clean_meta(df, json_out):
     """
     df["sample_id"] = df["sample_id"].astype(str).str.strip()
     df["treatment"] = df["treatment"].astype(str).str.strip()
+
+    # treatments also can't have spaces or underscores - convert both to -
+    df["treatment"] = df["treatment"].str.replace(" ", "-").str.replace("_", "-")
+
     df["protein_abundance_name"] = (
         df["protein_abundance_name"].str.lower().str.replace(" ", "_")
     )
@@ -114,6 +118,7 @@ def clean_prot(df, metadata):
     )
     # Rename columns in data_in based on the mapping
     df = df.rename(columns=rename_mapping)
+
     return df
 
 

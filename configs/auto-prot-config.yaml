@@ -15,13 +15,13 @@ data_type: prot                 # Type of data: "prot" for proteomics (default),
 #     - "PTM.CollapseKey"
 #   missing_value: "NA"        # Value to use if any field is missing
 
-missing_threshold: 0.75        # Proportion threshold for missingness per group (0–1).
+missing_threshold: 0.5        # Proportion threshold for missingness per group (0–1).
                                 # e.g. 0.75 means proteins must appear in ≥75% of samples per group.
 
 # ---- NORMALISATION & IMPUTATION ----
 normalise_method: vsn          # Normalisation: "vsn" (variance stabilisation, recommended) or "sample-median"
 imputation_method: pimms_collabfilter   # Imputation: "pimms_collabfilter" or "hist_grad_boost"
-df_to_use: df_imp              # Which dataset to analyse:
+df_to_use: df_norm              # Which dataset to analyse:
                                 #   "df" (raw, not recommended)
                                 #   "df_log2" (log2 transformed)
                                 #   "df_norm" (normalised)
@@ -42,6 +42,10 @@ analyse_full_dataset: true     # Analyse full dataset without filtering (true/fa
 analyse_subsets: false         # Analyse subsets based on a metadata variable (true/false)
 subset_variable: ""            # Metadata column to subset on (e.g. "timepoint")
 subsets: []                    # Specific subset values to run (empty = all values of subset_variable)
+
+# ---- PAIRWISE COMPARISONS ----
+pairwise_comparisons: []       # Specific pairs to compare, e.g. [["Control", "TreatmentA"], ["Control", "TreatmentB"]]
+                                # Leave empty ([]) to run all pairwise combinations
 
 # ---- DIFFERENTIAL EXPRESSION (DE) ----
 DE_full_formula: "~ treatment" # Formula for DE on full dataset (R-style model formula)
