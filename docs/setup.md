@@ -23,7 +23,9 @@ I ran into a few common issues with the environment worth noting. They mostly co
 * make sure the python version running in any script is the correct one i.e. it matches the version in the conda env.
 
 ## Input File Format
-**Please please please never mess with raw data**. Everything in this pipeline runs automatically. You can always re-run it to recover outputs. If you have a single copy of your raw data and overwrite it, it might not be possible to retrieve the raw data! It would be good to have a copy of the original data safely stored (and backed up) in a location that will never be touched by this pipeline (or any other). E.g. for UCL people, store the raw data on the [Research Data Storage Service](https://www.ucl.ac.uk/isd/research-data-storage-service) and make a local copy as input for the pipeline.
+**Please please please never mess with raw data**. Everything in this pipeline runs automatically. You can always re-run it to recover outputs. If you have a single copy of your raw data and overwrite it, it might not be possible to retrieve the raw data! I have overwritten `proteindata.csv' many times. It is very annoying (although so far I have not lost any data...!).
+
+It would be good to have a copy of the original data safely stored (and backed up) in a location that will never be touched by this pipeline (or any other). E.g. for UCL people, store the raw data on the [Research Data Storage Service](https://www.ucl.ac.uk/isd/research-data-storage-service) and make a local copy as input for the pipeline. You can keep the data in a folder separate from the github repository clone, which reduces the chance of git doing anything naughty.
 
 This tool expects two input files in CSV format:
 - `proteindata.csv`: protein abundance table
@@ -76,7 +78,7 @@ The pipeline can be used with phosphoproteomic data. There are a few things to b
 | Sample2   | treated   | 1         | 1         | Sample2                |
 
 - `Sample_ID`: used to identify samples
-- `treatment`: treatment group for each sample. E.g. positive, negative, healthy etc. required for group comparison and plotting
+- `treatment`: treatment group for each sample. E.g. positive, negative, healthy etc. required for group comparison and plotting. Must not contain underscores :'D
 - `replicate`: integer; replicates for sample IDs. If there are no replicates, enter 1 for all rows.
 - `timepoint`: optional, can be included in model for differential expression or used to subset samples
 - `protein_abundance_name`:  Very important column linking metadata to protein abundance. This must contain the exact name of the column containing protein data for each sample, replicate etc
@@ -114,6 +116,8 @@ To make the code work, you must enter the correct parameters and combination of 
 **phospho_row_id.missing_value**. Value to use if any of the above fields are missing. Default: "NA"
 
 **missing_threshold.** Proportion threshold for missingness per group (0–1). Example: 0.75 means proteins must appear in at least 75% of samples per group. Default: 0.75
+
+**IQR_threshold.** Proportion threshold for low-variance proteins (0–1). The interquartile range of normalised intensities is calculated for all proteins, and the bottom XX% are removed. Example: 0.1 filters out proteins in the bottom 10% based of IQRs. Default: 0.1
 
 ### Normalisation and imputation
 

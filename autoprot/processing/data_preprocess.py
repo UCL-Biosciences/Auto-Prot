@@ -5,6 +5,7 @@ import glob
 import os
 import subprocess
 import time
+import json
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -235,7 +236,7 @@ def impute_pimms_cf(
     return df_imputed
 
 
-def process_prot_data(df, config, outPath, metadata):
+def process_prot_data(df, config, outPath, metadata, json_out):
     """
     Preprocess protein abundance data by filtering, transforming, normalising, and imputing.
 
@@ -247,6 +248,7 @@ def process_prot_data(df, config, outPath, metadata):
 
     Args:
         df (pd.DataFrame): Raw protein abundance data (proteins in rows, samples in columns).
+        json_out (str, optional): Path to JSON file to write summary info.
 
     Returns:
         dict: Dictionary of intermediate DataFrames:
@@ -311,6 +313,29 @@ def process_prot_data(df, config, outPath, metadata):
     # Transpose: sklearn expects features in columns, samples in rows
     df_norm_t = df_norm.T  # shape: samples × proteins
     df_norm_t.columns = df_norm_t.columns.astype(str)
+
+    #### variance filter ####
+    # filter out proteins with low variance across samples, as these are unlikely to be informative for downstream analyses
+    # and can reduce ability to detect patterns in clustering and DE
+    # we use the inter-quartile range (IQR) as a measure of variance, and filter out proteins in the bottom X% of IQR values, where X is specified in config
+    # Those in bottom X% are removed from ALL dfs, below
+    iqr = df_norm.quantile(0.75, axis=1) - df_norm.quantile(0.25, axis=1)
+    threshold = np.percentile(iqr, config["IQR_threshold"] * 100)
+    variance_mask = iqr >= threshold
+    
+    # save a df with IQR and variance mask for each protein, to check how many proteins were removed by the variance filter and what their IQR values were
+    iqr_df = pd.DataFrame({"iqr": iqr, "retained": variance_mask})
+    iqr_df.to_csv(os.path.join(outPath, "data/protein_iqr_variance_filter.csv"))
+    print(f"Variance filter: removed {(~variance_mask).sum()} proteins (bottom {config['IQR_threshold']*100:.0f}% by IQR)")
+
+    with open(json_out, "r") as f:
+        out = json.load(f)
+
+    out["NUM_LOW_VAR_PROTS"] = int((~variance_mask).sum())
+
+    with open(json_out, "w") as f:
+        json.dump(out, f, indent=4)
+
     #### impute ####
     if config["imputation_method"] == "hist_grad_boost":
         
@@ -322,12 +347,14 @@ def process_prot_data(df, config, outPath, metadata):
         print("imputing with pimms: collaborative filtering")
         df_imp = impute_pimms_cf(df=df_log2.T)
         
+    proteins_to_keep = variance_mask[variance_mask].index
+    
     return {
-        "df": df,
-        "df_log2": df_log2,
-        "df_norm": df_norm,
-        "df_imp": df_imp,
-    }
+        "df": df.loc[df.index.intersection(proteins_to_keep)],
+        "df_log2": df_log2.loc[df_log2.index.intersection(proteins_to_keep)],
+        "df_norm": df_norm.loc[df_norm.index.intersection(proteins_to_keep)],
+        "df_imp": df_imp.loc[df_imp.index.intersection(proteins_to_keep)],
+        }
 
 
 def view_prot_distributions(dfs_values, plot_titles, metadata, outPath):

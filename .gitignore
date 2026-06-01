@@ -13,6 +13,9 @@ renv/staging/
 r_libs/
 r_libs/*
 
+configs/auto-prot-config*.yaml
+configs/auto-prot-config.yaml
+
 # Bytecode
 __pycache__/
 *.pyc

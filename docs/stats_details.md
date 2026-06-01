@@ -9,6 +9,8 @@ As always, we appreciate feedback and suggestions. Please create issues or get i
 ### Zero Values and Missing Data
 Important note: mass spectrometry instruments record the intensities of proteins that are detected above a certain threshold. Below that threshold, it is not clear whether a protein is completely absent or whether it just wasn't detected in the sample. In this pipeline, we assume all zeros are missing values and convert them to NA before further processing.
 
+Low-variance proteins are removed prior to analysis. The interquartile range of normalised intensities is calculated for all proteins, and the bottom XX% are removed. The threshold is determined by the "IQR_threshold" config parameter. The default value is 0.1 (10%) and can be set to 0 if you don't want to remove any low-variance proteins.
+
 ### Log Transformation
 If sample-median normalisation is used, values are log2-transformed. vsn normalisation requires raw values.
 
