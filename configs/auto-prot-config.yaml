@@ -17,6 +17,8 @@ data_type: prot                 # Type of data: "prot" for proteomics (default),
 
 missing_threshold: 0.75        # Proportion threshold for missingness per group (0–1).
                                 # e.g. 0.75 means proteins must appear in ≥75% of samples per group.
+IQR_threshold: 0.1            # filter out low-variance proteins. Value determines % of proteins to remove based on IQR
+
 
 # ---- NORMALISATION & IMPUTATION ----
 normalise_method: vsn          # Normalisation: "vsn" (variance stabilisation, recommended) or "sample-median"
