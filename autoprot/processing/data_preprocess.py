@@ -135,7 +135,7 @@ def filter_proteins_by_group_missingness(
     Returns:
         pd.DataFrame: Filtered protein DataFrame.
     """
-    threshold = config.get("missing_threshold")
+    threshold = config.get("missing_threshold", 0.0)
     # create empty list to store valid protein sets for each group
     valid_sets = []
     # .groupby groups the metadata by the specified group column
@@ -320,7 +320,7 @@ def process_prot_data(df, config, outPath, metadata, json_out):
     # we use the inter-quartile range (IQR) as a measure of variance, and filter out proteins in the bottom X% of IQR values, where X is specified in config
     # Those in bottom X% are removed from ALL dfs, below
     iqr = df_norm.quantile(0.75, axis=1) - df_norm.quantile(0.25, axis=1)
-    threshold = np.percentile(iqr, config["IQR_threshold"] * 100)
+    threshold = np.nanpercentile(iqr, config["IQR_threshold"] * 100)
     variance_mask = iqr >= threshold
     
     # save a df with IQR and variance mask for each protein, to check how many proteins were removed by the variance filter and what their IQR values were
@@ -399,7 +399,9 @@ def view_prot_distributions(dfs_values, plot_titles, metadata, outPath):
         )
         # Plot boxplots: each sample's distribution is shown on the x-axis.
         # The boxes are colored by treatment.
-        sns.boxplot(x="sample_rep", y="intensity", data=long_df, hue="treatment", ax=ax)
+        # Drop NaN intensities — seaborn fails to build palette for groups with no valid data
+        plot_df = long_df.dropna(subset=["intensity"])
+        sns.boxplot(x="sample_rep", y="intensity", data=plot_df, hue="treatment", ax=ax)
         ax.set_title(title)
         ax.set_xlabel("Sample ID")
         ax.set_ylabel("Intensity")
@@ -431,6 +433,11 @@ def view_prot_distributions(dfs_values, plot_titles, metadata, outPath):
         long_df = long_df.merge(
             metadata[["sample_rep", "treatment"]], on="sample_rep", how="left"
         )
+
+        # in case some values are NaN after merging, drop these rows to avoid errors in sns.kdeplot
+        long_df = long_df.dropna(subset=["intensity", "treatment"])  
+
+
         # Plot KDE for each treatment on the same subplot
         for treatment, group in long_df.groupby("treatment"):
             sns.kdeplot(data=group, x="intensity", ax=ax, label=treatment)

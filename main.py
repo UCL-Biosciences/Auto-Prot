@@ -52,6 +52,7 @@ def main():
     json_out = os.path.join(REPO_ROOT, config["json_outPath"])
     full_formula = config["DE_full_formula"]
     subset_formula = config["DE_subset_formula"]
+    prots_label_volcano = config["volcano_label_proteins"]
     # Create the output directory
     make_outdir(outPath, make_subdirs=True)
 
@@ -100,6 +101,7 @@ def main():
                 output_dir=full_outPath,
                 config=config,
                 formula=full_formula,
+                prots_label_volcano = prots_label_volcano
             )
             print("Full analysis complete.")
             record_step_complete("full_dataset_analysis", "success", run_meta, run_metadata_file)
@@ -142,6 +144,7 @@ def main():
                     output_dir=subset_outPath,
                     config=config,
                     formula=subset_formula,
+                    prots_label_volcano = prots_label_volcano
                 )
                 record_step_complete(step_name, "success", run_meta, run_metadata_file)
             print("All subsets processed successfully.")

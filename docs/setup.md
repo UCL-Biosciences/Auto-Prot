@@ -153,6 +153,12 @@ To make the code work, you must enter the correct parameters and combination of 
 
 **subsets.** Specific subset values to run. Empty = all values of subset_variable. Example: "timepoint 1" or ["treatment A", "treatment B"]
 
+#### Pairwise Setup
+**pairwise_comparisons.**  Specific pairs to compare, e.g. [["Control", "TreatmentA"], ["Control", "TreatmentB"]]. Leave empty ([]) to run all pairwise combinations
+
+**volcano_label_proteins.** names of proteins to name in the volcano plot (optional). Can be file path to csv or comma-separated list of protein names. Leave empty ([]) to label top 10 by LFC
+
+
 #### Differential Expression Calculation
 
 **DE_full_formula.** Formula for DE on full dataset (R-style model formula). Example: "~ treatment"

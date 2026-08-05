@@ -33,6 +33,7 @@ def run_analysis(
     output_dir: str,
     config: dict,
     formula: str,
+    prots_label_volcano: str
 ) -> dict:
     """
     Runs the full analysis pipeline for a protein abundance dataset, including clustering (PCA, MDS, heatmap)
@@ -54,6 +55,7 @@ def run_analysis(
             - "FDR_threshold" (float): Suggested p-value threshold for volcano plot annotation.
             - "LFC_plot_p_or_FDRp" (str): Column to use for y-axis in volcano plot.
         formula (str): the formula passted to the DE calculation. May need to be different for full dataset and subsets.
+        prots_label_volcano (str): file path to a list of proteins to label in the volcano plot.
 
     Returns:
         dict: Dictionary containing result DataFrames from PCA, MDS, heatmap, and each pairwise analysis.
@@ -105,6 +107,7 @@ def run_analysis(
             pair_name=pair_name,
             config=config,
             formula=formula,
+            prots_label_volcano = prots_label_volcano
         )
         results_name = "df_lm_" + pair_name
         results[results_name] = lm_results_df

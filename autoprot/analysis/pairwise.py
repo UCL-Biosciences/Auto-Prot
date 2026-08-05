@@ -19,6 +19,7 @@ def make_volcano(
     config: dict,
     formula: str,
     metadata_pair: pd.DataFrame = None,
+    prots_label_volcano: str = None
 ) -> pd.DataFrame:
     """
     Performs differential abundance analysis for a pairwise comparison using an external R script (limma),
@@ -37,6 +38,8 @@ def make_volcano(
             - "LFC_plot_p_or_FDRp" (str): Column to use for y-axis in volcano plot ("Log10_FDR_P_Value" or "Log10_unadjusted_p_Value").
         metadata_pair (pd.DataFrame, optional): Metadata for the subset of samples in this comparison.
         formula (str): the formula passted to the DE calculation. May need to be different for full dataset and subsets.
+        prots_label_volcano (str): file path to a list of proteins to label in the volcano plot.
+
 
     Returns:
         pd.DataFrame: DataFrame with differential expression results, including logFC, p-values, adjusted p-values,
@@ -122,11 +125,21 @@ def make_volcano(
         legend=False,  # No legend for this plot
         alpha=0.7,  # Transparency for points
     )
-    ### label top 10 blue proteins
-    # Sort by adjusted p-value and take top 10 (or all if < 10)
-    top_proteins = diffExpr_df[diffExpr_df["Colour"] == "blue"].nsmallest(
-        10, "adj.P.Val"
-    )
+    ### label top 10 blue proteins that appear in the user-supplied label list
+    if prots_label_volcano:
+        if os.path.isfile(prots_label_volcano):
+            label_list = pd.read_csv(prots_label_volcano, header=None, usecols=[0]).iloc[:, 0].tolist()
+        else:
+            label_list = [p.strip() for p in prots_label_volcano.split(",")]
+        top_proteins = diffExpr_df[
+            (diffExpr_df["Colour"] == "blue") & (diffExpr_df.index.isin(label_list))
+        ].nsmallest(20, "adj.P.Val")
+        if top_proteins.empty:
+            top_proteins = diffExpr_df[diffExpr_df["Colour"] == "blue"].nsmallest(10, "adj.P.Val")
+    else:
+        top_proteins = diffExpr_df[diffExpr_df["Colour"] == "blue"].nsmallest(
+            20, "adj.P.Val"
+        )
     # Prepare text objects
     texts = []
     for _, row in top_proteins.iterrows():
@@ -135,7 +148,7 @@ def make_volcano(
                 row["logFC"],
                 row[Volcano_y_axis],
                 row.name,  # Assumes protein names are in the index
-                fontsize=8,
+                fontsize=10,
             )
         )
 

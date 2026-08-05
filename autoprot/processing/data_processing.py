@@ -262,7 +262,7 @@ def process_data(file_path, metadata=None, json_out=None, outPath=None, config=N
             df=df_renamed, file_path=file_path, config=config, json_out=json_out
         )
         ### run function to validate metadata
-        validate_metadata(df)
+        validate_metadata(metadata = df)
 
     if "protein" in fname:
         df = clean_data(
