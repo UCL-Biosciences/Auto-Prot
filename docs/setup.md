@@ -104,6 +104,7 @@ To make the code work, you must enter the correct parameters and combination of 
 
 **process_prot_data.** Whether to complete the full protein data processing. If you have already done the data processing and have a `output/full_dataset/data/proteinAbundance.csv` file to use, set this to false to save a few seconds. If true (default), process protein data from scratch. If false, load from `output/full_dataset/data/proteinAbundance.csv`. 
 
+**prots_to_remove.** List of proteins to remove from analysis (optional). Can be file path to csv or comma-separated list of protein names. Leave empty ([]) to keep all proteins.  
 
 ### Input Data
 

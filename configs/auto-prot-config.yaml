@@ -4,6 +4,7 @@
 # This file controls how the pipeline runs. Update paths and parameters as needed.
 # ---- RUN SETTINGS ----
 process_prot_data: true          # If true, process protein data from scratch. If false, load from output/data/proteinAbundance.csv
+prots_to_remove: []             # List of proteins to remove from analysis (optional). Can be file path to csv or comma-separated list of protein names. Leave empty ([]) to keep all proteins.  
 
 # ---- DATA SETTINGS ----
 data_type: prot                 # Type of data: "prot" for proteomics (default), "phospho" for phosphoproteomics
@@ -15,13 +16,13 @@ data_type: prot                 # Type of data: "prot" for proteomics (default),
 #     - "PTM.CollapseKey"
 #   missing_value: "NA"        # Value to use if any field is missing
 
-missing_threshold: 0.5        # Proportion threshold for missingness per group (0–1).
+missing_threshold: 0.3        # Proportion threshold for missingness per group (0–1).
                                 # e.g. 0.75 means proteins must appear in ≥75% of samples per group.
 IQR_threshold: 0.1            # filter out low-variance proteins. Value determines % of proteins to remove based on IQR
 
 
 # ---- NORMALISATION & IMPUTATION ----
-normalise_method: vsn          # Normalisation: "vsn" (variance stabilisation, recommended) or "sample-median"
+normalise_method: vsn        # Normalisation: "vsn" (variance stabilisation, recommended) or "sample-median"
 imputation_method: pimms_collabfilter   # Imputation: "pimms_collabfilter" or "hist_grad_boost"
 df_to_use: df_norm              # Which dataset to analyse:
                                 #   "df" (raw, not recommended)
@@ -29,16 +30,16 @@ df_to_use: df_norm              # Which dataset to analyse:
                                 #   "df_norm" (normalised)
                                 #   "df_imp" (normalised + imputed)
 z_score_for_clustering: true    # Whether to z-score data for PCA, MDS and heatmap clustering (true/false)
-run_clustering: true           # Whether to skip clustering (PCA, MDS, heatmap). If true, the pipeline will skip clustering and only run DE and enrichment analyses.
+run_clustering: false           # Whether to skip clustering (PCA, MDS, heatmap). If true, the pipeline will skip clustering and only run DE and enrichment analyses.
 
 # ---- SPECIES & ANNOTATION ----
 species: hsapiens              # Species for pathway enrichment: e.g. hsapiens, mmusculus, etc.
 
 # ---- FILE PATHS ----
-protPath: input/data/proteindata.csv    # Path to protein data file
-metaPath: input/data/metadata.csv       # Path to metadata file
-outPath: output                         # Directory for all outputs
-json_outPath: output/data/data_for_report.json  # JSON file for storing report-related info
+protPath: input/data/proteindata_2025.csv    # Path to protein data file
+metaPath: input/data/metadata_2025_KO_DMSO.csv       # Path to metadata file
+outPath: output_2025_KO_DMSO                         # Directory for all outputs
+json_outPath: output_2025_KO_DMSO/data/data_for_report.json  # JSON file for storing report-related info
 
 # ---- SUBSETTING OPTIONS ----
 analyse_full_dataset: true     # Analyse full dataset without filtering (true/false)

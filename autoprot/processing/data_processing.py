@@ -82,7 +82,7 @@ def clean_meta(df, json_out):
 
 
 ### clean prot data
-def clean_prot(df, metadata):
+def clean_prot(df, metadata, config):
     """
     Filter and rename protein abundance columns using metadata.
 
@@ -99,17 +99,33 @@ def clean_prot(df, metadata):
     # Filter columns based on metadata['protein_abundance_name']
     # extract column names to keep
     valid_columns = metadata["protein_abundance_name"].tolist()
+    
     # filter df to keep prot abundance columns
     df = df.loc[:, df.columns.isin(valid_columns)]
+    
     # At this point, remove rows fully duplicated including the index
     df = df[~df.reset_index().duplicated(keep="first").values]
+    
     # protein columns should have only numeric data
     # convert non-numeric values to NaN and print warning message
     if not df.equals(df.select_dtypes(include=[np.number])):
         print(
-            "Warning: DataFrame contains non-numeric values! Converting to NaN: these proteins will be imputed!"
+            "Warning: DataFrame contains non-numeric values! Converting to NaN: these proteins will be imputed if you are using imputation!"
         )
         df = df.apply(pd.to_numeric, errors="coerce")
+
+    ## proteins to remove
+    if config.get("prots_to_remove"):
+        prots_to_remove = config["prots_to_remove"]
+        if os.path.isfile(prots_to_remove):
+            prots_to_remove = pd.read_csv(prots_to_remove, header=None).iloc[:, 0].tolist()
+
+        # print how many prots will be removed based on overlap with df
+        overlap = set(prots_to_remove).intersection(set(df.index))
+        print(len(overlap), "proteins will be removed based on the list provide in the config via prots-to-remove.")
+
+        df = df.drop(prots_to_remove, axis=0, errors="ignore")
+
     ### protein columns can have long names - better to have just sample name
     # Create a mapping of old column names to new column names
     rename_mapping = dict(
@@ -207,7 +223,7 @@ def clean_data(
                 "Error: 'protein_abundance_name' column is missing in the metadata."
             )
         else:
-            df = clean_prot(df, metadata)
+            df = clean_prot(df, metadata, config)
             ### pre process protein abundance data
             ## replace 0 with NA, remove prots with lots of missing data
             ## log2 transform, normalise, and/or impute - see docs for details
