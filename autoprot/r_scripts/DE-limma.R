@@ -90,7 +90,7 @@ design <- model.matrix(as.formula(formula_str), data = meta)
 print( paste0("running model with formula: ", formula_str))
 fit <- lmFit(df, design)
 print("running ebayes")
-fit <- eBayes(fit)
+fit <- eBayes(fit, robust = TRUE, trend = TRUE)
 
 ## which coefficient to use for the DE calculation?
 # two steps - first find which metadata column is the treatment to contrast
