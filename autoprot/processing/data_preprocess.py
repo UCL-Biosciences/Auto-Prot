@@ -138,29 +138,27 @@ def filter_proteins_by_group_missingness(
     threshold = config.get("missing_threshold", 0.0)
     # create empty list to store valid protein sets for each group
     valid_sets = []
+
+    # and the final mask should have a consistent order. Python by default randomises the order of sets when doing intersection, so we need to sort the indices before returning the filtered df
+    keep_mask = pd.Series(True, index=df.index) # initialize a boolean mask for proteins to keep
+
     # .groupby groups the metadata by the specified group column
     # outputs group name and DataFrame for each group
     for group, group_df in metadata.groupby(group_col):
+       
         # get the sample names for this group
         samples = group_df[sample_col]
+        
         # filter the original DataFrame to only include these samples
         sub_df = df[samples]
-        # calculate the proportion of non-missing values for each protein
-        # and keep those that are present in at least `threshold` proportion of samples
-        valid = sub_df.notna().mean(axis=1) >= threshold
-        # add the indices of valid proteins to the list
-        # this will be a set of protein indices that are valid for this group
-        valid_sets.append(set(df.index[valid]))
-    # find intersection of all valid sets to get proteins present > threshold in all groups
-    keep_proteins = set.intersection(*valid_sets)
-    print(
-        "found ",
-        len(keep_proteins),
-        " proteins in ",
-        (100 * threshold),
-        "% of each treatment group",
-    )
-    return df.loc[list(keep_proteins)]
+        
+        # keep_mask is brought forward as true
+        # unless the mean of NA is >= the threshold
+        # in which case it is converted to false
+        keep_mask &= sub_df.notna().mean(axis=1) >= threshold
+
+    print(f"found {keep_mask.sum()} proteins in {100 * threshold}% of each treatment group")
+    return df.loc[keep_mask]
 
 
 def impute_pimms_cf(
