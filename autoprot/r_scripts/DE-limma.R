@@ -92,6 +92,40 @@ fit <- lmFit(df, design)
 print("running ebayes")
 fit <- eBayes(fit)
 
+## which coefficient to use for the DE calculation?
+# two steps - first find which metadata column is the treatment to contrast
+# then set the coefficient to the treatment level of interest (which is the second level of the factor)
+
+## find the grouping column
+# Identify the grouping variable as the first term in the formula.
+# By convention the config formula must list the group variable first
+# (e.g. "~ treatment" or "~ treatment + batch"), which avoids passing the
+# column name in as a separate argument.
+group_col <- trimws(strsplit(sub("^\\s*~\\s*", "", formula_str), "[+*]")[[1]][1])
+
+if (!group_col %in% colnames(meta)) {
+  stop("Grouping variable '", group_col, "' from formula '", formula_str,
+       "' is not a column in the metadata. Metadata columns are: ",
+       paste(colnames(meta), collapse = ", "))
+}
+
+meta[[group_col]] <- relevel(factor(meta[[group_col]]), ref = ref_level)
+
+## Then define the contrast level for the group column
+# ref_level is passed as arg so level to contrast is the other level in the pair
+other_level <- setdiff(levels(meta[[group_col]]), ref_level)
+stopifnot(length(other_level) == 1)  # Python passes one pair at a time
+
+# Now we can find the coefficient name in the design matrix
+# The coefficient name is typically in the form "group_colOtherLevel", e.g., "treatmentDrugA" if group_col is "treatment" and other_level is "DrugA".
+coef_name <- paste0(group_col, other_level)
+if (!coef_name %in% colnames(design)) {
+  stop("Expected coefficient '", coef_name, "' not found in design matrix. ",
+       "Design columns are: ", paste(colnames(design), collapse = ", "))
+}
+
+res <- topTable(fit, coef = coef_name, number = Inf)
+
 # Output result
 res <- topTable(fit, coef = 2, number = Inf)
 write.csv(res, file = output_file)
