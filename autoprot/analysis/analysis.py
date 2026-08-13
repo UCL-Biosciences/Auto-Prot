@@ -65,14 +65,15 @@ def run_analysis(
     results = {}
 
     ##### Analyses for all treatment groups #####
+    if config.get("run_clustering"):
 
-    # Perform clustering (PCA, MDS, heatmap) and save results
-    if config.get("z_score_for_clustering"):
-        scaler = StandardScaler().set_output(transform="pandas")
-        df_scaled = scaler.fit_transform(df)
-        results = run_clustering_analysis(df = df_scaled, metadata = metadata, output_dir = output_dir)
-    else:
-        results = run_clustering_analysis(df = df, metadata = metadata, output_dir = output_dir)
+        # Perform clustering (PCA, MDS, heatmap) and save results
+        if config.get("z_score_for_clustering"):
+            scaler = StandardScaler().set_output(transform="pandas")
+            df_scaled = scaler.fit_transform(df)
+            results = run_clustering_analysis(df = df_scaled, metadata = metadata, output_dir = output_dir)
+        else:
+            results = run_clustering_analysis(df = df, metadata = metadata, output_dir = output_dir)
 
     ###### Pairwise Analyses #####
     # if there are > 2 treatment groups, pairwise analyses will have to be run separately for each pair of treatments

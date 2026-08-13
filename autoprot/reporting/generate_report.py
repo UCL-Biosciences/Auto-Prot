@@ -6,6 +6,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 import json
 import os
+import re
 import subprocess
 
 import markdown2  # conda env info in configs/auto-prot-env-markdown-macOS.yml
@@ -141,6 +142,17 @@ def generate_report_html(config = None):
 
     # also replacing the {outPath} placeholder with real out dir
     tempMd = tempMd.replace("{outPath}", config.get("outPath"))
+
+    ### Remove clustering section if not requested in config
+    if not config.get("run_clustering"):
+        tempMd = re.sub(
+            r"<!--CLUSTERING_START-->.*?<!--CLUSTERING_END-->",
+            "",
+            tempMd,
+            flags=re.DOTALL,
+        )
+    else:
+        tempMd = tempMd.replace("<!--CLUSTERING_START-->", "").replace("<!--CLUSTERING_END-->", "")
 
     # Convert the input to HTML
     tempHtml = markdown2.markdown(tempMd)

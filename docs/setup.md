@@ -129,6 +129,9 @@ To make the code work, you must enter the correct parameters and combination of 
 
 **z_score_for_clustering.** Whether to z-score data for PCA, MDS and heatmap clustering (true/false). Uses scikit-learn's [StandardScaler](https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.StandardScaler.html#sklearn.preprocessing.StandardScaler). 
 
+**run_clustering.** Whether to skip clustering (PCA, MDS, heatmap). If true, the pipeline will skip clustering and only run DE and enrichment analyses.
+
+
 ### Annotation
 
 **species.** Species for pathway enrichment. Examples: "hsapiens", "mmusculus". Default: "hsapiens"

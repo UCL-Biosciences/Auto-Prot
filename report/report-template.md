@@ -42,6 +42,7 @@ There are four stages of processing shown here. The raw values, the log2-transfo
 
 ## Analysis
 
+<!--CLUSTERING_START-->
 ### Clustering
 We start with simple clustering. Which samples are most similar?
 
@@ -61,6 +62,8 @@ Compare the MDS plot with the PCA plot above. Do they show consistent patterns i
 The below dendrogram and heatmap shows hierarchical relationships of proteins (rows) and samples (columns) based on their dissimilarity. Colour intensity represents standardised protein abundance. Clusters highlight groups of proteins/samples with similar abundances. Verify data quality by ensuring expected clustering (e.g., replicates group together) and checking for outliers or missing data. Explore clusters to identify functionally related proteins or patterns linked to experimental conditions.
 
 <img src="{outPath}/full_dataset/plots/heatmap_plot.png" width="600" height="600">
+<!--CLUSTERING_END-->
+
 
 ### Differential Protein Abundance
 Now, we look at the protein abundance and whether there are differences between treatment groups.
