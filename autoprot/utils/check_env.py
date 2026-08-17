@@ -20,6 +20,7 @@ def get_repo_root():
             capture_output=True,
             text=True,
             check=True,
+            shell = True,
         )
         return os.path.abspath(result.stdout.strip())
     except subprocess.CalledProcessError:
@@ -88,7 +89,7 @@ def get_installed_packages():
         set[str]: A set of 'package=version' strings for all currently installed packages.
     """
     result = subprocess.run(
-        ["conda", "list", "--export"], capture_output=True, text=True, check=True
+        ["conda", "list", "--export"], capture_output=True, text=True, check=True, shell = True
     )
     packages = set()
     for line in result.stdout.splitlines():

@@ -114,7 +114,7 @@ def normalise_vsn(file_path_in, file_path_normalised_out, meanSdPlot_path):
             file_path_normalised_out,
             meanSdPlot_path,
         ],
-        check=True,
+        check=True, shell = True,
     )
 
 

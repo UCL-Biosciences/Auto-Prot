@@ -74,7 +74,7 @@ def make_volcano(
             formula,  ## formula used in DE analysis
             ref_level
         ],
-        check=True,
+        check=True, shell = True,
     )
     # read results back in
     diffExpr_df = pd.read_csv(pair_result_path, index_col=0)
